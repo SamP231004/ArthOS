@@ -24,7 +24,9 @@ export function Logo({ href = "/", size = "md" }: { href?: string; size?: "md" |
   return (
     <Link href={href} className="group flex items-center gap-2.5" aria-label="ArthOS home">
       <LogoMark size={lg ? 42 : 32} className="transition group-hover:scale-[1.04]" />
-      <span className={`font-display leading-none tracking-tight translate-y-[-0.06em] ${lg ? "text-[28px]" : "text-[22px]"}`}>
+      {/* Newsreader's line box sits its ink ~0.12em above centre; measured offset is corrected so the
+          letters' ink is centred on the tile (±0.3px at both sizes). */}
+      <span className={`font-display leading-none tracking-tight translate-y-[0.115em] ${lg ? "text-[28px]" : "text-[22px]"}`}>
         <span className="text-fg">Arth</span>
         <span className="font-medium text-brand">OS</span>
       </span>
