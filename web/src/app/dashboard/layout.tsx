@@ -1,15 +1,17 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowDownLeft, ArrowUpRight, ChartPie, Gauge, LayoutDashboard, LogOut, Settings, Sparkles } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ChartPie, Gauge, LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen, Settings, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
-import { Logo } from "@/components/logo";
+import { DialNav } from "@/components/dial-nav";
+import { Logo, LogoMark } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { buttonClass } from "@/lib/button";
 import { useAuth } from "@/lib/auth-store";
+import { useSidebar } from "@/lib/sidebar-store";
 
 const nav = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -60,7 +62,9 @@ function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const qc = useQueryClient();
   const { user, signOut } = useAuth();
+  const { collapsed, toggle } = useSidebar();
   const isActive = (href: string) => (href === "/dashboard" ? pathname === href : pathname.startsWith(href));
+  const activeHref = nav.find((n) => isActive(n.href))?.href ?? "/dashboard";
 
   // Full navigation after sign-out: avoids racing the auth guard's redirect and discards any page state
   // Next.js keeps alive between routes (e.g. a half-finished demo start).
@@ -73,70 +77,95 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-1">
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-line bg-bg-2/80 px-3 py-5 backdrop-blur md:flex">
-        <div className="flex items-center justify-between pl-3">
-          <Logo href="/dashboard" />
-          <ThemeToggle />
+      <aside
+        className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-line bg-bg-2/80 py-5 backdrop-blur transition-[width] duration-300 md:flex ${
+          collapsed ? "w-[76px] px-2.5" : "w-64 px-3"
+        }`}
+      >
+        <div className={`flex items-center ${collapsed ? "flex-col gap-3" : "justify-between pl-3"}`}>
+          {collapsed ? (
+            <Link href="/dashboard" aria-label="ArthOS home"><LogoMark size={34} /></Link>
+          ) : (
+            <Logo href="/dashboard" />
+          )}
+          <div className={`flex items-center ${collapsed ? "flex-col" : ""}`}>
+            <ThemeToggle />
+            <button
+              onClick={toggle}
+              className="grid h-9 w-9 place-items-center rounded-xl text-muted transition hover:bg-fg/5 hover:text-fg"
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+            </button>
+          </div>
         </div>
 
-        <p className="mt-9 px-3 text-[10.5px] font-medium uppercase tracking-[0.16em] text-subtle">Money</p>
-        <nav className="mt-2 space-y-0.5">
+        {!collapsed && <p className="mt-9 px-3 text-[10.5px] font-medium uppercase tracking-[0.16em] text-subtle">Money</p>}
+        <nav className={`${collapsed ? "mt-6" : "mt-2"} space-y-0.5`}>
           {nav.map((n) => {
             const active = isActive(n.href);
             return (
               <Link
                 key={n.href}
                 href={n.href}
-                className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
+                title={collapsed ? n.label : undefined}
+                className={`group relative flex items-center rounded-xl py-2.5 text-sm transition ${collapsed ? "justify-center px-0" : "gap-3 px-3"} ${
                   active ? "bg-fg/[0.06] text-fg shadow-[inset_0_1px_0_rgb(var(--hl)/0.05)]" : "text-muted hover:bg-fg/[0.03] hover:text-fg"
                 }`}
               >
                 {active && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-brand" />}
-                <n.icon size={17} className={active ? "text-brand" : "text-subtle group-hover:text-fg-2"} />
-                {n.label}
+                <n.icon size={collapsed ? 19 : 17} className={active ? "text-brand" : "text-subtle group-hover:text-fg-2"} />
+                {!collapsed && n.label}
               </Link>
             );
           })}
         </nav>
 
-        <p className="mt-8 px-3 text-[10.5px] font-medium uppercase tracking-[0.16em] text-subtle">Coming soon</p>
-        <div className="mt-2 space-y-0.5">
-          {soon.map((s) => (
-            <div key={s} className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-subtle">
-              {s}
-              <span className="rounded-full border border-line px-1.5 py-px text-[9.5px] uppercase tracking-wider">Soon</span>
+        {!collapsed && (
+          <>
+            <p className="mt-8 px-3 text-[10.5px] font-medium uppercase tracking-[0.16em] text-subtle">Coming soon</p>
+            <div className="mt-2 space-y-0.5">
+              {soon.map((x) => (
+                <div key={x} className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-subtle">
+                  {x}
+                  <span className="rounded-full border border-line px-1.5 py-px text-[9.5px] uppercase tracking-wider">Soon</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
 
-        <div className="panel mt-auto flex items-center gap-3 p-3">
+        <div className={`mt-auto flex items-center ${collapsed ? "flex-col gap-2" : "panel gap-3 p-3"}`}>
           {user?.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- remote Google avatar; next/image would need remotePatterns
-            <img src={user.avatarUrl} alt="" referrerPolicy="no-referrer" className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-line-strong" />
+            <img src={user.avatarUrl} alt="" referrerPolicy="no-referrer" title={collapsed ? user.name : undefined} className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-line-strong" />
           ) : (
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-accent-1 to-accent-3 text-xs font-semibold text-accent-fg">
+            <span title={collapsed ? user?.name : undefined} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-accent-1 to-accent-3 text-xs font-semibold text-accent-fg">
               {initials(user?.name)}
             </span>
           )}
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{user?.name}</p>
-            <p className="truncate text-[11px] text-subtle">{user?.demo ? "Demo account" : user?.email}</p>
-          </div>
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{user?.name}</p>
+              <p className="truncate text-[11px] text-subtle">{user?.demo ? "Demo account" : user?.email}</p>
+            </div>
+          )}
           <button onClick={logout} className="rounded-lg p-1.5 text-subtle transition hover:bg-fg/5 hover:text-expense" aria-label="Sign out" title="Sign out">
             <LogOut size={16} />
           </button>
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col pb-20 md:pb-0">
+      <div className="flex min-w-0 flex-1 flex-col pb-32 md:pb-0">
         <DemoBanner />
         <header className="flex items-center justify-between border-b border-line px-4 py-3 md:hidden">
           <Logo href="/dashboard" />
           <div className="flex items-center gap-1">
             <ThemeToggle />
-          <button onClick={logout} className="rounded-lg p-2 text-muted" aria-label="Sign out">
-            <LogOut size={18} />
-          </button>
+            <button onClick={logout} className="rounded-lg p-2 text-muted" aria-label="Sign out">
+              <LogOut size={18} />
+            </button>
           </div>
         </header>
         <main className="relative mx-auto w-full max-w-7xl flex-1 px-4 py-7 sm:px-8 sm:py-10">
@@ -145,17 +174,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-6 rounded-2xl border border-line bg-surface/90 p-1 shadow-2xl backdrop-blur-xl md:hidden">
-        {nav.map((n) => {
-          const active = isActive(n.href);
-          return (
-            <Link key={n.href} href={n.href} className={`flex flex-col items-center gap-1 rounded-xl py-2 text-[10.5px] ${active ? "bg-fg/[0.06] text-brand" : "text-subtle"}`}>
-              <n.icon size={18} />
-              {n.label}
-            </Link>
-          );
-        })}
-      </nav>
+      <DialNav items={nav} activeHref={activeHref} />
     </div>
   );
 }

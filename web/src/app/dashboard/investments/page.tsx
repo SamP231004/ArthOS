@@ -14,7 +14,10 @@ import { money } from "@/lib/format";
 import { useDeleteHolding, usePortfolio } from "@/lib/queries";
 import type { AssetClass, HoldingView, Portfolio, PortfolioRange } from "@/lib/types";
 
-type Tab = "ALL" | AssetClass;
+type Tab = AssetClass;
+/** Fixed tab order, showing only the classes the user holds. */
+const CLASS_ORDER: AssetClass[] = ["STOCK", "MUTUAL_FUND", "GOLD", "BOND"];
+const presentClasses = (p: Portfolio) => CLASS_ORDER.filter((c) => p.holdings.some((h) => h.assetClass === c));
 type View = "holdings" | "analysis";
 const RANGES: PortfolioRange[] = ["1M", "3M", "6M", "1Y", "ALL"];
 
@@ -80,13 +83,13 @@ const COLS = [
 type SortKey = (typeof COLS)[number][0];
 
 function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refresh: () => void; refreshing: boolean; onOpen: (id: string, tab: DetailTab) => void }) {
-  const classes = p.allocation.map((a) => a.assetClass);
-  const [tab, setTab] = useState<Tab>(classes.length === 1 ? classes[0] : "ALL");
+  const classes = presentClasses(p);
+  const [tab, setTab] = useState<Tab>(classes[0]);
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "currentValue", dir: -1 });
   const del = useDeleteHolding();
 
   const items = useMemo(() => {
-    const hs = p.holdings.filter((h) => tab === "ALL" || h.assetClass === tab);
+    const hs = p.holdings.filter((h) => h.assetClass === tab);
     return [...hs].sort((a, b) => {
       const va = a[sort.key], vb = b[sort.key];
       return (typeof va === "string" ? va.localeCompare(vb as string) : (va as number) - (vb as number)) * sort.dir;
@@ -104,9 +107,9 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
       <section className="panel overflow-hidden">
         <div className="flex flex-wrap items-center gap-2 p-4 sm:p-5">
           <div className="flex flex-wrap rounded-xl bg-fg/[0.05] p-1 text-sm">
-            {(["ALL", ...classes] as Tab[]).map((t) => (
+            {classes.map((t) => (
               <button key={t} onClick={() => setTab(t)} className={`rounded-lg px-3 py-1.5 transition ${tab === t ? "bg-surface text-fg shadow-sm" : "text-muted hover:text-fg"}`}>
-                {t === "ALL" ? "All" : CLASS_META[t].plural}
+                {CLASS_META[t].plural}
               </button>
             ))}
           </div>
@@ -293,10 +296,10 @@ function RealizedProfit({ p }: { p: Portfolio }) {
 // ───────────────────────────────────────── Analysis
 
 function AnalysisView({ p, range, setRange }: { p: Portfolio; range: PortfolioRange; setRange: (r: PortfolioRange) => void }) {
-  const classes = p.allocation.map((a) => a.assetClass);
-  const [tab, setTab] = useState<Tab>("ALL");
+  const classes = presentClasses(p);
+  const [tab, setTab] = useState<Tab>(classes[0]);
   const [period, setPeriod] = useState<"month" | "year">("month");
-  const hs = p.holdings.filter((h) => tab === "ALL" || h.assetClass === tab);
+  const hs = p.holdings.filter((h) => h.assetClass === tab);
 
   const flows = useMemo(() => {
     const by = new Map<string, number>();
@@ -330,9 +333,9 @@ function AnalysisView({ p, range, setRange }: { p: Portfolio; range: PortfolioRa
     <div className="space-y-6">
       <div className="panel flex flex-wrap items-center justify-between gap-3 p-3">
         <div className="flex flex-wrap rounded-xl bg-fg/[0.05] p-1 text-sm">
-          {(["ALL", ...classes] as Tab[]).map((t) => (
+          {classes.map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`rounded-lg px-3 py-1.5 transition ${tab === t ? "bg-surface text-fg shadow-sm" : "text-muted hover:text-fg"}`}>
-              {t === "ALL" ? "All" : CLASS_META[t].plural}
+              {CLASS_META[t].plural}
             </button>
           ))}
         </div>

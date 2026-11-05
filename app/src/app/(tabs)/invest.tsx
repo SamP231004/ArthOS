@@ -11,7 +11,10 @@ import { usePortfolio } from '@/lib/queries';
 import type { AssetClass, HoldingView, Portfolio, PortfolioRange } from '@/lib/types';
 import { alpha, F, R, S, useStyles, useTheme, type Palette } from '@/theme';
 
-type Tab = 'ALL' | AssetClass;
+type Tab = AssetClass;
+/** Fixed tab order, showing only the classes the user holds (no "All" tab). */
+const CLASS_ORDER: AssetClass[] = ['STOCK', 'MUTUAL_FUND', 'GOLD', 'BOND'];
+const presentClasses = (p: Portfolio) => CLASS_ORDER.filter((c) => p.holdings.some((h) => h.assetClass === c));
 
 export default function InvestTab() {
   const [range, setRange] = useState<PortfolioRange>('1Y');
@@ -51,9 +54,9 @@ export default function InvestTab() {
 function Holdings({ p }: { p: Portfolio }) {
   const { c } = useTheme();
   const s = useStyles(make);
-  const classes = p.allocation.map((a) => a.assetClass);
-  const [tab, setTab] = useState<Tab>('ALL');
-  const items = p.holdings.filter((h) => tab === 'ALL' || h.assetClass === tab).sort((a, b) => b.currentValue - a.currentValue);
+  const classes = presentClasses(p);
+  const [tab, setTab] = useState<Tab>(classes[0]);
+  const items = p.holdings.filter((h) => h.assetClass === tab).sort((a, b) => b.currentValue - a.currentValue);
   const invested = items.reduce((x, h) => x + h.invested, 0);
   const current = items.reduce((x, h) => x + h.currentValue, 0);
   const pl = current - invested;
@@ -76,8 +79,8 @@ function Holdings({ p }: { p: Portfolio }) {
       </Card>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: S.sm }}>
-        {(['ALL', ...classes] as Tab[]).map((x) => (
-          <Chip key={x} label={x === 'ALL' ? 'All' : CLASS_META[x].plural} active={tab === x} onPress={() => setTab(x)} />
+        {classes.map((x) => (
+          <Chip key={x} label={CLASS_META[x].plural} active={tab === x} onPress={() => setTab(x)} />
         ))}
       </ScrollView>
 
@@ -134,10 +137,10 @@ function Row({ h, last, share }: { h: HoldingView; last: boolean; share: number 
 function Analysis({ p, range, setRange }: { p: Portfolio; range: PortfolioRange; setRange: (r: PortfolioRange) => void }) {
   const { c } = useTheme();
   const { width } = useWindowDimensions();
-  const classes = p.allocation.map((a) => a.assetClass);
-  const [tab, setTab] = useState<Tab>('ALL');
+  const classes = presentClasses(p);
+  const [tab, setTab] = useState<Tab>(classes[0]);
   const [period, setPeriod] = useState<'month' | 'year'>('month');
-  const hs = p.holdings.filter((h) => tab === 'ALL' || h.assetClass === tab);
+  const hs = p.holdings.filter((h) => h.assetClass === tab);
 
   const flows = useMemo(() => {
     const by = new Map<string, number>();
@@ -166,8 +169,8 @@ function Analysis({ p, range, setRange }: { p: Portfolio; range: PortfolioRange;
   return (
     <>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: S.sm }}>
-        {(['ALL', ...classes] as Tab[]).map((x) => (
-          <Chip key={x} label={x === 'ALL' ? 'All' : CLASS_META[x].plural} active={tab === x} onPress={() => setTab(x)} />
+        {classes.map((x) => (
+          <Chip key={x} label={CLASS_META[x].plural} active={tab === x} onPress={() => setTab(x)} />
         ))}
       </ScrollView>
 

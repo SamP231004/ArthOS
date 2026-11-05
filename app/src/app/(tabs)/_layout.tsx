@@ -1,35 +1,18 @@
-import { NativeTabs } from 'expo-router/native-tabs';
+import { Tabs } from 'expo-router/tabs';
 
-import { alpha, useTheme } from '@/theme';
+import { DialTabBar } from '@/components/dial-tab-bar';
+import { useTheme } from '@/theme';
 
+/** Tabs driven by the Omnitrix-style dial instead of a bottom bar (matches the website's mobile navigation). */
 export default function TabsLayout() {
   const { c } = useTheme();
   return (
-    <NativeTabs
-      backgroundColor={c.surface}
-      indicatorColor={alpha(c.brand, 0.16)}
-      labelStyle={{ default: { color: c.subtle }, selected: { color: c.brand } }}
-      iconColor={{ default: c.subtle, selected: c.brand }}>
-      <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon src={require('@/assets/images/tabIcons/home.png')} renderingMode="template" />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="income">
-        <NativeTabs.Trigger.Label>Income</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon src={require('@/assets/images/tabIcons/income.png')} renderingMode="template" />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="expenses">
-        <NativeTabs.Trigger.Label>Expenses</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon src={require('@/assets/images/tabIcons/expense.png')} renderingMode="template" />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="budget">
-        <NativeTabs.Trigger.Label>Budget</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon src={require('@/assets/images/tabIcons/budget.png')} renderingMode="template" />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="invest">
-        <NativeTabs.Trigger.Label>Invest</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon src={require('@/assets/images/tabIcons/invest.png')} renderingMode="template" />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <Tabs tabBar={(props) => <DialTabBar {...props} />} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: c.bg } }}>
+      <Tabs.Screen name="index" options={{ title: 'Home' }} />
+      <Tabs.Screen name="income" options={{ title: 'Income' }} />
+      <Tabs.Screen name="expenses" options={{ title: 'Expenses' }} />
+      <Tabs.Screen name="budget" options={{ title: 'Budget' }} />
+      <Tabs.Screen name="invest" options={{ title: 'Invest' }} />
+    </Tabs>
   );
 }

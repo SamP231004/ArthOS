@@ -16,4 +16,8 @@ public final class DemoPortfolioAccess {
     public static List<Holding> build(String userId, LocalDate today, Instant expiresAt, Map<String, List<PricePoint>> histories) {
         return DemoPortfolio.build(userId, today, expiresAt, histories);
     }
+
+    public static List<String> marketKeys() {
+        return DemoPortfolio.marketKeys();
+    }
 }

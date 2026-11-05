@@ -116,14 +116,41 @@ class PortfolioCalculatorTest {
     }
 
     @Test
-    void demoPortfolioCoversEveryAssetClassAndUsesHistoricalPrices() {
-        List<PricePoint> fake = List.of(new PricePoint(TODAY.minusYears(2), new BigDecimal("100")), new PricePoint(TODAY.minusMonths(6), new BigDecimal("150")));
-        var holdings = DemoPortfolioAccess.build("u1", TODAY, Instant.now(), Map.of("STOCK:TCS.NS", fake));
+    void demoPortfolioBuysDipsKeepsWinnersAndEndsPositive() {
+        // Two years of daily closes: every candidate trends up with a dip, except INFY which falls.
+        java.util.Map<String, List<PricePoint>> hist = new java.util.HashMap<>();
+        for (String k : DemoPortfolioAccess.marketKeys()) {
+            boolean falling = k.equals("STOCK:INFY.NS");
+            List<PricePoint> h = new ArrayList<>();
+            for (LocalDate d = TODAY.minusYears(2); !d.isAfter(TODAY); d = d.plusDays(1)) {
+                long t = d.toEpochDay() - TODAY.minusYears(2).toEpochDay();
+                double base = falling ? 2000 - t * 1.2 : 100 + t * 0.25;
+                double dip = Math.abs(t - 400) < 20 ? -15 : 0; // a clear dip ~10 months before today
+                h.add(new PricePoint(d, BigDecimal.valueOf(Math.max(5, base + dip))));
+            }
+            hist.put(k, h);
+        }
+        var holdings = DemoPortfolioAccess.build("u1", TODAY, Instant.now(), hist);
+
         assertEquals(java.util.Set.of(AssetClass.values()), holdings.stream().map(Holding::getAssetClass).collect(java.util.stream.Collectors.toSet()));
-        Holding tcs = holdings.stream().filter(x -> "TCS.NS".equals(x.getSymbol())).findFirst().orElseThrow();
-        assertEq("100", tcs.getLots().getFirst().getPrice()); // bought 11 months ago → close on/before that date
-        assertTrue(holdings.stream().allMatch(x -> "u1".equals(x.getUserId()) && x.getExpiresAt() != null));
-        assertTrue(holdings.stream().flatMap(x -> x.getLots().stream()).noneMatch(l -> l.getDate().isAfter(TODAY)));
+        assertTrue(holdings.stream().noneMatch(h -> "INFY.NS".equals(h.getSymbol())), "losers are left out");
+        assertTrue(holdings.stream().flatMap(h -> h.getLots().stream()).noneMatch(l -> l.getDate().isAfter(TODAY)));
+        assertTrue(holdings.stream().allMatch(h -> "u1".equals(h.getUserId()) && h.getExpiresAt() != null));
+        assertTrue(holdings.stream().anyMatch(h -> h.getLots().stream().anyMatch(l -> l.getType() == LotType.SELL)), "books some profit");
+
+        java.util.Map<String, Quote> quotes = new java.util.HashMap<>();
+        hist.forEach((k, h) -> quotes.put(k, new Quote(h.getLast().close(), h.get(h.size() - 2).close(), Instant.now(), "test")));
+        PortfolioView v = PortfolioCalculator.calculate(holdings, quotes, hist, TODAY, "1Y");
+        assertTrue(v.totals().gain().signum() > 0, "net holdings in profit, was " + v.totals().gain());
+        assertTrue(v.totals().xirr() != null && v.totals().xirr().signum() > 0, "positive XIRR, was " + v.totals().xirr());
+        assertTrue(v.totals().realizedGain().signum() > 0, "realised profit positive");
+    }
+
+    @Test
+    void demoPortfolioStillBuildsWithoutAnyMarketData() {
+        var holdings = DemoPortfolioAccess.build("u1", TODAY, Instant.now(), java.util.Map.of());
+        assertEquals(java.util.Set.of(AssetClass.values()), holdings.stream().map(Holding::getAssetClass).collect(java.util.stream.Collectors.toSet()));
+        assertTrue(holdings.stream().allMatch(h -> !h.getLots().isEmpty()));
     }
 
     private static Holding holding(AssetClass cls, String symbol, Lot... lots) {

@@ -32,5 +32,5 @@ export function Screen({
 
 const styles = StyleSheet.create({
   glow: { position: 'absolute', top: 0, left: 0, right: 0, height: 260 },
-  content: { padding: S.lg, paddingBottom: S.xxl * 2 },
+  content: { padding: S.lg, paddingBottom: 132 }, // clears the bottom dial
 });
