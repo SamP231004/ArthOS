@@ -21,7 +21,7 @@ export function Screen({
     <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={edges}>
       <LinearGradient colors={[`${c.glow}0.10)`, `${c.glow}0)`]} style={styles.glow} pointerEvents="none" />
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, edges.includes('bottom') && { paddingBottom: S.xxl }]}
         keyboardShouldPersistTaps="handled"
         refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={c.brand} colors={[c.brand]} progressBackgroundColor={c.surface} /> : undefined}>
         <View style={{ gap: S.lg }}>{children}</View>

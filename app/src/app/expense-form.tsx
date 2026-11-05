@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Switch, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Switch, View } from 'react-native';
 
 import { DateField, isISODate } from '@/components/date-field';
 import { Screen } from '@/components/screen';
@@ -55,7 +55,7 @@ function ExpenseForm({ initial }: { initial?: Expense }) {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <Screen edges={['bottom']}>
         <Input
           label="Amount"

@@ -3,9 +3,11 @@ import { Platform } from 'react-native';
 import { useAuth } from './auth-store';
 import type { ApiErrorBody } from './types';
 
-// Android emulators reach the host machine at 10.0.2.2. On a physical device set EXPO_PUBLIC_API_URL
-// to your computer's LAN IP (e.g. http://192.168.1.20:8080) or the deployed backend URL.
-const fallback = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://localhost:8080';
+// EXPO_PUBLIC_API_URL is set per build profile in eas.json and by .env locally. Without it, dev builds talk to a
+// local backend (Android emulators reach the host at 10.0.2.2) and release builds to the deployed one — a release
+// build must never point at an emulator-only address.
+const PRODUCTION_API = 'https://arthos-9tro.onrender.com';
+const fallback = !__DEV__ ? PRODUCTION_API : Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://localhost:8080';
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? fallback).replace(/\/$/, '');
 
 export class ApiError extends Error {

@@ -1,11 +1,27 @@
 export function money(amount: number | undefined | null, currency = "INR", compact = false): string {
   const value = amount ?? 0;
-  return new Intl.NumberFormat(currency === "INR" ? "en-IN" : "en-US", {
+  const locale = currency === "INR" ? "en-IN" : "en-US";
+  if (compact && Math.abs(value) >= 100000) return compactMoney(value, currency, locale);
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     maximumFractionDigits: compact || Number.isInteger(value) ? 0 : 2,
-    notation: compact && Math.abs(value) >= 100000 ? "compact" : "standard",
   }).format(value);
+}
+
+/**
+ * ₹8.2L / ₹1.4Cr (INR) or $1.2M (others), built by hand: Hermes only honours Intl's `notation: "compact"` on
+ * Android 11+, so older phones would otherwise show the full number.
+ */
+function compactMoney(value: number, currency: string, locale: string): string {
+  const abs = Math.abs(value);
+  const units: [number, string][] = currency === "INR" ? [[1e7, "Cr"], [1e5, "L"]] : [[1e9, "B"], [1e6, "M"], [1e3, "K"]];
+  const [size, suffix] = units.find(([n]) => abs >= n) ?? [1, ""];
+  const scaled = abs / size;
+  const digits = scaled >= 100 ? 0 : scaled >= 10 ? 1 : 2;
+  const symbol = new Intl.NumberFormat(locale, { style: "currency", currency, maximumFractionDigits: 0 }).format(0).replace(/[\d.,\s]/g, "");
+  const n = Number(scaled.toFixed(digits)).toString();
+  return `${value < 0 ? "−" : ""}${symbol}${n}${suffix}`;
 }
 
 export function label(enumValue: string): string {

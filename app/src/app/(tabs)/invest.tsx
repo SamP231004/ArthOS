@@ -8,8 +8,9 @@ import { Button, Card, Chip, ErrorNote, Loading, Segmented, T } from '@/componen
 import { money } from '@/lib/format';
 import { CLASS_META, fmtQty, signedPct, toneColor } from '@/lib/invest-meta';
 import { indianMarketStatus } from '@/lib/market';
-import { usePortfolio } from '@/lib/queries';
+import { usePortfolio, useSummary } from '@/lib/queries';
 import type { AssetClass, HoldingView, Portfolio, PortfolioRange } from '@/lib/types';
+import { useMonth } from '@/lib/ui-store';
 import { alpha, F, R, S, useStyles, useTheme, type Palette } from '@/theme';
 
 type Tab = AssetClass;
@@ -28,6 +29,7 @@ export default function InvestTab() {
         <T variant="title">Investments</T>
         <T variant="muted">Stocks, mutual funds, gold and bonds — one live portfolio.</T>
       </View>
+      <SavingsBalance />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Segmented value={view} onChange={setView} options={[{ value: 'holdings', label: 'Holdings' }, { value: 'analysis', label: 'Analysis' }]} />
         <Button title="+ Add" onPress={() => router.push('/add-holding')} />
@@ -52,11 +54,27 @@ export default function InvestTab() {
   );
 }
 
+/** The savings account balance: what's set aside and ready to invest. */
+function SavingsBalance() {
+  const { c } = useTheme();
+  const month = useMonth();
+  const a = useSummary(month).data?.savings;
+  if (!a) return null;
+  const over = a.closing < 0;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: over ? alpha(c.expense, 0.35) : c.line, borderRadius: R.md, paddingHorizontal: S.md, paddingVertical: S.sm }}>
+      <T variant="small">{over ? 'Savings account overdrawn' : 'Savings to invest'}</T>
+      <Text style={{ color: over ? c.expense : c.fg, fontFamily: F.uiSemibold, fontSize: 15, fontVariant: ['tabular-nums'] }}>{money(Math.abs(a.closing))}</Text>
+    </View>
+  );
+}
+
 function Holdings({ p }: { p: Portfolio }) {
   const { c } = useTheme();
   const s = useStyles(make);
   const classes = presentClasses(p);
-  const [tab, setTab] = useState<Tab>(classes[0]);
+  const [picked, setTab] = useState<Tab>(classes[0]);
+  const tab = classes.includes(picked) ? picked : classes[0]; // the picked class may have been emptied
   const items = p.holdings.filter((h) => h.assetClass === tab).sort((a, b) => b.currentValue - a.currentValue);
   const invested = items.reduce((x, h) => x + h.invested, 0);
   const current = items.reduce((x, h) => x + h.currentValue, 0);

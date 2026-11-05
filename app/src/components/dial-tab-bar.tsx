@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import { useEffect, useState } from 'react';
-import { Animated, Image, Pressable, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
+import { Animated, BackHandler, Image, Pressable, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { alpha, F, useTheme } from '@/theme';
@@ -35,6 +35,15 @@ export function DialTabBar({ state, navigateToTab }: BottomTabBarProps) {
   useEffect(() => {
     Animated.spring(anim, { toValue: open ? 1 : 0, useNativeDriver: true, friction: 7, tension: 60 }).start();
   }, [open, anim]);
+
+  useEffect(() => {
+    if (!open) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setOpen(false);
+      return true;
+    });
+    return () => sub.remove();
+  }, [open]);
 
   const go = (it: Item) => {
     setOpen(false);

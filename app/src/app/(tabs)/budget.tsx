@@ -7,7 +7,7 @@ import { Badge, Button, Card, Chip, ErrorNote, Input, Loading, T } from '@/compo
 import { useAuth } from '@/lib/auth-store';
 import { explain, MODE_META, STATUS_META, warningFor, type Tone } from '@/lib/budget-meta';
 import { label, money, monthLabel } from '@/lib/format';
-import { useBudget, useSaveBudget } from '@/lib/queries';
+import { useBudget, useSaveBudget, useSummary } from '@/lib/queries';
 import { BUDGET_MODES, EXPENSE_CATEGORIES, type BudgetMode, type BudgetStatus, type ExpenseCategory } from '@/lib/types';
 import { useMonth } from '@/lib/ui-store';
 import { alpha, F, R, S, useStyles, useTheme, type Palette } from '@/theme';
@@ -61,6 +61,7 @@ function BudgetView({ b, fmt, month }: { b: BudgetStatus; fmt: (n: number) => st
         </View>
       )}
 
+      <SaveFirstFit b={b} fmt={fmt} month={month} />
       <ModeSwitch b={b} fmt={fmt} month={month} />
 
       <Card glow style={{ gap: S.sm }}>
@@ -108,6 +109,28 @@ function BudgetView({ b, fmt, month }: { b: BudgetStatus; fmt: (n: number) => st
         <Calendar b={b} fmt={fmt} />
       </Card>
     </>
+  );
+}
+
+/** Savings come first: the budget plus fixed costs must fit in what's left of income after saving. */
+function SaveFirstFit({ b, fmt, month }: { b: BudgetStatus; fmt: (n: number) => string; month: string }) {
+  const { c } = useTheme();
+  const { data: s } = useSummary(month);
+  const save = useSaveBudget(month);
+  if (!s || s.totalIncome <= 0 || b.daysRemaining === 0) return null;
+  const room = Math.floor((s.spendable - b.excludedSpent) / 100) * 100;
+  const over = b.limit > room;
+  return (
+    <View style={{ gap: S.sm, borderWidth: 1, borderRadius: R.md, padding: S.md, borderColor: over ? alpha(c.warn, 0.35) : c.line, backgroundColor: over ? alpha(c.warn, 0.08) : 'transparent' }}>
+      <T variant="small" style={{ color: c.fg2, lineHeight: 18 }}>
+        {over
+          ? `Your ${fmt(b.limit)} budget is more than the ${fmt(Math.max(room, 0))} left after saving ${fmt(s.savedFirst)} first — spending it all would eat into savings.`
+          : `Savings come first: ${fmt(s.savedFirst)} is set aside, and your ${fmt(b.limit)} budget fits in the ${fmt(Math.max(room, 0))} that remains.`}
+      </T>
+      {over && room > 0 && (
+        <Button title={`Fit budget to ${fmt(room)}`} variant="secondary" loading={save.isPending} onPress={() => save.mutate({ limit: room, mode: b.mode, excludedCategories: b.excludedCategories })} />
+      )}
+    </View>
   );
 }
 

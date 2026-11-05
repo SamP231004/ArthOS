@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useDeferredValue, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Pressable, Text, TextInput, View } from 'react-native';
 
 import { DateField, isISODate } from '@/components/date-field';
 import { FundingPicker } from '@/components/funding-picker';
@@ -102,7 +102,7 @@ function Form({ cls, onBack }: { cls: AssetClass; onBack: () => void }) {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <Screen edges={['bottom']}>
         <Pressable onPress={onBack}>
           <T variant="small" style={{ color: c.brand }}>‹ Change type</T>

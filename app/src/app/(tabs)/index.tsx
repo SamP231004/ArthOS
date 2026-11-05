@@ -13,6 +13,7 @@ import { STATUS_META } from '@/lib/budget-meta';
 import { dayLabel, label, money } from '@/lib/format';
 import { CLASS_META, signedPct, toneColor } from '@/lib/invest-meta';
 import { useBudget, usePortfolio, useSummary } from '@/lib/queries';
+import { tagColor } from '@/lib/ledger';
 import { ruleLabel } from '@/lib/savings';
 import type { MonthSummary, SavingsAccount } from '@/lib/types';
 import { useMonth } from '@/lib/ui-store';
@@ -149,6 +150,7 @@ function Summary({ s }: { s: MonthSummary }) {
                 title={r.label}
                 subtitle={`${label(r.tag)} · ${dayLabel(r.date)}`}
                 amount={money(r.amount, cur)}
+                color={tagColor(c, r.kind, r.tag)}
                 onPress={() => router.push(r.kind === 'INCOME' ? `/income-form?id=${r.id}` : `/expense-form?id=${r.id}`)}
               />
             ))}

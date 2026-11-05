@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Pressable, Text, View } from 'react-native';
 
 import { Sparkline } from '@/components/charts';
 import { DateField, isISODate } from '@/components/date-field';
@@ -22,7 +22,7 @@ export default function HoldingScreen() {
   if (isLoading) return <Loading />;
   if (!h) return <ErrorNote message="This holding no longer exists." />;
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <Stack.Screen options={{ title: h.name.length > 26 ? h.name.slice(0, 24) + '…' : h.name }} />
       <Screen edges={['bottom']}>
         <T variant="small">{holdingSubtitle(h)}</T>
