@@ -1,0 +1,17 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# Env files (each package ships a .env.example)
+.env
+.env.local
+.env.*.local
+
+# Node (web/, app/)
+node_modules/
+
+# Java (backend/)
+backend/target/

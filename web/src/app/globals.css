@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/* ArthOS design tokens: dark by default (blueprint §11), calm and premium. */
+:root {
+  --bg: #0a0d12;
+  --surface: #11161e;
+  --surface-2: #171e28;
+  --border: #232c39;
+  --fg: #e8ecf2;
+  --muted: #8b96a8;
+  --brand: #f2c14e; /* gold: अर्थ / wealth */
+  --brand-fg: #1a1406;
+  --income: #34d399;
+  --expense: #f87171;
+  --info: #60a5fa;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-fg: var(--brand-fg);
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+  --color-info: var(--info);
+  --font-sans: var(--font-geist-sans), var(--font-deva), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-deva: var(--font-deva);
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Native date inputs: make the picker icon visible on dark backgrounds. */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+}

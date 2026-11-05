@@ -1,0 +1,34 @@
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: arthos-backend
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/arthos}
+      auto-index-creation: true
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+arthos:
+  jwt:
+    # Must be at least 32 characters. Always override in production.
+    secret: ${JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}
+    expiry-hours: ${JWT_EXPIRY_HOURS:168}
+  cors:
+    # Comma-separated list. Supports patterns like https://*.vercel.app
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8081,http://localhost:19006}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true

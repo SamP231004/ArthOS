@@ -1,0 +1,17 @@
+# Render Blueprint: deploys only the backend/ folder as a Docker web service.
+# The website (web/) deploys separately on Vercel with Root Directory = web.
+services:
+  - type: web
+    name: arthos-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
