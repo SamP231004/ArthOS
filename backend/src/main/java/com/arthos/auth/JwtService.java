@@ -23,9 +23,11 @@ public class JwtService {
     private final Duration ttl;
 
     public JwtService(ArthosProperties props) {
-        byte[] bytes = props.jwt().secret().getBytes(StandardCharsets.UTF_8);
+        String secret = props.jwt().secret() == null ? "" : props.jwt().secret().trim();
+        byte[] bytes = secret.getBytes(StandardCharsets.UTF_8);
         if (bytes.length < 32) {
-            throw new IllegalStateException("arthos.jwt.secret (JWT_SECRET) must be at least 32 characters");
+            throw new IllegalStateException("JWT_SECRET must be at least 32 characters (got " + bytes.length
+                    + "). Unset it to use the dev default, or generate one with: openssl rand -base64 48");
         }
         this.key = Keys.hmacShaKeyFor(bytes);
         this.ttl = Duration.ofHours(props.jwt().expiryHours());
