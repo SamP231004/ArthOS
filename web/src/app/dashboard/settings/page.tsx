@@ -3,6 +3,7 @@
 import { Check } from "lucide-react";
 import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
+import { SavingsRuleField } from "@/components/savings-rule";
 import { Button, ErrorNote, Field, Input, Select } from "@/components/ui";
 import { useAuth } from "@/lib/auth-store";
 import { useUpdateProfile } from "@/lib/queries";
@@ -16,6 +17,8 @@ export default function SettingsPage() {
     name: user.name,
     currency: user.currency,
     timezone: user.timezone,
+    savingsMode: user.savingsMode ?? "PERCENT",
+    savingsValue: String(user.savingsValue ?? 20),
   });
   const [saved, setSaved] = useState(false);
 
@@ -27,6 +30,8 @@ export default function SettingsPage() {
         name: f.name,
         currency: f.currency,
         timezone: f.timezone,
+        savingsMode: f.savingsMode,
+        savingsValue: Number(f.savingsValue) || 0,
       });
       setSaved(true);
     } catch {
@@ -46,6 +51,15 @@ export default function SettingsPage() {
           <Field label="Email" hint={user.demo ? "Demo accounts use a generated address" : "Email can't be changed yet"}>
             <Input value={user.email} disabled />
           </Field>
+        </Section>
+
+        <Section title="Save first" desc="Pay yourself first: this is set aside the moment income arrives. Budgets and “left to spend” come out of what remains.">
+          <SavingsRuleField
+            mode={f.savingsMode}
+            value={f.savingsValue}
+            currency={f.currency}
+            onChange={(savingsMode, savingsValue) => setF({ ...f, savingsMode, savingsValue })}
+          />
         </Section>
 
         <Section title="Money" desc="How amounts are shown, and when your day rolls over.">

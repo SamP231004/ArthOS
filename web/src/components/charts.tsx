@@ -28,11 +28,13 @@ export function SpendCurve({
   daily,
   daysInMonth,
   income,
+  incomeLabel = "income",
   format,
 }: {
   daily: { date: string; amount: number }[];
   daysInMonth: number;
   income: number;
+  incomeLabel?: string;
   format: (n: number) => string;
 }) {
   const id = useId();
@@ -83,7 +85,7 @@ export function SpendCurve({
           <>
             <line x1={x(1)} y1={y(0)} x2={x(daysInMonth)} y2={y(income)} stroke="var(--income)" strokeOpacity="0.45" strokeDasharray="4 5" />
             <text x={x(daysInMonth) - 4} y={y(income) - 8} textAnchor="end" fill="var(--income)" fillOpacity="0.8" fontSize="11">
-              income
+              {incomeLabel}
             </text>
           </>
         )}

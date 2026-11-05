@@ -39,6 +39,11 @@ public class User {
     @Field(targetType = FieldType.DECIMAL128)
     private BigDecimal monthlyIncomeTarget;
 
+    /** Pay-yourself-first rule; null fields mean the default (20% of income). */
+    private SavingsRule.Mode savingsMode;
+    @Field(targetType = FieldType.DECIMAL128)
+    private BigDecimal savingsValue;
+
     private boolean onboardingCompleted;
 
     /** Sandbox account created from "Try the demo". */
@@ -72,6 +77,11 @@ public class User {
     public void setTimezone(String timezone) { this.timezone = timezone; }
     public BigDecimal getMonthlyIncomeTarget() { return monthlyIncomeTarget; }
     public void setMonthlyIncomeTarget(BigDecimal monthlyIncomeTarget) { this.monthlyIncomeTarget = monthlyIncomeTarget; }
+    public SavingsRule savingsRule() { return SavingsRule.of(savingsMode, savingsValue); }
+    public SavingsRule.Mode getSavingsMode() { return savingsMode; }
+    public void setSavingsMode(SavingsRule.Mode savingsMode) { this.savingsMode = savingsMode; }
+    public BigDecimal getSavingsValue() { return savingsValue; }
+    public void setSavingsValue(BigDecimal savingsValue) { this.savingsValue = savingsValue; }
     public boolean isOnboardingCompleted() { return onboardingCompleted; }
     public void setOnboardingCompleted(boolean onboardingCompleted) { this.onboardingCompleted = onboardingCompleted; }
     public boolean isDemo() { return demo; }

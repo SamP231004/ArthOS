@@ -4,6 +4,7 @@ import { Pencil, Plus, Repeat, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { BreakdownBar, ExportButton, initials, pctChange, RecurringBadge, sameDayIn, SortHeader, SummaryCell, type Sort } from "@/components/ledger";
 import { MonthPicker } from "@/components/month-picker";
+import { ruleLabel, setAside } from "@/lib/savings";
 import { PageHeader } from "@/components/page-header";
 import { IncomeModal } from "@/components/transaction-forms";
 import { Badge, Button, ErrorNote, Skeleton } from "@/components/ui";
@@ -19,6 +20,7 @@ type Key = "date" | "source" | "type" | "amount";
 export default function IncomePage() {
   const month = useMonth();
   const cur = useAuth((s) => s.user?.currency ?? "INR");
+  const user = useAuth((s) => s.user);
   const fmt = (n: number) => money(n, cur);
   const { data, isLoading, error } = useIncomes(month);
   const prev = useIncomes(shiftMonth(month, -1));
@@ -43,6 +45,10 @@ export default function IncomePage() {
   }, [all, type, q, recurringOnly, sort]);
 
   const total = all.reduce((s, i) => s + i.amount, 0);
+
+  const rule = { mode: user?.savingsMode ?? "PERCENT", value: user?.savingsValue ?? 20 } as const;
+
+  const saved = setAside(rule, total);
   const prevTotal = (prev.data ?? []).reduce((s, i) => s + i.amount, 0);
   const recurring = all.filter((i) => i.recurring);
   const bySource = new Map<string, number>();
@@ -69,8 +75,9 @@ export default function IncomePage() {
       </PageHeader>
 
       <section className="panel overflow-hidden">
-        <div className="grid grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5">
           <SummaryCell k="Received" v={fmt(total)} tone="text-income" sub={`${all.length} ${all.length === 1 ? "entry" : "entries"}`} />
+          <SummaryCell k="Saved first" v={fmt(saved)} tone="text-brand" sub={`${ruleLabel(rule, fmt)} · ${fmt(total - saved)} to spend`} />
           <SummaryCell k="Recurring" v={fmt(recurring.reduce((s, i) => s + i.amount, 0))} sub={`${recurring.length} monthly ${recurring.length === 1 ? "source" : "sources"}`} />
           <SummaryCell k="Top source" v={top ? fmt(top[1]) : "—"} sub={top ? <span className="truncate">{top[0]}</span> : "No income yet"} />
           <SummaryCell k="Last month" v={prevTotal ? fmt(prevTotal) : "—"} pill={change ? { text: change.text, tone: change.up ? "bg-income/10 text-income" : "bg-expense/10 text-expense" } : undefined} sub={!change ? "No data" : undefined} />

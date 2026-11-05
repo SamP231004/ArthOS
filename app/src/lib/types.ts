@@ -1,3 +1,5 @@
+import type { SavingsMode, SavingsRule } from './savings';
+
 // Mirrors the backend DTOs in backend/src/main/java/com/arthos/**/..Dtos.java
 // Money comes back as JSON numbers (BigDecimal); treat as major units (e.g. rupees).
 
@@ -9,6 +11,8 @@ export type User = {
   currency: string;
   timezone: string;
   monthlyIncomeTarget?: number;
+  savingsMode: SavingsMode;
+  savingsValue: number;
   onboardingCompleted: boolean;
   /** Sandbox account from "Explore the demo"; self-deletes at expiresAt. */
   demo?: boolean;
@@ -68,6 +72,11 @@ export type MonthSummary = {
   net: number;
   savingsRate?: number;
   incomeTargetProgress?: number;
+  savingsRule: SavingsRule;
+  savedFirst: number;
+  spendable: number;
+  leftToSpend: number;
+  investedThisMonth: number;
   todayExpense: number;
   averageDailyExpense: number;
   expenseByCategory: { category: ExpenseCategory; amount: number; share: number }[];

@@ -5,6 +5,7 @@ import com.arthos.expense.ExpenseCategory;
 import com.arthos.expense.PaymentSource;
 import com.arthos.income.Income;
 import com.arthos.income.IncomeType;
+import com.arthos.user.SavingsRule;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -45,6 +46,30 @@ class MonthSummaryCalculatorTest {
         assertEquals(0, new BigDecimal("1000").compareTo(s.dailyExpense().get(4).amount()));
         assertEquals(5, s.recent().size());
         assertEquals(LocalDate.of(2026, 11, 5), s.recent().getFirst().date());
+    }
+
+    @Test
+    void savesFirstThenSpendsWhatIsLeft() {
+        LocalDate today = LocalDate.of(2026, 11, 5);
+        List<Income> incomes = List.of(income("50000", IncomeType.SALARY, 1), income("10000", IncomeType.FREELANCE, 3));
+        List<Expense> expenses = List.of(expense("15000", ExpenseCategory.RENT, 1), expense("1000", ExpenseCategory.FOOD, 5));
+
+        MonthSummary pct = MonthSummaryCalculator.calculate(NOV, today, "INR", null,
+                new SavingsRule(SavingsRule.Mode.PERCENT, new BigDecimal("25")), new BigDecimal("5000"), incomes, expenses);
+        assertEquals(0, new BigDecimal("15000").compareTo(pct.savedFirst()));
+        assertEquals(0, new BigDecimal("45000").compareTo(pct.spendable()));
+        assertEquals(0, new BigDecimal("29000").compareTo(pct.leftToSpend()));
+        assertEquals(0, new BigDecimal("5000").compareTo(pct.investedThisMonth()));
+
+        // a fixed amount can't exceed what has actually arrived
+        MonthSummary fixed = MonthSummaryCalculator.calculate(NOV, today, "INR", null,
+                new SavingsRule(SavingsRule.Mode.FIXED, new BigDecimal("80000")), BigDecimal.ZERO, incomes, expenses);
+        assertEquals(0, new BigDecimal("60000").compareTo(fixed.savedFirst()));
+        assertEquals(0, BigDecimal.ZERO.compareTo(fixed.spendable()));
+        assertTrue(fixed.leftToSpend().signum() < 0);
+
+        MonthSummary none = MonthSummaryCalculator.calculate(NOV, today, "INR", null, SavingsRule.DEFAULT, null, List.of(), expenses);
+        assertEquals(0, BigDecimal.ZERO.compareTo(none.savedFirst()));
     }
 
     @Test

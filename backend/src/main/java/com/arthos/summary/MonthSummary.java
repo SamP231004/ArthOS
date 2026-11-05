@@ -1,5 +1,7 @@
 package com.arthos.summary;
 
+import com.arthos.user.SavingsRule;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -18,6 +20,16 @@ public record MonthSummary(
         BigDecimal savingsRate,
         /** Percentage of the monthly income target achieved; null when no target is set. */
         BigDecimal incomeTargetProgress,
+        /** The pay-yourself-first rule in force. */
+        SavingsRule savingsRule,
+        /** Set aside the moment income arrived (rule applied to this month's income). */
+        BigDecimal savedFirst,
+        /** Income after saving first: what this month's spending is allowed to come out of. */
+        BigDecimal spendable,
+        /** spendable − totalExpense; negative means spending has eaten into the money set aside. */
+        BigDecimal leftToSpend,
+        /** Buys recorded in investments this month (savings actually put to work). */
+        BigDecimal investedThisMonth,
         BigDecimal todayExpense,
         BigDecimal averageDailyExpense,
         List<CategoryTotal> expenseByCategory,

@@ -13,6 +13,7 @@ import { initials, tagColor } from "@/components/ledger";
 import { useAuth } from "@/lib/auth-store";
 import { dayLabel, label, money } from "@/lib/format";
 import { useSummary } from "@/lib/queries";
+import { ruleLabel } from "@/lib/savings";
 import { useMonth } from "@/lib/ui-store";
 import type { MonthSummary } from "@/lib/types";
 
@@ -72,9 +73,10 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
   const cur = s.currency;
   const fmt = (n: number) => money(n, cur);
   const empty = s.incomeCount === 0 && s.expenseCount === 0;
-  const spentPct = s.totalIncome > 0 ? Math.min(100, (s.totalExpense / s.totalIncome) * 100) : s.totalExpense > 0 ? 100 : 0;
+  const spentPct = s.spendable > 0 ? Math.min(100, (s.totalExpense / s.spendable) * 100) : s.totalExpense > 0 ? 100 : 0;
   const monthPct = (s.daysElapsed / s.daysInMonth) * 100;
-  const [whole, paise] = fmt(s.net).split(".");
+  const [whole, paise] = fmt(s.leftToSpend).split(".");
+  const dipped = s.leftToSpend < 0;
 
   if (empty) {
     return (
@@ -98,18 +100,22 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
       <section className="panel-glow overflow-hidden p-6 sm:p-8">
         <div className="grid gap-8 lg:grid-cols-[1fr_1.35fr] lg:items-center">
           <div>
-            <p className="text-sm text-muted">Remaining this month</p>
-            <p className={`tabular mt-2 text-5xl font-semibold tracking-tight sm:text-6xl ${s.net < 0 ? "text-expense" : "text-silver"}`}>
+            <p className="text-sm text-muted">{dipped ? "Spent beyond your spendable" : "Left to spend this month"}</p>
+            <p className={`tabular mt-2 text-5xl font-semibold tracking-tight sm:text-6xl ${dipped ? "text-expense" : "text-silver"}`}>
               {whole}
               {paise && <span className="text-2xl text-subtle">.{paise}</span>}
             </p>
-            <p className="mt-4 flex items-start gap-2 text-sm leading-relaxed text-fg-2">
+            <p className="mt-2 text-xs text-subtle">After saving first · {fmt(s.totalIncome)} in − {fmt(s.savedFirst)} saved − {fmt(s.totalExpense)} spent</p>
+
+            <FlowBar s={s} fmt={fmt} />
+
+            <p className="mt-5 flex items-start gap-2 text-sm leading-relaxed text-fg-2">
               <Sparkles size={15} className="mt-0.5 shrink-0 text-brand" />
-              {insight(s)}
+              {insight(s, fmt)}
             </p>
 
-            <div className="mt-7 space-y-3">
-              <Meter label="Income spent" value={spentPct} tone={spentPct >= 90 ? "expense" : spentPct >= 70 ? "gold" : "income"} />
+            <div className="mt-6 space-y-3">
+              <Meter label="Spendable used" value={spentPct} tone={spentPct >= 90 ? "expense" : spentPct >= 70 ? "gold" : "income"} />
               <Meter label="Month elapsed" value={monthPct} tone="neutral" />
             </div>
             <p className="mt-3 text-xs text-subtle">
@@ -125,10 +131,10 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
               <span className="text-muted">Cumulative spending</span>
               <span className="flex items-center gap-3 text-subtle">
                 <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded bg-brand" /> spent</span>
-                <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded border-t border-dashed border-income" /> income</span>
+                <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded border-t border-dashed border-income" /> spendable</span>
               </span>
             </div>
-            <SpendCurve daily={s.dailyExpense} daysInMonth={s.daysInMonth} income={s.totalIncome} format={fmt} />
+            <SpendCurve daily={s.dailyExpense} daysInMonth={s.daysInMonth} income={s.spendable} incomeLabel="spendable" format={fmt} />
           </div>
         </div>
       </section>
@@ -149,8 +155,11 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
         <Kpi icon={ArrowUpRight} tone="text-info" label="Spent today" value={fmt(s.todayExpense)}>
           <span className="text-subtle">Avg {fmt(s.averageDailyExpense)}/day</span>
         </Kpi>
-        <Kpi icon={PiggyBank} tone="text-brand" label="Savings rate" value={s.savingsRate != null ? `${s.savingsRate}%` : "—"}>
-          <span className="text-subtle">of income kept</span>
+        <Kpi icon={PiggyBank} tone="text-brand" label="Saved first" value={fmt(s.savedFirst)}>
+          <span className="text-subtle">
+            {ruleLabel(s.savingsRule, fmt)}
+            {s.investedThisMonth > 0 && <> · <span className="text-income">{fmt(s.investedThisMonth)} invested</span></>}
+          </span>
         </Kpi>
       </section>
 
@@ -377,11 +386,53 @@ function Kpi({
   );
 }
 
-function insight(s: MonthSummary): string {
-  if (s.totalIncome === 0) return "No income recorded yet this month — add your salary to see what remains.";
-  if (s.net < 0) return "You've spent more than you've earned this month. Your biggest lever is " + label(s.expenseByCategory[0]?.category ?? "OTHER").toLowerCase() + ".";
+function insight(s: MonthSummary, fmt: (n: number) => string): string {
+  const lever = label(s.expenseByCategory[0]?.category ?? "OTHER").toLowerCase();
+  if (s.totalIncome === 0) return "No income yet this month. When it lands, your savings are set aside first and the rest becomes your spending money.";
+  if (s.net < 0) return `You've spent more than you've earned this month — your savings are gone and then some. Biggest lever: ${lever}.`;
+  if (s.leftToSpend < 0) return `You've dipped ${fmt(-s.leftToSpend)} into the ${fmt(s.savedFirst)} you set aside. Biggest lever: ${lever}.`;
+  if (s.savedFirst > 0 && s.investedThisMonth >= s.savedFirst) return `Your ${fmt(s.savedFirst)} of savings is fully invested this month — money put to work before it could be spent.`;
+  if (s.savedFirst > 0 && s.investedThisMonth > 0)
+    return `${fmt(s.investedThisMonth)} of your ${fmt(s.savedFirst)} savings is invested — ${fmt(s.savedFirst - s.investedThisMonth)} still waiting to be put to work.`;
   const top = s.expenseByCategory[0];
-  if (top && top.share >= 40) return `${label(top.category)} is ${top.share}% of your spending — your largest fixed lever.`;
-  if (s.savingsRate != null && s.savingsRate >= 30) return `Strong pace — you're keeping ${s.savingsRate}% of what you've earned this month.`;
-  return `You've kept ${s.savingsRate ?? 0}% of this month's income so far.`;
+  if (top && top.share >= 40) return `Savings are safe. ${label(top.category)} is ${top.share}% of your spending — your largest fixed lever.`;
+  return `Savings are safe — ${fmt(s.leftToSpend)} is yours to spend, guilt-free.`;
+}
+
+/** Where this month's income went: saved first, then spent, then what's left. Overspending eats into the savings slice. */
+function FlowBar({ s, fmt }: { s: MonthSummary; fmt: (n: number) => string }) {
+  if (s.totalIncome <= 0) return null;
+  const T = Math.max(s.totalIncome, s.totalExpense);
+  const dip = Math.max(0, Math.min(s.savedFirst, -s.leftToSpend));
+  const parts = [
+    { key: "saved", label: "Saved first", v: s.savedFirst - dip, color: "var(--income)" },
+    { key: "dip", label: "Spent from savings", v: dip, color: "var(--expense)", striped: true },
+    { key: "spent", label: "Spent", v: Math.min(s.totalExpense, s.spendable), color: "color-mix(in oklab, var(--expense) 70%, transparent)" },
+    { key: "left", label: "Left", v: Math.max(0, s.leftToSpend), color: "color-mix(in oklab, var(--fg) 12%, transparent)" },
+  ].filter((p) => p.v > 0);
+  return (
+    <div className="mt-5">
+      <div className="flex h-3 overflow-hidden rounded-full bg-fg/[0.05]">
+        {parts.map((p) => (
+          <div
+            key={p.key}
+            title={`${p.label}: ${fmt(p.v)}`}
+            className="h-full first:rounded-l-full last:rounded-r-full"
+            style={{
+              width: `${(p.v / T) * 100}%`,
+              background: p.striped ? `repeating-linear-gradient(135deg, ${p.color} 0 4px, transparent 4px 7px)` : p.color,
+            }}
+          />
+        ))}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-subtle">
+        {parts.map((p) => (
+          <span key={p.key} className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-[3px]" style={{ background: p.color }} />
+            {p.label} <span className="tabular text-fg-2">{fmt(p.v)}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
 }

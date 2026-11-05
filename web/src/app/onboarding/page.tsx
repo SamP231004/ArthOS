@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
 import { Logo } from "@/components/logo";
+import { SavingsRuleField } from "@/components/savings-rule";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button, ErrorNote, Field, Input, Select } from "@/components/ui";
 import { useAuth } from "@/lib/auth-store";
 import { useUpdateProfile } from "@/lib/queries";
+import type { SavingsMode } from "@/lib/savings";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AED", "SGD"];
 
@@ -20,12 +22,17 @@ function Onboarding() {
     user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata",
   );
 
+  const [savingsMode, setSavingsMode] = useState<SavingsMode>(user.savingsMode ?? "PERCENT");
+  const [savingsValue, setSavingsValue] = useState(String(user.savingsValue ?? 20));
+
   async function finish(e: React.FormEvent) {
     e.preventDefault();
     try {
       await update.mutateAsync({
         currency,
         timezone,
+        savingsMode,
+        savingsValue: Number(savingsValue) || 0,
         onboardingCompleted: true,
       });
       router.replace("/dashboard");
@@ -48,7 +55,7 @@ function Onboarding() {
           <p className="eyebrow">Step 1 of 1 · Setup</p>
           <h1 className="mt-3 font-display text-4xl leading-tight tracking-tight">Hi {user.name.split(" ")[0]}, let&apos;s get you set up</h1>
           <p className="mt-2 text-sm text-muted">
-            Pick your currency and timezone — they decide how money is shown and when your day and month roll over.
+            Pick your currency and timezone, then decide how much of every income you save before spending a rupee.
           </p>
           <div className="mt-6 space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -62,6 +69,19 @@ function Onboarding() {
               <Field label="Timezone">
                 <Input value={timezone} onChange={(e) => setTimezone(e.target.value)} />
               </Field>
+            </div>
+            <div className="border-t border-line pt-4">
+              <p className="mb-1 text-sm font-medium">Save first, then spend</p>
+              <p className="mb-3 text-xs text-muted">Set aside part of every income the moment it arrives. You can change this any time in Settings.</p>
+              <SavingsRuleField
+                mode={savingsMode}
+                value={savingsValue}
+                currency={currency}
+                onChange={(m, v) => {
+                  setSavingsMode(m);
+                  setSavingsValue(v);
+                }}
+              />
             </div>
             <ErrorNote message={update.error?.message} />
             <Button type="submit" size="lg" loading={update.isPending} className="w-full">

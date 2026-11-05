@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, CalendarDays, Check, Gauge, Info, Loader2, Pencil, Repeat, Sparkles, TrendingUp } from "lucide-react";
+import { AlertTriangle, CalendarDays, Check, Gauge, PiggyBank, Info, Loader2, Pencil, Repeat, Sparkles, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { BudgetCalendar } from "@/components/budget/budget-calendar";
 import { BudgetModal } from "@/components/budget/budget-form";
@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/page-header";
 import { Badge, Button, ErrorNote, Skeleton } from "@/components/ui";
 import { useAuth } from "@/lib/auth-store";
 import { dayLabel, label, money, monthLabel } from "@/lib/format";
-import { useBudget, useSaveBudget } from "@/lib/queries";
+import { useBudget, useSaveBudget, useSummary } from "@/lib/queries";
 import { useMonth } from "@/lib/ui-store";
 import { BUDGET_MODES, type BudgetMode, type BudgetStatus } from "@/lib/types";
 
@@ -96,6 +96,8 @@ function Configured({ b, fmt, month }: { b: BudgetStatus; fmt: (n: number) => st
           {warn}
         </div>
       )}
+
+      <SaveFirstFit b={b} fmt={fmt} month={month} />
 
       <ModeSwitch b={b} fmt={fmt} month={month} />
 
@@ -201,6 +203,35 @@ function Configured({ b, fmt, month }: { b: BudgetStatus; fmt: (n: number) => st
         </div>
       </section>
     </>
+  );
+}
+
+/**
+ * Savings come first, so the everyday budget plus fixed costs must fit inside what's left of income after saving.
+ * Offers a one-click fix when the budget would quietly eat into savings.
+ */
+function SaveFirstFit({ b, fmt, month }: { b: BudgetStatus; fmt: (n: number) => string; month: string }) {
+  const { data: s } = useSummary(month);
+  const save = useSaveBudget(month);
+  if (!s || s.totalIncome <= 0 || b.daysRemaining === 0) return null;
+  const room = Math.floor((s.spendable - b.excludedSpent) / 100) * 100; // everyday money once fixed costs are paid
+  const over = b.limit > room;
+  return (
+    <div className={`flex flex-wrap items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${over ? "border-warn/30 bg-warn/[0.08]" : "border-line bg-fg/[0.02]"}`}>
+      <PiggyBank size={16} className={`shrink-0 ${over ? "text-warn" : "text-brand"}`} />
+      <p className="min-w-0 flex-1 text-fg-2">
+        {over ? (
+          <>Your {fmt(b.limit)} budget is more than the {fmt(Math.max(room, 0))} left after saving {fmt(s.savedFirst)} first{b.excludedSpent > 0 ? ` and paying ${fmt(b.excludedSpent)} of fixed costs` : ""} — spending it all would eat into your savings.</>
+        ) : (
+          <>Savings come first: {fmt(s.savedFirst)} is set aside, and your {fmt(b.limit)} budget fits in the {fmt(Math.max(room, 0))} that remains.</>
+        )}
+      </p>
+      {over && room > 0 && (
+        <Button size="sm" variant="secondary" loading={save.isPending} onClick={() => save.mutate({ limit: room, mode: b.mode, excludedCategories: b.excludedCategories })}>
+          Fit budget to {fmt(room)}
+        </Button>
+      )}
+    </div>
   );
 }
 

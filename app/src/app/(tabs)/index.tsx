@@ -13,6 +13,7 @@ import { STATUS_META } from '@/lib/budget-meta';
 import { dayLabel, label, money } from '@/lib/format';
 import { CLASS_META, signedPct, toneColor } from '@/lib/invest-meta';
 import { useBudget, usePortfolio, useSummary } from '@/lib/queries';
+import { ruleLabel } from '@/lib/savings';
 import type { MonthSummary } from '@/lib/types';
 import { useMonth } from '@/lib/ui-store';
 import { alpha, F, R, S, useStyles, useTheme, type Palette } from '@/theme';
@@ -64,21 +65,25 @@ function Summary({ s }: { s: MonthSummary }) {
   const { c } = useTheme();
   const st = useStyles(make);
   const cur = s.currency;
-  const spentPct = s.totalIncome > 0 ? Math.min(100, (s.totalExpense / s.totalIncome) * 100) : s.totalExpense > 0 ? 100 : 0;
+  const spentPct = s.spendable > 0 ? Math.min(100, (s.totalExpense / s.spendable) * 100) : s.totalExpense > 0 ? 100 : 0;
   const monthPct = (s.daysElapsed / s.daysInMonth) * 100;
   const empty = s.incomeCount === 0 && s.expenseCount === 0;
-  const [whole, paise] = money(s.net, cur).split('.');
+  const [whole, paise] = money(s.leftToSpend, cur).split('.');
+  const dipped = s.leftToSpend < 0;
+  const fmt = (n: number) => money(n, cur);
 
   return (
     <>
       <Card glow style={{ gap: S.sm }}>
-        <T variant="muted">Remaining this month</T>
-        <Text style={[st.hero, s.net < 0 && { color: c.expense }]}>
+        <T variant="muted">{dipped ? 'Spent beyond your spendable' : 'Left to spend this month'}</T>
+        <Text style={[st.hero, dipped && { color: c.expense }]}>
           {whole}
           {paise ? <Text style={st.paise}>.{paise}</Text> : null}
         </Text>
-        <T style={{ color: c.fg2, fontSize: 14 }}>✦ {insight(s)}</T>
-        <Meter label="Income spent" value={spentPct} color={spentPct >= 90 ? c.expense : spentPct >= 70 ? c.warn : c.income} />
+        <T variant="small">After saving first · {fmt(s.totalIncome)} in − {fmt(s.savedFirst)} saved − {fmt(s.totalExpense)} spent</T>
+        <FlowBar s={s} fmt={fmt} />
+        <T style={{ color: c.fg2, fontSize: 14 }}>✦ {insight(s, fmt)}</T>
+        <Meter label="Spendable used" value={spentPct} color={spentPct >= 90 ? c.expense : spentPct >= 70 ? c.warn : c.income} />
         <Meter label="Month elapsed" value={monthPct} color={alpha(c.fg, 0.3)} />
       </Card>
 
@@ -94,7 +99,12 @@ function Summary({ s }: { s: MonthSummary }) {
         <Stat label="Income" value={money(s.totalIncome, cur)} color={c.income} sub={`${s.incomeCount} ${s.incomeCount === 1 ? 'entry' : 'entries'}`} />
         <Stat label="Spent" value={money(s.totalExpense, cur)} color={c.expense} sub={`${s.expenseCount} transactions`} />
         <Stat label="Spent today" value={money(s.todayExpense, cur)} sub={`Avg ${money(s.averageDailyExpense, cur)}/day`} />
-        <Stat label="Savings rate" value={s.savingsRate != null ? `${s.savingsRate}%` : '—'} color={c.brand} sub="of income kept" />
+        <Stat
+          label="Saved first"
+          value={fmt(s.savedFirst)}
+          color={c.brand}
+          sub={s.investedThisMonth > 0 ? `${fmt(s.investedThisMonth)} invested` : ruleLabel(s.savingsRule, fmt)}
+        />
       </View>
 
       {empty ? (
@@ -230,13 +240,47 @@ function Stat({ label: l, value, sub, color }: { label: string; value: string; s
   );
 }
 
-function insight(s: MonthSummary): string {
+function insight(s: MonthSummary, fmt: (n: number) => string): string {
   if (s.incomeCount === 0 && s.expenseCount === 0) return 'Start logging to see where your month stands.';
-  if (s.totalIncome === 0) return 'No income recorded yet — add your salary to see what remains.';
-  if (s.net < 0) return "You've spent more than you've earned this month.";
+  if (s.totalIncome === 0) return 'No income yet. When it lands, your savings are set aside first and the rest is yours to spend.';
+  if (s.net < 0) return "You've spent more than you've earned — your savings are gone and then some.";
+  if (s.leftToSpend < 0) return `You've dipped ${fmt(-s.leftToSpend)} into the ${fmt(s.savedFirst)} you set aside.`;
+  if (s.savedFirst > 0 && s.investedThisMonth >= s.savedFirst) return `Your ${fmt(s.savedFirst)} of savings is fully invested this month.`;
+  if (s.savedFirst > 0 && s.investedThisMonth > 0) return `${fmt(s.investedThisMonth)} of your ${fmt(s.savedFirst)} savings is invested — ${fmt(s.savedFirst - s.investedThisMonth)} still to put to work.`;
   const top = s.expenseByCategory[0];
-  if (top && top.share >= 40) return `${label(top.category)} is ${top.share}% of your spending.`;
-  return `You've kept ${s.savingsRate ?? 0}% of this month's income so far.`;
+  if (top && top.share >= 40) return `Savings are safe. ${label(top.category)} is ${top.share}% of your spending.`;
+  return `Savings are safe — ${fmt(s.leftToSpend)} is yours to spend, guilt-free.`;
+}
+
+/** Where income went: saved first, then spent, then left. Overspending eats into the savings slice. */
+function FlowBar({ s, fmt }: { s: MonthSummary; fmt: (n: number) => string }) {
+  const { c } = useTheme();
+  if (s.totalIncome <= 0) return null;
+  const total = Math.max(s.totalIncome, s.totalExpense);
+  const dip = Math.max(0, Math.min(s.savedFirst, -s.leftToSpend));
+  const parts = [
+    { key: 'saved', label: 'Saved first', v: s.savedFirst - dip, color: c.income },
+    { key: 'dip', label: 'From savings', v: dip, color: c.expense },
+    { key: 'spent', label: 'Spent', v: Math.min(s.totalExpense, s.spendable), color: alpha(c.expense, 0.7) },
+    { key: 'left', label: 'Left', v: Math.max(0, s.leftToSpend), color: alpha(c.fg, 0.14) },
+  ].filter((p) => p.v > 0);
+  return (
+    <View style={{ gap: 6, marginTop: S.xs }}>
+      <View style={{ flexDirection: 'row', height: 10, borderRadius: R.pill, overflow: 'hidden', backgroundColor: alpha(c.fg, 0.05) }}>
+        {parts.map((p) => (
+          <View key={p.key} style={{ width: `${(p.v / total) * 100}%`, backgroundColor: p.color }} />
+        ))}
+      </View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: S.md, rowGap: 4 }}>
+        {parts.map((p) => (
+          <View key={p.key} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: p.color }} />
+            <T variant="small">{p.label} {fmt(p.v)}</T>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
 }
 
 const make = (c: Palette) =>

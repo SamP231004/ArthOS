@@ -3,6 +3,7 @@ package com.arthos.summary;
 import com.arthos.expense.Expense;
 import com.arthos.income.Income;
 import com.arthos.summary.MonthSummary.*;
+import com.arthos.user.SavingsRule;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -22,6 +23,11 @@ public final class MonthSummaryCalculator {
 
     public static MonthSummary calculate(YearMonth month, LocalDate today, String currency, BigDecimal incomeTarget,
                                          List<Income> incomes, List<Expense> expenses) {
+        return calculate(month, today, currency, incomeTarget, SavingsRule.DEFAULT, BigDecimal.ZERO, incomes, expenses);
+    }
+
+    public static MonthSummary calculate(YearMonth month, LocalDate today, String currency, BigDecimal incomeTarget,
+                                         SavingsRule rule, BigDecimal invested, List<Income> incomes, List<Expense> expenses) {
         int daysInMonth = month.lengthOfMonth();
         YearMonth current = YearMonth.from(today);
         int daysElapsed = month.isBefore(current) ? daysInMonth : month.isAfter(current) ? 0 : today.getDayOfMonth();
@@ -33,6 +39,10 @@ public final class MonthSummaryCalculator {
         BigDecimal savingsRate = totalIncome.signum() > 0 ? pct(net, totalIncome) : null;
         BigDecimal targetProgress = incomeTarget != null && incomeTarget.signum() > 0 ? pct(totalIncome, incomeTarget) : null;
 
+        BigDecimal savedFirst = rule.setAside(totalIncome);
+        BigDecimal spendable = totalIncome.subtract(savedFirst);
+        BigDecimal leftToSpend = spendable.subtract(totalExpense);
+
         BigDecimal todayExpense = month.equals(current)
                 ? sum(expenses.stream().filter(e -> today.equals(e.getDate())).map(Expense::getAmount))
                 : BigDecimal.ZERO;
@@ -42,7 +52,9 @@ public final class MonthSummaryCalculator {
 
         return new MonthSummary(
                 month.toString(), currency, daysInMonth, daysElapsed, incomeTarget,
-                totalIncome, totalExpense, net, savingsRate, targetProgress, todayExpense, avgDaily,
+                totalIncome, totalExpense, net, savingsRate, targetProgress,
+                rule, savedFirst, spendable, leftToSpend, invested == null ? BigDecimal.ZERO : invested,
+                todayExpense, avgDaily,
                 byCategory(expenses, totalExpense), byType(incomes), daily(month, daysElapsed, expenses),
                 recent(incomes, expenses), incomes.size(), expenses.size());
     }

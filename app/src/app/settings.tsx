@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Alert, View } from 'react-native';
 
 import { Logo } from '@/components/logo';
+import { SavingsRuleField } from '@/components/savings-rule';
 import { Screen } from '@/components/screen';
 import { Button, Card, Chip, ErrorNote, Input, Segmented, T } from '@/components/ui';
 import { API_URL } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 import { useUpdateProfile } from '@/lib/queries';
+import type { SavingsMode } from '@/lib/savings';
 import { alpha, S, useTheme, type Mode } from '@/theme';
 
 const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD'];
@@ -17,6 +19,8 @@ export default function SettingsScreen() {
   const update = useUpdateProfile();
   const [name, setName] = useState(user?.name ?? '');
   const [currency, setCurrency] = useState(user?.currency ?? 'INR');
+  const [savingsMode, setSavingsMode] = useState<SavingsMode>(user?.savingsMode ?? 'PERCENT');
+  const [savingsValue, setSavingsValue] = useState(String(user?.savingsValue ?? 20));
 
   if (!user) return null;
 
@@ -48,6 +52,20 @@ export default function SettingsScreen() {
       </Card>
 
       <Card style={{ gap: S.md }}>
+        <T variant="label">Save first</T>
+        <T variant="muted">Pay yourself first: this is set aside the moment income arrives. Budgets and “left to spend” come out of what remains.</T>
+        <SavingsRuleField
+          mode={savingsMode}
+          value={savingsValue}
+          currency={currency}
+          onChange={(m, v) => {
+            setSavingsMode(m);
+            setSavingsValue(v);
+          }}
+        />
+      </Card>
+
+      <Card style={{ gap: S.md }}>
         <T variant="label">Money</T>
         <View style={{ gap: S.sm }}>
           <T variant="label">Currency</T>
@@ -62,7 +80,7 @@ export default function SettingsScreen() {
         <Button
           title={update.isSuccess ? 'Saved ✓' : 'Save changes'}
           loading={update.isPending}
-          onPress={() => update.mutate({ name: name.trim() || user.name, currency })}
+          onPress={() => update.mutate({ name: name.trim() || user.name, currency, savingsMode, savingsValue: Number(savingsValue) || 0 })}
         />
       </Card>
 

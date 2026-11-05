@@ -38,6 +38,14 @@ public class UserController {
             u.setTimezone(req.timezone());
         }
         if (req.monthlyIncomeTarget() != null) u.setMonthlyIncomeTarget(req.monthlyIncomeTarget());
+        if (req.savingsMode() != null || req.savingsValue() != null) {
+            SavingsRule.Mode mode = req.savingsMode() != null ? req.savingsMode() : u.savingsRule().mode();
+            java.math.BigDecimal value = req.savingsValue() != null ? req.savingsValue() : u.savingsRule().value();
+            if (mode == SavingsRule.Mode.PERCENT && value.compareTo(java.math.BigDecimal.valueOf(100)) > 0)
+                throw ApiException.badRequest("Savings percentage can't be more than 100");
+            u.setSavingsMode(mode);
+            u.setSavingsValue(value);
+        }
         if (req.onboardingCompleted() != null) u.setOnboardingCompleted(req.onboardingCompleted());
         return UserResponse.from(users.save(u));
     }

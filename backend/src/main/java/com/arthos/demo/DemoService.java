@@ -59,6 +59,8 @@ public class DemoService {
         u.setEmail("demo-" + tag + "@demo.arthos.app");
         u.setPasswordHash(encoder.encode(UUID.randomUUID().toString())); // unguessable: demo accounts can't log in by password
         u.setOnboardingCompleted(true);
+        u.setSavingsMode(com.arthos.user.SavingsRule.Mode.PERCENT);
+        u.setSavingsValue(java.math.BigDecimal.valueOf(20));
         u.setDemo(true);
         u.setExpiresAt(expiresAt);
         u = users.save(u);

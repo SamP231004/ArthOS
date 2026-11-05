@@ -72,7 +72,7 @@ export function useUpdateProfile() {
   const qc = useQueryClient();
   const setUser = useAuth((s) => s.setUser);
   return useMutation({
-    mutationFn: (patch: Partial<Pick<User, "name" | "currency" | "timezone" | "monthlyIncomeTarget" | "onboardingCompleted">>) =>
+    mutationFn: (patch: Partial<Pick<User, "name" | "currency" | "timezone" | "monthlyIncomeTarget" | "savingsMode" | "savingsValue" | "onboardingCompleted">>) =>
       api<User>("/api/users/me", { method: "PATCH", body: patch }),
     onSuccess: (user) => {
       setUser(user);

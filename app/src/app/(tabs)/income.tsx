@@ -8,6 +8,7 @@ import { Button, Card, ErrorNote, Loading, T } from '@/components/ui';
 import { useAuth } from '@/lib/auth-store';
 import { dayLabel, label, money } from '@/lib/format';
 import { useIncomes } from '@/lib/queries';
+import { ruleLabel, setAside } from '@/lib/savings';
 import { useMonth } from '@/lib/ui-store';
 import { S, useTheme } from '@/theme';
 
@@ -20,6 +21,8 @@ export default function IncomeTab() {
   const total = (data ?? []).reduce((a, i) => a + i.amount, 0);
   const recurring = (data ?? []).filter((i) => i.recurring).reduce((a, i) => a + i.amount, 0);
   const count = data?.length ?? 0;
+  const rule = { mode: user?.savingsMode ?? 'PERCENT', value: user?.savingsValue ?? 20 } as const;
+  const saved = setAside(rule, total);
 
   return (
     <Screen refreshing={isRefetching} onRefresh={refetch}>
@@ -39,6 +42,11 @@ export default function IncomeTab() {
           {count} {count === 1 ? 'entry' : 'entries'}
           {recurring > 0 ? ` · ${money(recurring, cur)} recurring` : ''}
         </T>
+        {total > 0 && (
+          <T variant="small" style={{ color: c.brand }}>
+            {money(saved, cur)} saved first ({ruleLabel(rule, (n) => money(n, cur))}) · {money(total - saved, cur)} to spend
+          </T>
+        )}
       </Card>
 
       {isLoading ? (
