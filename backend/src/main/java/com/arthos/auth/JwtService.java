@@ -34,12 +34,16 @@ public class JwtService {
     }
 
     public String issue(String userId) {
+        return issue(userId, ttl);
+    }
+
+    public String issue(String userId, Duration lifetime) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .issuer(ISSUER)
                 .subject(userId)
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plus(ttl)))
+                .expiration(Date.from(now.plus(lifetime)))
                 .signWith(key)
                 .compact();
     }

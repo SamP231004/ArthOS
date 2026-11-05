@@ -5,7 +5,7 @@ import com.arthos.common.ApiException;
 import com.arthos.common.MonthKey;
 import com.arthos.expense.ExpenseDtos.ExpenseRequest;
 import com.arthos.expense.ExpenseDtos.ExpenseResponse;
-import com.arthos.user.UserZones;
+import com.arthos.user.UserContext;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -24,12 +24,12 @@ public class ExpenseController {
 
     private final ExpenseRepository expenses;
     private final MongoTemplate mongo;
-    private final UserZones zones;
+    private final UserContext userCtx;
 
-    public ExpenseController(ExpenseRepository expenses, MongoTemplate mongo, UserZones zones) {
+    public ExpenseController(ExpenseRepository expenses, MongoTemplate mongo, UserContext userCtx) {
         this.expenses = expenses;
         this.mongo = mongo;
-        this.zones = zones;
+        this.userCtx = userCtx;
     }
 
     /**
@@ -43,7 +43,7 @@ public class ExpenseController {
                                @RequestParam(required = false) BigDecimal minAmount,
                                @RequestParam(required = false) BigDecimal maxAmount) {
         String userId = CurrentUser.id();
-        String key = MonthKey.parseOrCurrent(month, zones.of(userId)).toString();
+        String key = MonthKey.parseOrCurrent(month, userCtx.zone(userId)).toString();
 
         Criteria c = Criteria.where("userId").is(userId).and("monthKey").is(key);
         if (category != null) c = c.and("category").is(category);
@@ -70,6 +70,7 @@ public class ExpenseController {
     ExpenseResponse create(@Valid @RequestBody ExpenseRequest req) {
         Expense e = new Expense();
         e.setUserId(CurrentUser.id());
+        e.setExpiresAt(userCtx.demoExpiry(e.getUserId()));
         apply(e, req);
         return ExpenseResponse.from(expenses.save(e));
     }

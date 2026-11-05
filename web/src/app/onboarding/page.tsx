@@ -36,14 +36,15 @@ function Onboarding() {
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="relative flex flex-1 items-center justify-center px-4 py-12">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-96 bg-[radial-gradient(50%_100%_at_50%_0%,rgb(227_191_118/0.1),transparent)]" />
+      <div className="relative w-full max-w-md">
         <div className="mb-8 flex justify-center">
           <Logo size="lg" />
         </div>
-        <form onSubmit={finish} className="rounded-2xl border border-border bg-surface p-6 sm:p-8">
-          <p className="text-sm text-brand">Step 1 of 1</p>
-          <h1 className="mt-1 text-2xl font-semibold">Hi {user.name.split(" ")[0]}, let&apos;s set up your month</h1>
+        <form onSubmit={finish} className="panel-glow animate-fade-up p-7 sm:p-9">
+          <p className="eyebrow">Step 1 of 1 · Setup</p>
+          <h1 className="mt-3 font-display text-4xl leading-tight tracking-tight">Hi {user.name.split(" ")[0]}, let&apos;s set up your month</h1>
           <p className="mt-2 text-sm text-muted">
             A monthly earning target lets ArthOS show how close you are each month. You can change it anytime.
           </p>
@@ -64,7 +65,7 @@ function Onboarding() {
               </Field>
             </div>
             <ErrorNote message={update.error?.message} />
-            <Button type="submit" loading={update.isPending} className="w-full">
+            <Button type="submit" size="lg" loading={update.isPending} className="w-full">
               Go to my dashboard
             </Button>
           </div>

@@ -34,6 +34,13 @@ public class User {
 
     private boolean onboardingCompleted;
 
+    /** Sandbox account created from "Try the demo". */
+    private boolean demo;
+
+    /** Set only for demo data: MongoDB's TTL monitor deletes the document after this instant. */
+    @Indexed(expireAfter = "0s")
+    private Instant expiresAt;
+
     @CreatedDate
     private Instant createdAt;
 
@@ -56,6 +63,10 @@ public class User {
     public void setMonthlyIncomeTarget(BigDecimal monthlyIncomeTarget) { this.monthlyIncomeTarget = monthlyIncomeTarget; }
     public boolean isOnboardingCompleted() { return onboardingCompleted; }
     public void setOnboardingCompleted(boolean onboardingCompleted) { this.onboardingCompleted = onboardingCompleted; }
+    public boolean isDemo() { return demo; }
+    public void setDemo(boolean demo) { this.demo = demo; }
+    public Instant getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(Instant expiresAt) { this.expiresAt = expiresAt; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

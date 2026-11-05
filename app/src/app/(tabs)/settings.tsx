@@ -22,6 +22,12 @@ export default function SettingsTab() {
   return (
     <Screen>
       <T variant="title">Settings</T>
+      {user.demo && (
+        <Card style={{ gap: S.sm, borderColor: C.brand + '55', backgroundColor: C.brand + '14' }}>
+          <T style={{ fontWeight: '600' }}>You&apos;re exploring a demo</T>
+          <T variant="muted">This sandbox and its sample data reset after 24 hours. Sign out and create an account to keep your own data.</T>
+        </Card>
+      )}
       <Card style={{ gap: S.md }}>
         <Input label="Name" value={name} onChangeText={setName} maxLength={80} />
         <Input label="Email" value={user.email} editable={false} style={{ opacity: 0.6 }} />

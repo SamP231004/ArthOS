@@ -2,13 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { useAuth } from "@/lib/auth-store";
+import { useAuth, useHydrated } from "@/lib/auth-store";
 import { Spinner } from "./ui";
 
 /** Client-side guard: waits for the persisted session to load, then redirects if needed. */
 export function AuthGuard({ requireOnboarded = true, children }: { requireOnboarded?: boolean; children: React.ReactNode }) {
   const router = useRouter();
-  const { hydrated, token, user } = useAuth();
+  const { token, user } = useAuth();
+  const hydrated = useHydrated();
 
   const needsLogin = hydrated && (!token || !user);
   const needsOnboarding = hydrated && !!user && requireOnboarded && !user.onboardingCompleted;

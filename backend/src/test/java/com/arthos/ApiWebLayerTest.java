@@ -3,12 +3,14 @@ package com.arthos;
 import com.arthos.auth.AuthController;
 import com.arthos.auth.JwtService;
 import com.arthos.config.SecurityConfig;
+import com.arthos.demo.DemoRateLimiter;
+import com.arthos.demo.DemoService;
 import com.arthos.expense.ExpenseController;
 import com.arthos.expense.ExpenseRepository;
 import com.arthos.user.User;
 import com.arthos.user.UserController;
 import com.arthos.user.UserRepository;
-import com.arthos.user.UserZones;
+import com.arthos.user.UserContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -27,7 +29,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = {AuthController.class, UserController.class, ExpenseController.class})
-@Import({SecurityConfig.class, JwtService.class, UserZones.class})
+@Import({SecurityConfig.class, JwtService.class, UserContext.class, DemoRateLimiter.class})
 class ApiWebLayerTest {
 
     @Autowired MockMvc mvc;
@@ -37,6 +39,7 @@ class ApiWebLayerTest {
     @MockitoBean UserRepository users;
     @MockitoBean ExpenseRepository expenses;
     @MockitoBean MongoTemplate mongo;
+    @MockitoBean DemoService demoService;
 
     @Test
     void registerIssuesTokenAndNormalizesEmail() throws Exception {
@@ -96,6 +99,27 @@ class ApiWebLayerTest {
                         .header("Access-Control-Request-Headers", "authorization"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3000"));
+    }
+
+    @Test
+    void demoEndpointIssuesSandboxSessionAndIsRateLimited() throws Exception {
+        User demo = user();
+        demo.setDemo(true);
+        demo.setOnboardingCompleted(true);
+        demo.setExpiresAt(java.time.Instant.now().plus(DemoService.TTL));
+        when(demoService.createDemoUser()).thenReturn(demo);
+
+        mvc.perform(post("/api/auth/demo").with(r -> { r.setRemoteAddr("203.0.113.7"); return r; }))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.token").isNotEmpty())
+                .andExpect(jsonPath("$.user.demo").value(true))
+                .andExpect(jsonPath("$.user.onboardingCompleted").value(true));
+
+        for (int i = 1; i < 10; i++) mvc.perform(post("/api/auth/demo").with(r -> { r.setRemoteAddr("203.0.113.7"); return r; }));
+        mvc.perform(post("/api/auth/demo").with(r -> { r.setRemoteAddr("203.0.113.7"); return r; }))
+                .andExpect(status().isTooManyRequests());
+        mvc.perform(post("/api/auth/demo").with(r -> { r.setRemoteAddr("198.51.100.1"); return r; }))
+                .andExpect(status().isCreated());
     }
 
     private static User user() {

@@ -9,6 +9,9 @@ export type User = {
   timezone: string;
   monthlyIncomeTarget?: number;
   onboardingCompleted: boolean;
+  /** Sandbox account from "Explore the demo"; self-deletes at expiresAt. */
+  demo?: boolean;
+  expiresAt?: string;
   createdAt?: string;
 };
 

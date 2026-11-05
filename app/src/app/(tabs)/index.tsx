@@ -15,10 +15,16 @@ import { useMonth } from '@/lib/ui-store';
 export default function Home() {
   const month = useMonth();
   const name = useAuth((s) => s.user?.name.split(' ')[0]);
+  const demo = useAuth((s) => s.user?.demo);
   const { data, isLoading, error, refetch, isRefetching } = useSummary(month);
 
   return (
     <Screen refreshing={isRefetching} onRefresh={refetch}>
+      {demo && (
+        <View style={{ backgroundColor: C.brand + '1f', borderColor: C.brand + '44', borderWidth: 1, borderRadius: R.md, padding: S.md }}>
+          <T variant="small" style={{ color: C.brand }}>Demo mode · sample data resets in 24h</T>
+        </View>
+      )}
       <View style={{ gap: 2 }}>
         <T variant="muted">Namaste, {name}</T>
         <T variant="title">Your month at a glance</T>

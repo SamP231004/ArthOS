@@ -15,6 +15,20 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  async function startDemo() {
+    setDemoLoading(true);
+    setError(null);
+    try {
+      const res = await api<AuthResponse>('/api/auth/demo', { method: 'POST', auth: false });
+      setSession(res.token, res.user);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Couldn't start the demo");
+    } finally {
+      setDemoLoading(false);
+    }
+  }
 
   async function submit() {
     setLoading(true);
@@ -77,6 +91,9 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
           />
           <ErrorNote message={error} />
           <Button title={mode === 'login' ? 'Sign in' : 'Create account'} onPress={submit} loading={loading} />
+          <T variant="small" style={{ textAlign: 'center', marginTop: S.sm }}>or</T>
+          <Button title="▶  Explore with demo data" variant="outline" onPress={startDemo} loading={demoLoading} />
+          <T variant="small" style={{ textAlign: 'center' }}>A private sandbox with 3 months of sample data. No sign-up.</T>
         </View>
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6 }}>

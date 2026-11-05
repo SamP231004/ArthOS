@@ -5,7 +5,7 @@ import com.arthos.common.ApiException;
 import com.arthos.common.MonthKey;
 import com.arthos.income.IncomeDtos.IncomeRequest;
 import com.arthos.income.IncomeDtos.IncomeResponse;
-import com.arthos.user.UserZones;
+import com.arthos.user.UserContext;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -17,18 +17,18 @@ import java.util.List;
 public class IncomeController {
 
     private final IncomeRepository incomes;
-    private final UserZones zones;
+    private final UserContext userCtx;
 
-    public IncomeController(IncomeRepository incomes, UserZones zones) {
+    public IncomeController(IncomeRepository incomes, UserContext userCtx) {
         this.incomes = incomes;
-        this.zones = zones;
+        this.userCtx = userCtx;
     }
 
     /** Lists the given month's income ("YYYY-MM"), defaulting to the current month in the user's timezone. */
     @GetMapping
     List<IncomeResponse> list(@RequestParam(required = false) String month) {
         String userId = CurrentUser.id();
-        String key = MonthKey.parseOrCurrent(month, zones.of(userId)).toString();
+        String key = MonthKey.parseOrCurrent(month, userCtx.zone(userId)).toString();
         return incomes.findByUserIdAndMonthKeyOrderByDateDescCreatedAtDesc(userId, key)
                 .stream().map(IncomeResponse::from).toList();
     }
@@ -43,6 +43,7 @@ public class IncomeController {
     IncomeResponse create(@Valid @RequestBody IncomeRequest req) {
         Income i = new Income();
         i.setUserId(CurrentUser.id());
+        i.setExpiresAt(userCtx.demoExpiry(i.getUserId()));
         apply(i, req);
         return IncomeResponse.from(incomes.save(i));
     }

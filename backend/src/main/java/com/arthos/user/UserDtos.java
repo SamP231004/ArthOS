@@ -19,11 +19,13 @@ public final class UserDtos {
             String timezone,
             BigDecimal monthlyIncomeTarget,
             boolean onboardingCompleted,
+            boolean demo,
+            Instant expiresAt,
             Instant createdAt) {
 
         public static UserResponse from(User u) {
             return new UserResponse(u.getId(), u.getName(), u.getEmail(), u.getCurrency(), u.getTimezone(),
-                    u.getMonthlyIncomeTarget(), u.isOnboardingCompleted(), u.getCreatedAt());
+                    u.getMonthlyIncomeTarget(), u.isOnboardingCompleted(), u.isDemo(), u.getExpiresAt(), u.getCreatedAt());
         }
     }
 

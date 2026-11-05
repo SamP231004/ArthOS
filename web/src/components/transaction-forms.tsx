@@ -23,7 +23,7 @@ function errorsOf(err: unknown) {
 function Recurring({ checked, onChange, text }: { checked: boolean; onChange: (v: boolean) => void; text: string }) {
   return (
     <label className="flex items-center gap-3 text-sm text-muted">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4 accent-[var(--brand)]" />
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4 accent-[var(--gold-2)]" />
       {text}
     </label>
   );
@@ -31,7 +31,7 @@ function Recurring({ checked, onChange, text }: { checked: boolean; onChange: (v
 
 export function IncomeModal({ open, onClose, initial }: { open: boolean; onClose: () => void; initial?: Income | null }) {
   return (
-    <Modal open={open} onClose={onClose} title={initial ? "Edit income" : "Add income"}>
+    <Modal open={open} onClose={onClose} title={initial ? "Edit income" : "Add income"} subtitle="Money coming in">
       {/* key remounts the form so state resets between different records */}
       <IncomeForm key={initial?.id ?? "new"} initial={initial} onDone={onClose} />
     </Modal>
@@ -64,7 +64,7 @@ function IncomeForm({ initial, onDone }: { initial?: Income | null; onDone: () =
   return (
     <form onSubmit={submit} className="space-y-4">
       <Field label="Amount" error={err.fields.amount}>
-        <Input autoFocus type="number" inputMode="decimal" min="0.01" step="0.01" required value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} className="tabular text-lg" />
+        <Input autoFocus type="number" inputMode="decimal" min="0.01" step="0.01" required value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} className="tabular !py-3 text-2xl font-semibold" />
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Type">
@@ -117,7 +117,7 @@ function IncomeForm({ initial, onDone }: { initial?: Income | null; onDone: () =
 
 export function ExpenseModal({ open, onClose, initial }: { open: boolean; onClose: () => void; initial?: Expense | null }) {
   return (
-    <Modal open={open} onClose={onClose} title={initial ? "Edit expense" : "Add expense"}>
+    <Modal open={open} onClose={onClose} title={initial ? "Edit expense" : "Add expense"} subtitle="Money going out">
       <ExpenseForm key={initial?.id ?? "new"} initial={initial} onDone={onClose} />
     </Modal>
   );
@@ -155,26 +155,32 @@ function ExpenseForm({ initial, onDone }: { initial?: Expense | null; onDone: ()
   return (
     <form onSubmit={submit} className="space-y-4">
       <Field label="Amount" error={err.fields.amount}>
-        <Input autoFocus type="number" inputMode="decimal" min="0.01" step="0.01" required value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} className="tabular text-lg" />
+        <Input autoFocus type="number" inputMode="decimal" min="0.01" step="0.01" required value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} className="tabular !py-3 text-2xl font-semibold" />
       </Field>
       <div>
-        <span className="text-xs font-medium uppercase tracking-wide text-muted">Category</span>
+        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-subtle">Category</span>
         <div className="mt-1.5 flex flex-wrap gap-2">
           {QUICK_CATEGORIES.map((c) => (
             <button
               type="button"
               key={c}
               onClick={() => setF({ ...f, category: c })}
-              className={`rounded-full border px-3 py-1 text-xs transition ${f.category === c ? "border-brand bg-brand/15 text-brand" : "border-border text-muted hover:text-fg"}`}
+              className={`rounded-full border px-3 py-1 text-xs transition ${f.category === c ? "border-brand bg-brand/15 text-brand" : "border-line-strong text-muted hover:text-fg"}`}
             >
               {label(c)}
             </button>
           ))}
-          <Select value={f.category} onChange={(e) => setF({ ...f, category: e.target.value as ExpenseCategory })} className="!w-auto !py-1 !text-xs">
-            {EXPENSE_CATEGORIES.map((c) => (
+          <select
+            aria-label="More categories"
+            value={QUICK_CATEGORIES.includes(f.category) ? "" : f.category}
+            onChange={(e) => e.target.value && setF({ ...f, category: e.target.value as ExpenseCategory })}
+            className={`rounded-full border bg-transparent px-3 py-1 text-xs outline-none transition ${QUICK_CATEGORIES.includes(f.category) ? "border-line-strong text-muted" : "border-brand bg-brand/15 text-brand"}`}
+          >
+            <option value="">More…</option>
+            {EXPENSE_CATEGORIES.filter((c) => !QUICK_CATEGORIES.includes(c)).map((c) => (
               <option key={c} value={c}>{label(c)}</option>
             ))}
-          </Select>
+          </select>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">

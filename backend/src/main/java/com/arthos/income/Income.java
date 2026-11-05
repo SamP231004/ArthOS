@@ -4,6 +4,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.FieldType;
@@ -32,6 +33,10 @@ public class Income {
     private String note;
     private boolean recurring;
 
+    /** Set only for demo data: MongoDB's TTL monitor deletes the document after this instant. */
+    @Indexed(expireAfter = "0s")
+    private Instant expiresAt;
+
     @CreatedDate
     private Instant createdAt;
     @LastModifiedDate
@@ -54,6 +59,8 @@ public class Income {
     public void setNote(String note) { this.note = note; }
     public boolean isRecurring() { return recurring; }
     public void setRecurring(boolean recurring) { this.recurring = recurring; }
+    public Instant getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(Instant expiresAt) { this.expiresAt = expiresAt; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

@@ -1,25 +1,34 @@
 "use client";
 
+import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { DemoButton } from "./demo-button";
 import { Logo } from "./logo";
 import { Button, ErrorNote, Field, Input } from "./ui";
 import { api, ApiError } from "@/lib/api";
-import { useAuth } from "@/lib/auth-store";
+import { useAuth, useHydrated } from "@/lib/auth-store";
 import type { AuthResponse } from "@/lib/types";
+
+const perks = [
+  "Income, expenses and savings rate in one dashboard",
+  "Same account on the web and the Android app",
+  "Adaptive daily budgets — arriving in Phase 2",
+];
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
-  const { token, user, hydrated, setSession } = useAuth();
+  const { token, user, setSession } = useAuth();
+  const hydrated = useHydrated();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-  // Already signed in → go straight to the app.
+  // Already signed in (and not a demo session) → straight to the app.
   useEffect(() => {
-    if (hydrated && token && user) router.replace(user.onboardingCompleted ? "/dashboard" : "/onboarding");
+    if (hydrated && token && user && !user.demo) router.replace(user.onboardingCompleted ? "/dashboard" : "/onboarding");
   }, [hydrated, token, user, router]);
 
   async function submit(e: React.FormEvent) {
@@ -31,6 +40,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       const body = mode === "register" ? form : { email: form.email, password: form.password };
       const res = await api<AuthResponse>(`/api/auth/${mode}`, { method: "POST", body, auth: false });
       setSession(res.token, res.user);
+      router.replace(res.user.onboardingCompleted ? "/dashboard" : "/onboarding");
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.fieldErrors ? null : err.message);
@@ -44,24 +54,62 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
 
   return (
-    <div className="flex flex-1 items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex justify-center">
-          <Logo size="lg" />
+    <div className="grid min-h-screen flex-1 lg:grid-cols-[1.05fr_1fr]">
+      {/* Brand panel */}
+      <aside className="noise relative hidden overflow-hidden border-r border-line bg-bg-2 lg:flex lg:flex-col lg:justify-between lg:p-12">
+        <div className="bg-grid pointer-events-none absolute inset-0 opacity-60" />
+        <div className="pointer-events-none absolute -left-40 top-1/3 h-[520px] w-[520px] rounded-full bg-brand/10 blur-[120px]" />
+        <div className="relative">
+          <Logo />
         </div>
-        <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8">
-          <h1 className="text-xl font-semibold">{mode === "login" ? "Welcome back" : "Create your account"}</h1>
-          <p className="mt-1 text-sm text-muted">
-            {mode === "login" ? "Sign in to your financial control center." : "One account for the web and the Android app."}
+        <div className="relative max-w-md">
+          <p className="eyebrow">Personal financial OS</p>
+          <h2 className="mt-5 font-display text-5xl leading-[1.05] tracking-tight">
+            <span className="text-silver">Every rupee,</span>
+            <br />
+            <span className="italic text-gold">in motion.</span>
+          </h2>
+          <ul className="mt-10 space-y-3.5">
+            {perks.map((p) => (
+              <li key={p} className="flex items-start gap-3 text-sm text-fg-2">
+                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand/15 text-brand">
+                  <Check size={12} />
+                </span>
+                {p}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="panel relative max-w-sm p-5">
+          <p className="text-xs text-subtle">This month · remaining</p>
+          <p className="tabular mt-1 text-3xl font-semibold">₹38,420</p>
+          <div className="mt-3 h-1.5 rounded-full bg-white/5">
+            <div className="h-full w-[58%] rounded-full bg-gradient-to-r from-gold-3 to-gold-1" />
+          </div>
+          <p className="mt-2 text-xs text-income">41.8% of income kept so far</p>
+        </div>
+      </aside>
+
+      {/* Form */}
+      <div className="relative flex items-center justify-center px-4 py-14 sm:px-8">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(50%_100%_at_50%_0%,rgb(227_191_118/0.08),transparent)] lg:hidden" />
+        <div className="relative w-full max-w-[400px] animate-fade-up">
+          <div className="mb-10 lg:hidden">
+            <Logo />
+          </div>
+          <h1 className="font-display text-4xl tracking-tight">{mode === "login" ? "Welcome back" : "Create your account"}</h1>
+          <p className="mt-2 text-sm text-muted">
+            {mode === "login" ? "Sign in to your financial control center." : "Free during early access. Takes under a minute."}
           </p>
-          <form onSubmit={submit} className="mt-6 space-y-4">
+
+          <form onSubmit={submit} className="mt-9 space-y-4">
             {mode === "register" && (
-              <Field label="Name" error={fieldErrors.name}>
-                <Input value={form.name} onChange={set("name")} autoComplete="name" required maxLength={80} />
+              <Field label="Full name" error={fieldErrors.name}>
+                <Input value={form.name} onChange={set("name")} autoComplete="name" required maxLength={80} placeholder="Aarav Mehta" />
               </Field>
             )}
             <Field label="Email" error={fieldErrors.email}>
-              <Input type="email" value={form.email} onChange={set("email")} autoComplete="email" required />
+              <Input type="email" value={form.email} onChange={set("email")} autoComplete="email" required placeholder="you@example.com" />
             </Field>
             <Field label="Password" error={fieldErrors.password} hint={mode === "register" ? "At least 8 characters" : undefined}>
               <Input
@@ -71,21 +119,32 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                 autoComplete={mode === "login" ? "current-password" : "new-password"}
                 required
                 minLength={mode === "register" ? 8 : undefined}
+                placeholder="••••••••"
               />
             </Field>
             <ErrorNote message={error} />
-            <Button type="submit" loading={loading} className="w-full">
-              {mode === "login" ? "Sign in" : "Create account"}
+            <Button type="submit" loading={loading} size="lg" className="w-full">
+              {mode === "login" ? "Sign in" : "Create account"} {!loading && <ArrowRight size={16} />}
             </Button>
           </form>
+
+          <div className="my-7 flex items-center gap-4 text-[11px] uppercase tracking-widest text-subtle">
+            <span className="hairline flex-1" /> or <span className="hairline flex-1" />
+          </div>
+
+          <div className="flex flex-col items-stretch [&>span]:w-full [&_button]:w-full">
+            <DemoButton size="lg">Explore with demo data</DemoButton>
+          </div>
+          <p className="mt-2.5 text-center text-xs text-subtle">A private sandbox with 3 months of sample data. No sign-up.</p>
+
+          <p className="mt-10 text-center text-sm text-muted">
+            {mode === "login" ? (
+              <>New to ArthOS? <Link href="/register" className="text-brand hover:underline">Create an account</Link></>
+            ) : (
+              <>Already have an account? <Link href="/login" className="text-brand hover:underline">Sign in</Link></>
+            )}
+          </p>
         </div>
-        <p className="mt-6 text-center text-sm text-muted">
-          {mode === "login" ? (
-            <>New to ArthOS? <Link href="/register" className="text-brand hover:underline">Create an account</Link></>
-          ) : (
-            <>Already have an account? <Link href="/login" className="text-brand hover:underline">Sign in</Link></>
-          )}
-        </p>
       </div>
     </div>
   );

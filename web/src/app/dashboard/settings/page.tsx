@@ -1,7 +1,9 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { useState } from "react";
-import { Button, Card, ErrorNote, Field, Input, Select } from "@/components/ui";
+import { PageHeader } from "@/components/page-header";
+import { Button, ErrorNote, Field, Input, Select } from "@/components/ui";
 import { useAuth } from "@/lib/auth-store";
 import { useUpdateProfile } from "@/lib/queries";
 
@@ -35,23 +37,24 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted">Profile and preferences, shared with the Android app.</p>
-      </div>
-      <Card>
-        <form onSubmit={save} className="space-y-4">
-          <Field label="Name">
+    <div className="max-w-3xl space-y-6">
+      <PageHeader title="Settings" subtitle="Profile and preferences, shared with the Android app." />
+
+      <form onSubmit={save} className="panel divide-y divide-line">
+        <Section title="Profile" desc="How ArthOS greets you.">
+          <Field label="Full name">
             <Input required maxLength={80} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
           </Field>
-          <Field label="Email" hint="Email can't be changed yet">
-            <Input value={user.email} disabled className="opacity-60" />
+          <Field label="Email" hint={user.demo ? "Demo accounts use a generated address" : "Email can't be changed yet"}>
+            <Input value={user.email} disabled />
           </Field>
+        </Section>
+
+        <Section title="Money" desc="Your earning target and display currency.">
           <Field label="Monthly income target">
             <Input type="number" min={0} step="0.01" value={f.monthlyIncomeTarget} onChange={(e) => setF({ ...f, monthlyIncomeTarget: e.target.value })} />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Currency">
               <Select value={f.currency} onChange={(e) => setF({ ...f, currency: e.target.value })}>
                 {CURRENCIES.map((c) => (
@@ -59,17 +62,34 @@ export default function SettingsPage() {
                 ))}
               </Select>
             </Field>
-            <Field label="Timezone">
+            <Field label="Timezone" hint="Decides when your day and month roll over">
               <Input value={f.timezone} onChange={(e) => setF({ ...f, timezone: e.target.value })} />
             </Field>
           </div>
+        </Section>
+
+        <div className="flex items-center justify-end gap-3 p-6">
           <ErrorNote message={update.error?.message} />
-          <div className="flex items-center gap-3">
-            <Button type="submit" loading={update.isPending}>Save</Button>
-            {saved && <span className="text-sm text-income">Saved</span>}
-          </div>
-        </form>
-      </Card>
+          {saved && (
+            <span className="flex items-center gap-1.5 text-sm text-income">
+              <Check size={15} /> Saved
+            </span>
+          )}
+          <Button type="submit" loading={update.isPending}>Save changes</Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function Section({ title, desc, children }: { title: string; desc: string; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-6 p-6 md:grid-cols-[200px_1fr]">
+      <div>
+        <h2 className="font-medium">{title}</h2>
+        <p className="mt-1 text-sm text-subtle">{desc}</p>
+      </div>
+      <div className="space-y-4">{children}</div>
     </div>
   );
 }
