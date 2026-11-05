@@ -9,16 +9,18 @@ import { dateLabel, money, todayISO } from "@/lib/format";
 import { useAddLot, useDeleteHolding, useDeleteLot, useSaveHolding } from "@/lib/queries";
 import { HORIZONS, type HoldingView, type Horizon, type LotType } from "@/lib/types";
 
-export function HoldingModal({ holding, onClose }: { holding: HoldingView | null; onClose: () => void }) {
+export type DetailTab = "overview" | "trade" | "settings" | "withdraw";
+
+export function HoldingModal({ holding, onClose, initialTab = "overview" }: { holding: HoldingView | null; onClose: () => void; initialTab?: DetailTab }) {
   return (
     <Modal open={!!holding} onClose={onClose} title={holding?.name ?? ""} subtitle={holding ? holdingSubtitle(holding) : undefined}>
-      {holding && <Detail key={holding.id} h={holding} onClose={onClose} />}
+      {holding && <Detail key={`${holding.id}-${initialTab}`} h={holding} onClose={onClose} initialTab={initialTab} />}
     </Modal>
   );
 }
 
-function Detail({ h, onClose }: { h: HoldingView; onClose: () => void }) {
-  const [tab, setTab] = useState<"overview" | "trade" | "settings">("overview");
+function Detail({ h, onClose, initialTab }: { h: HoldingView; onClose: () => void; initialTab: DetailTab }) {
+  const [tab, setTab] = useState<Exclude<DetailTab, "withdraw">>(initialTab === "withdraw" ? "trade" : initialTab);
   const M = CLASS_META[h.assetClass];
   return (
     <div className="space-y-5">
@@ -67,7 +69,7 @@ function Detail({ h, onClose }: { h: HoldingView; onClose: () => void }) {
         </>
       )}
 
-      {tab === "trade" && <Trade h={h} onDone={() => setTab("overview")} />}
+      {tab === "trade" && <Trade h={h} onDone={() => setTab("overview")} initialType={initialTab === "withdraw" ? "SELL" : "BUY"} />}
       {tab === "settings" && <Settings h={h} onDeleted={onClose} onSaved={() => setTab("overview")} />}
     </div>
   );
@@ -110,9 +112,9 @@ function Lots({ h }: { h: HoldingView }) {
   );
 }
 
-function Trade({ h, onDone }: { h: HoldingView; onDone: () => void }) {
+function Trade({ h, onDone, initialType = "BUY" }: { h: HoldingView; onDone: () => void; initialType?: LotType }) {
   const add = useAddLot(h.id);
-  const [type, setType] = useState<LotType>("BUY");
+  const [type, setType] = useState<LotType>(initialType);
   const [qty, setQty] = useState("");
   const [price, setPrice] = useState(String(h.price));
   const [date, setDate] = useState(todayISO());

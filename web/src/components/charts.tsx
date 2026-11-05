@@ -182,7 +182,8 @@ export function DailyBars({ data, format }: { data: { date: string; amount: numb
               className="w-full rounded-t-[3px] transition-colors"
               style={{
                 height: `${Math.max(2, (d.amount / max) * 100)}%`,
-                background: hover === i ? "var(--accent-1)" : d.amount > avg * 1.6 ? "var(--expense)" : "linear-gradient(180deg, var(--accent-2), var(--accent-3))",
+                // normal days are neutral so only spikes read as red, in both themes
+                background: d.amount > avg * 1.6 ? "var(--expense)" : hover === i ? "color-mix(in oklab, var(--fg) 55%, transparent)" : "color-mix(in oklab, var(--fg) 26%, transparent)",
                 opacity: d.amount === 0 ? 0.2 : hover == null || hover === i ? 1 : 0.55,
               }}
             />

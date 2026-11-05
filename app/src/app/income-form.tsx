@@ -5,7 +5,7 @@ import { Alert, KeyboardAvoidingView, Platform, Switch, View } from 'react-nativ
 import { DateField, isISODate } from '@/components/date-field';
 import { Screen } from '@/components/screen';
 import { Button, Chip, ErrorNote, Input, Loading, T } from '@/components/ui';
-import { C, S } from '@/constants/theme';
+import { S, useTheme } from '@/theme';
 import { ApiError } from '@/lib/api';
 import { label, todayISO } from '@/lib/format';
 import { useDeleteIncome, useIncome, useSaveIncome } from '@/lib/queries';
@@ -20,6 +20,7 @@ export default function IncomeFormScreen() {
 }
 
 function IncomeForm({ initial }: { initial?: Income }) {
+  const { c } = useTheme();
   const save = useSaveIncome();
   const del = useDeleteIncome();
   const [f, setF] = useState({
@@ -58,7 +59,7 @@ function IncomeForm({ initial }: { initial?: Income }) {
           keyboardType="decimal-pad"
           value={f.amount}
           onChangeText={(t) => setF({ ...f, amount: t.replace(/[^0-9.]/g, '') })}
-          style={{ fontSize: 24, fontWeight: '700' }}
+          style={{ fontSize: 24, fontFamily: 'Manrope_600SemiBold' }}
           error={fields.amount}
         />
         <View style={{ gap: S.sm }}>
@@ -74,10 +75,10 @@ function IncomeForm({ initial }: { initial?: Income }) {
         <Input label="Note" placeholder="Optional" value={f.note} onChangeText={(note) => setF({ ...f, note })} maxLength={500} />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <T>Repeats every month</T>
-          <Switch value={f.recurring} onValueChange={(recurring) => setF({ ...f, recurring })} trackColor={{ true: C.brand }} />
+          <Switch value={f.recurring} onValueChange={(recurring) => setF({ ...f, recurring })} trackColor={{ true: c.accent2, false: c.lineStrong }} thumbColor={c.surface} />
         </View>
         <ErrorNote message={err && !(err instanceof ApiError && err.fieldErrors) ? err.message : null} />
-        <Button title={initial ? 'Save changes' : 'Add income'} onPress={submit} loading={save.isPending} disabled={!valid} />
+        <Button size="lg" title={initial ? 'Save changes' : 'Add income'} onPress={submit} loading={save.isPending} disabled={!valid} />
         {initial && <Button title="Delete" variant="danger" onPress={remove} loading={del.isPending} />}
       </Screen>
     </KeyboardAvoidingView>

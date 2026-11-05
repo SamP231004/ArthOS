@@ -5,13 +5,14 @@ import { MonthPicker } from '@/components/month-picker';
 import { Screen } from '@/components/screen';
 import { TxRow } from '@/components/tx-row';
 import { Button, Card, ErrorNote, Loading, T } from '@/components/ui';
-import { C, R, S } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-store';
 import { dayLabel, label, money } from '@/lib/format';
 import { useIncomes } from '@/lib/queries';
 import { useMonth } from '@/lib/ui-store';
+import { alpha, R, S, useTheme } from '@/theme';
 
 export default function IncomeTab() {
+  const { c } = useTheme();
   const month = useMonth();
   const user = useAuth((s) => s.user);
   const cur = user?.currency ?? 'INR';
@@ -22,20 +23,27 @@ export default function IncomeTab() {
 
   return (
     <Screen refreshing={isRefetching} onRefresh={refetch}>
-      <T variant="title">Income</T>
+      <View>
+        <T variant="title">Income</T>
+        <T variant="muted">Everything coming in this month.</T>
+      </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <MonthPicker />
         <Button title="+ Add" onPress={() => router.push('/income-form')} />
       </View>
 
-      <Card style={{ gap: S.xs }}>
-        <T variant="muted">Received</T>
-        <T variant="big" style={{ color: C.income, fontSize: 32 }}>{money(total, cur)}</T>
-        <T variant="small">{target ? `Target ${money(target, cur)}` : 'Set a monthly target in Settings'}</T>
-        {pct != null && (
-          <View style={{ height: 8, borderRadius: R.pill, backgroundColor: C.bg, overflow: 'hidden', marginTop: S.sm }}>
-            <View style={{ height: 8, width: `${pct}%`, backgroundColor: C.income }} />
-          </View>
+      <Card glow style={{ gap: S.xs }}>
+        <T variant="muted">↙ Received this month</T>
+        <T variant="big" style={{ color: c.income }}>{money(total, cur)}</T>
+        {pct != null ? (
+          <>
+            <View style={{ height: 8, borderRadius: R.pill, backgroundColor: alpha(c.fg, 0.06), overflow: 'hidden', marginTop: S.sm }}>
+              <View style={{ height: 8, width: `${pct}%`, backgroundColor: c.income, borderRadius: R.pill }} />
+            </View>
+            <T variant="small">{pct.toFixed(0)}% of your {money(target, cur)} target</T>
+          </>
+        ) : (
+          <T variant="small">Set a monthly target in Settings to track progress</T>
         )}
       </Card>
 

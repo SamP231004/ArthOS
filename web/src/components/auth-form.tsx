@@ -57,24 +57,24 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
 
   return (
-    <div className="relative grid min-h-screen flex-1 lg:grid-cols-[1fr_1fr]">
+    <div className="relative grid min-h-dvh flex-1 lg:h-dvh lg:grid-cols-[1fr_1fr] lg:overflow-hidden">
       <div className="absolute right-4 top-4 z-10 sm:right-6 sm:top-6">
         <ThemeToggle />
       </div>
       {/* Brand panel */}
-      <aside className="noise relative hidden overflow-hidden border-r border-line bg-bg-2 lg:flex lg:items-center lg:justify-center lg:p-12">
+      <aside className="noise relative hidden overflow-hidden border-r border-line bg-bg-2 lg:flex lg:items-center lg:justify-center lg:p-10">
         <div className="bg-grid pointer-events-none absolute inset-0 opacity-60" />
         <div className="pointer-events-none absolute -left-40 top-1/3 h-[520px] w-[520px] rounded-full bg-brand/10 blur-[120px]" />
-        <div className="relative flex min-h-[560px] w-full max-w-md flex-col justify-between gap-12 py-4">
+        <div className="relative flex h-full max-h-[640px] w-full max-w-md flex-col justify-between gap-8 py-2">
         <Logo />
         <div>
           <p className="eyebrow">Personal financial OS</p>
-          <h2 className="mt-5 font-display text-5xl leading-[1.05] tracking-tight">
+          <h2 className="mt-4 font-display text-5xl leading-[1.05] tracking-tight">
             <span className="text-silver">Every rupee,</span>
             <br />
             <span className="italic text-accent">in motion.</span>
           </h2>
-          <ul className="mt-10 space-y-3.5">
+          <ul className="mt-8 space-y-3">
             {perks.map((p) => (
               <li key={p} className="flex items-start gap-3 text-sm text-fg-2">
                 <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand/15 text-brand">
@@ -97,31 +97,33 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       </aside>
 
       {/* Form */}
-      <div className="relative flex items-center justify-center px-4 py-14 sm:px-8">
+      <div className="relative flex items-center justify-center px-4 py-10 sm:px-8 lg:overflow-y-auto lg:py-6 lg:[scrollbar-width:none]">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(50%_100%_at_50%_0%,rgb(var(--glow)/0.08),transparent)] lg:hidden" />
         <div className="relative w-full max-w-[400px] animate-fade-up">
-          <div className="mb-10 lg:hidden">
+          <div className="mb-8 lg:hidden">
             <Logo />
           </div>
           {user?.demo && (
-            <p className="mb-6 rounded-xl border border-brand/25 bg-brand/[0.06] px-3.5 py-2.5 text-sm text-fg-2">
+            <p className="mb-4 rounded-xl border border-brand/25 bg-brand/[0.06] px-3.5 py-2.5 text-sm text-fg-2">
               {mode === "register" ? "Create your account to keep your own data. Your demo sandbox stays available until it expires." : "You're in a demo session — sign in to switch to your own account."}
             </p>
           )}
-          <h1 className="font-display text-4xl tracking-tight">{mode === "login" ? "Welcome back" : "Create your account"}</h1>
-          <p className="mt-2 text-sm text-muted">
+          <h1 className="font-display text-[2.15rem] leading-tight tracking-tight">{mode === "login" ? "Welcome back" : "Create your account"}</h1>
+          <p className="mt-1 text-sm text-muted">
             {mode === "login" ? "Sign in to your financial control center." : "Free during early access. Takes under a minute."}
           </p>
 
-          <form onSubmit={submit} className="mt-9 space-y-4">
-            {mode === "register" && (
-              <Field label="Full name" error={fieldErrors.name}>
-                <Input value={form.name} onChange={set("name")} autoComplete="name" required maxLength={80} placeholder="Samarth Patel" />
+          <form onSubmit={submit} className="mt-6 space-y-3.5">
+            <div className={mode === "register" ? "grid gap-3.5 sm:grid-cols-2" : ""}>
+              {mode === "register" && (
+                <Field label="Full name" error={fieldErrors.name}>
+                  <Input value={form.name} onChange={set("name")} autoComplete="name" required maxLength={80} placeholder="Samarth Patel" />
+                </Field>
+              )}
+              <Field label="Email" error={fieldErrors.email}>
+                <Input type="email" value={form.email} onChange={set("email")} autoComplete="email" required placeholder="you@example.com" />
               </Field>
-            )}
-            <Field label="Email" error={fieldErrors.email}>
-              <Input type="email" value={form.email} onChange={set("email")} autoComplete="email" required placeholder="you@example.com" />
-            </Field>
+            </div>
             <Field label="Password" error={fieldErrors.password} hint={mode === "register" ? "At least 8 characters" : undefined}>
               <Input
                 type="password"
@@ -139,19 +141,19 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             </Button>
           </form>
 
-          <div className="my-7 flex items-center gap-4 text-[11px] uppercase tracking-widest text-subtle">
+          <div className="my-5 flex items-center gap-4 text-[11px] uppercase tracking-widest text-subtle">
             <span className="hairline flex-1" /> or <span className="hairline flex-1" />
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <GoogleButton onError={setError} />
             <div className="flex flex-col items-stretch [&>span]:w-full [&_button]:w-full">
               <DemoButton size="lg">Explore with demo data</DemoButton>
             </div>
           </div>
-          <p className="mt-2.5 text-center text-xs text-subtle">A private sandbox with 3 months of sample data. No sign-up.</p>
+          <p className="mt-2 text-center text-xs text-subtle">A private sandbox with 6 months of sample data. No sign-up.</p>
 
-          <p className="mt-10 text-center text-sm text-muted">
+          <p className="mt-6 text-center text-sm text-muted">
             {mode === "login" ? (
               <>New to ArthOS? <Link href="/register" className="text-brand hover:underline">Create an account</Link></>
             ) : (

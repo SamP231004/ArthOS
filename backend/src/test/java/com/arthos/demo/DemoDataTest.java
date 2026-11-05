@@ -20,18 +20,18 @@ import static org.junit.jupiter.api.Assertions.*;
 class DemoDataTest {
 
     @Test
-    void generatesThreeMonthsOfPastOnlyDataThatAllExpires() {
+    void generatesSixMonthsOfPastOnlyDataThatAllExpires() {
         LocalDate today = LocalDate.of(2026, 11, 5);
         Instant expiry = Instant.parse("2026-11-06T00:00:00Z");
         DemoData.Seed seed = DemoData.generate("u1", today, expiry, new Random(42));
 
         Set<String> months = Stream.concat(seed.incomes().stream().map(Income::getMonthKey), seed.expenses().stream().map(Expense::getMonthKey))
                 .collect(Collectors.toSet());
-        assertEquals(Set.of("2026-09", "2026-10", "2026-11"), months);
+        assertEquals(Set.of("2026-06", "2026-07", "2026-08", "2026-09", "2026-10", "2026-11"), months);
 
         assertTrue(seed.incomes().stream().allMatch(i -> !i.getDate().isAfter(today) && expiry.equals(i.getExpiresAt()) && "u1".equals(i.getUserId())));
         assertTrue(seed.expenses().stream().allMatch(e -> !e.getDate().isAfter(today) && expiry.equals(e.getExpiresAt()) && e.getAmount().signum() > 0));
-        assertTrue(seed.expenses().size() > 90, "should look lived-in, was " + seed.expenses().size());
+        assertTrue(seed.expenses().size() > 200, "should look lived-in, was " + seed.expenses().size());
     }
 
     @Test

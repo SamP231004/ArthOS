@@ -1,9 +1,10 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { C, S } from '@/constants/theme';
+import { S, useTheme } from '@/theme';
 
-/** Standard scrollable screen with safe-area padding and optional pull-to-refresh. */
+/** Scrollable screen with the web's soft top glow, safe-area padding and optional pull-to-refresh. */
 export function Screen({
   children,
   refreshing,
@@ -15,12 +16,14 @@ export function Screen({
   onRefresh?: () => void;
   edges?: ('top' | 'bottom')[];
 }) {
+  const { c } = useTheme();
   return (
-    <SafeAreaView style={styles.root} edges={edges}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={edges}>
+      <LinearGradient colors={[`${c.glow}0.10)`, `${c.glow}0)`]} style={styles.glow} pointerEvents="none" />
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
-        refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={C.brand} colors={[C.brand]} /> : undefined}>
+        refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={c.brand} colors={[c.brand]} progressBackgroundColor={c.surface} /> : undefined}>
         <View style={{ gap: S.lg }}>{children}</View>
       </ScrollView>
     </SafeAreaView>
@@ -28,6 +31,6 @@ export function Screen({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg },
+  glow: { position: 'absolute', top: 0, left: 0, right: 0, height: 260 },
   content: { padding: S.lg, paddingBottom: S.xxl * 2 },
 });

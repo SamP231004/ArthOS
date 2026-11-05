@@ -1,73 +1,109 @@
+import { IBMPlexMono_400Regular } from '@expo-google-fonts/ibm-plex-mono';
+import { Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold } from '@expo-google-fonts/manrope';
+import { Newsreader_400Regular, Newsreader_400Regular_Italic, Newsreader_500Medium } from '@expo-google-fonts/newsreader';
+import { TiroDevanagariHindi_400Regular } from '@expo-google-fonts/tiro-devanagari-hindi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import { useFonts } from 'expo-font';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider as NavThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { C } from '@/constants/theme';
 import { ApiError } from '@/lib/api';
-import { useAuth } from '@/lib/auth-store';
+import { useAuth, useHydrated } from '@/lib/auth-store';
+import { F, ThemeProvider, useTheme } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
-const theme = {
-  ...DarkTheme,
-  colors: { ...DarkTheme.colors, background: C.bg, card: C.surface, text: C.fg, border: C.border, primary: C.brand },
-};
-
 export default function RootLayout() {
-  const { hydrated, token, user } = useAuth();
+  const [fontsReady, fontError] = useFonts({
+    Newsreader_400Regular,
+    Newsreader_400Regular_Italic,
+    Newsreader_500Medium,
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
+    IBMPlexMono_400Regular,
+    TiroDevanagariHindi_400Regular,
+  });
+  // Never trap the user on the splash screen: render with system fonts if custom fonts fail or are slow.
+  const [fontTimeout, setFontTimeout] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setFontTimeout(true), 4000);
+    return () => clearTimeout(t);
+  }, []);
+  const fontsLoaded = fontsReady || !!fontError || fontTimeout;
   const [queryClient] = useState(
     () =>
       new QueryClient({
         defaultOptions: {
-          queries: {
-            staleTime: 30_000,
-            retry: (count, err) => !(err instanceof ApiError && err.status >= 400 && err.status < 500) && count < 2,
-          },
+          queries: { staleTime: 30_000, retry: (count, err) => !(err instanceof ApiError && err.status >= 400 && err.status < 500) && count < 2 },
         },
       }),
   );
+  return (
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <AppStack fontsLoaded={fontsLoaded} queryClient={queryClient} />
+      </QueryClientProvider>
+    </ThemeProvider>
+  );
+}
+
+function AppStack({ fontsLoaded, queryClient }: { fontsLoaded: boolean; queryClient: QueryClient }) {
+  const { token, user } = useAuth();
+  const hydrated = useHydrated();
+  const { c, mode, ready } = useTheme();
+  const isReady = hydrated && fontsLoaded && ready;
 
   useEffect(() => {
-    if (hydrated) SplashScreen.hideAsync();
-  }, [hydrated]);
+    if (isReady) SplashScreen.hideAsync();
+  }, [isReady]);
 
   // Clear cached data from the previous account when signing out.
   useEffect(() => {
     if (!token) queryClient.clear();
   }, [token, queryClient]);
 
-  if (!hydrated) return null; // splash stays visible while the session loads
+  const navTheme = useMemo(() => {
+    const base = mode === 'dark' ? DarkTheme : DefaultTheme;
+    return { ...base, colors: { ...base.colors, background: c.bg, card: c.surface, text: c.fg, border: c.line, primary: c.brand } };
+  }, [mode, c]);
+
+  if (!isReady) return null; // splash stays visible while the session, fonts and theme load
 
   const signedIn = !!token && !!user;
   const onboarded = signedIn && user!.onboardingCompleted;
+  const modal = {
+    presentation: 'modal' as const,
+    headerShown: true,
+    headerStyle: { backgroundColor: c.surface },
+    headerTintColor: c.fg,
+    headerTitleStyle: { fontFamily: F.display, fontSize: 22 },
+    headerShadowVisible: false,
+  };
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider value={theme}>
-        <StatusBar style="light" />
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }}>
-          <Stack.Protected guard={!signedIn}>
-            <Stack.Screen name="login" />
-            <Stack.Screen name="register" />
-          </Stack.Protected>
-          <Stack.Protected guard={signedIn && !onboarded}>
-            <Stack.Screen name="onboarding" />
-          </Stack.Protected>
-          <Stack.Protected guard={onboarded}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen
-              name="income-form"
-              options={{ presentation: 'modal', headerShown: true, title: 'Income', headerStyle: { backgroundColor: C.surface } }}
-            />
-            <Stack.Screen
-              name="expense-form"
-              options={{ presentation: 'modal', headerShown: true, title: 'Expense', headerStyle: { backgroundColor: C.surface } }}
-            />
-          </Stack.Protected>
-        </Stack>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <NavThemeProvider value={navTheme}>
+      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>
+        <Stack.Protected guard={!signedIn}>
+          <Stack.Screen name="login" />
+          <Stack.Screen name="register" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !onboarded}>
+          <Stack.Screen name="onboarding" />
+        </Stack.Protected>
+        <Stack.Protected guard={onboarded}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="income-form" options={{ ...modal, title: 'Income' }} />
+          <Stack.Screen name="expense-form" options={{ ...modal, title: 'Expense' }} />
+          <Stack.Screen name="add-holding" options={{ ...modal, title: 'Add investment' }} />
+          <Stack.Screen name="holding" options={{ ...modal, title: 'Holding' }} />
+          <Stack.Screen name="settings" options={{ ...modal, presentation: 'card', title: 'Settings' }} />
+        </Stack.Protected>
+      </Stack>
+    </NavThemeProvider>
   );
 }

@@ -1,8 +1,8 @@
 import { View } from 'react-native';
 
 import { Chip, Input } from './ui';
-import { S } from '@/constants/theme';
 import { todayISO } from '@/lib/format';
+import { S } from '@/theme';
 
 function yesterdayISO() {
   const d = new Date();
@@ -13,13 +13,13 @@ function yesterdayISO() {
 export const isISODate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(new Date(v).getTime());
 
 /** Date entry without a native picker dependency: quick chips + YYYY-MM-DD text. */
-export function DateField({ value, onChange, error }: { value: string; onChange: (v: string) => void; error?: string }) {
+export function DateField({ value, onChange, error, label = 'Date' }: { value: string; onChange: (v: string) => void; error?: string; label?: string }) {
   const today = todayISO();
   const yesterday = yesterdayISO();
   return (
     <View style={{ gap: S.sm }}>
       <Input
-        label="Date"
+        label={label}
         value={value}
         onChangeText={onChange}
         placeholder="YYYY-MM-DD"

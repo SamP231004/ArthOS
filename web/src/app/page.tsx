@@ -45,7 +45,7 @@ const roadmap = [
 
 const faqs = [
   ["Do I need to connect my bank account?", "No. ArthOS never asks for bank credentials. You log what you choose — manually today, and from screenshots of UPI receipts or bank SMS once automation ships."],
-  ["What is in the demo?", "A private sandbox with three months of realistic data for a salaried professional in Bengaluru. Add, edit or delete anything — it's yours alone, and it deletes itself after 24 hours."],
+  ["What is in the demo?", "A private sandbox with six months of realistic data for a salaried professional in Bengaluru. Add, edit or delete anything — it's yours alone, and it deletes itself after 24 hours."],
   ["Is there an Android app?", "Yes. ArthOS is Android-first; the app and this website share the same account, so anything you log on your phone appears here instantly."],
   ["How is my data protected?", "All traffic is encrypted over HTTPS, passwords are hashed with bcrypt, and every request is scoped to your account with signed session tokens."],
   ["What does it cost?", "ArthOS is free during early access. Premium features are planned for a later phase of the roadmap."],

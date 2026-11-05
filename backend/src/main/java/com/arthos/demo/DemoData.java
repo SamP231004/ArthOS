@@ -20,12 +20,12 @@ import static com.arthos.expense.ExpenseCategory.*;
 import static com.arthos.expense.PaymentSource.*;
 
 /**
- * Generates a believable three-month financial history for a demo account: a salaried professional in
+ * Generates a believable six-month financial history (a rolling window ending in the current month) for a demo account: a salaried professional in
  * Bengaluru with rent, subscriptions, everyday UPI spending and the odd freelance payment. Pure and seedable.
  */
 public final class DemoData {
 
-    public static final int MONTHS = 3;
+    public static final int MONTHS = 6;
 
     public record Seed(List<Income> incomes, List<Expense> expenses) {}
 
@@ -53,6 +53,9 @@ public final class DemoData {
     private void month(YearMonth ym, int monthsAgo) {
         // ---- income ----
         income(ym, 1, 92_000, "Northwind Labs", IncomeType.SALARY, "Monthly salary", true);
+        if (monthsAgo == 5) income(ym, 28, 46_000, "Northwind Labs", IncomeType.BONUS, "Annual performance bonus", false);
+        if (monthsAgo == 3) income(ym, 14, 15_000, "Pixel & Co.", IncomeType.FREELANCE, "Brand refresh", false);
+        if (monthsAgo == 4) income(ym, 20, 2_180, "Fixed deposit", IncomeType.INTEREST, "FD interest payout", false);
         if (monthsAgo == 2) income(ym, 18, 18_000, "Pixel & Co.", IncomeType.FREELANCE, "Brand design retainer", false);
         if (monthsAgo == 1) income(ym, 15, 1_240, "Nifty 50 index fund", IncomeType.DIVIDEND, null, false);
         if (monthsAgo == 1) income(ym, 22, 12_500, "Pixel & Co.", IncomeType.FREELANCE, "Landing page project", false);
@@ -84,6 +87,15 @@ public final class DemoData {
             expense(ym, 26, 2_500, GIFTS, "Gift — Riya's birthday", UPI, null, false);
         }
         if (monthsAgo == 0) expense(ym, 4, 3_200, EDUCATION, "Online course", CREDIT_CARD, "Personal finance basics", false);
+        if (monthsAgo == 3) {
+            expense(ym, 8, 4_900, SHOPPING, "Croma", CREDIT_CARD, "Headphones", false);
+            expense(ym, 24, 3_600, GIFTS, "Diwali gifts", UPI, null, false);
+        }
+        if (monthsAgo == 4) {
+            expense(ym, 16, 6_200, TRAVEL, "Weekend in Coorg", UPI, null, false);
+            expense(ym, 21, 1_850, HEALTH, "Dental check-up", UPI, null, false);
+        }
+        if (monthsAgo == 5) expense(ym, 12, 12_500, SHOPPING, "IKEA", CREDIT_CARD, "Study desk & chair", false);
     }
 
     private void income(YearMonth ym, int day, long amount, String source, IncomeType type, String note, boolean recurring) {

@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { C, R, S } from '@/constants/theme';
+import { alpha, F, R, S, useStyles, useTheme, type Palette } from '@/theme';
 
+/** Transaction row with the web's letter avatar. */
 export function TxRow({
   kind,
   title,
@@ -17,20 +18,22 @@ export function TxRow({
   badge?: string;
   onPress?: () => void;
 }) {
+  const { c } = useTheme();
+  const s = useStyles(make);
   const income = kind === 'INCOME';
   return (
-    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => [styles.row, pressed && { backgroundColor: C.surface2 }]}>
-      <View style={[styles.icon, { backgroundColor: (income ? C.income : C.expense) + '1a' }]}>
-        <Text style={{ color: income ? C.income : C.expense, fontSize: 15 }}>{income ? '↓' : '↑'}</Text>
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => [s.row, pressed && { backgroundColor: alpha(c.fg, 0.03) }]}>
+      <View style={[s.avatar, income && { backgroundColor: alpha(c.income, 0.1), borderColor: alpha(c.income, 0.25) }]}>
+        <Text style={[s.avatarText, income && { color: c.income }]}>{title.trim().charAt(0).toUpperCase() || '•'}</Text>
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Text style={styles.title} numberOfLines={1}>{title}</Text>
-          {badge ? <Text style={styles.badge}>{badge}</Text> : null}
+          <Text style={s.title} numberOfLines={1}>{title}</Text>
+          {badge ? <Text style={s.badge}>{badge}</Text> : null}
         </View>
-        <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
+        <Text style={s.subtitle} numberOfLines={1}>{subtitle}</Text>
       </View>
-      <Text style={[styles.amount, income && { color: C.income }]}>
+      <Text style={[s.amount, income && { color: c.income }]}>
         {income ? '+' : '−'}
         {amount}
       </Text>
@@ -38,11 +41,13 @@ export function TxRow({
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: S.md, paddingVertical: S.md, paddingHorizontal: S.lg },
-  icon: { width: 36, height: 36, borderRadius: R.md, alignItems: 'center', justifyContent: 'center' },
-  title: { color: C.fg, fontSize: 15, fontWeight: '500', flexShrink: 1 },
-  subtitle: { color: C.muted, fontSize: 12, marginTop: 2 },
-  amount: { color: C.fg, fontSize: 15, fontWeight: '600', fontVariant: ['tabular-nums'] },
-  badge: { color: C.info, backgroundColor: C.info + '1a', fontSize: 10, paddingHorizontal: 6, paddingVertical: 1, borderRadius: R.pill, overflow: 'hidden' },
-});
+const make = (c: Palette) =>
+  StyleSheet.create({
+    row: { flexDirection: 'row', alignItems: 'center', gap: S.md, paddingVertical: S.md, paddingHorizontal: S.lg },
+    avatar: { width: 40, height: 40, borderRadius: R.md, alignItems: 'center', justifyContent: 'center', backgroundColor: alpha(c.fg, 0.04), borderWidth: 1, borderColor: alpha(c.fg, 0.1) },
+    avatarText: { color: c.fg2, fontSize: 14, fontFamily: F.uiSemibold },
+    title: { color: c.fg, fontSize: 15, fontFamily: F.uiMedium, flexShrink: 1 },
+    subtitle: { color: c.subtle, fontSize: 12, marginTop: 2, fontFamily: F.ui },
+    amount: { color: c.fg, fontSize: 15, fontFamily: F.uiSemibold, fontVariant: ['tabular-nums'] },
+    badge: { color: c.info, backgroundColor: alpha(c.info, 0.1), fontSize: 10, paddingHorizontal: 6, paddingVertical: 1, borderRadius: R.pill, overflow: 'hidden', fontFamily: F.uiMedium },
+  });

@@ -18,7 +18,7 @@ export function ValueChart({ data, format }: { data: { date: string; value: numb
   const [hover, setHover] = useState<number | null>(null);
   if (data.length < 2) return <div className="grid h-56 place-items-center text-sm text-subtle">Not enough history yet</div>;
 
-  const W = 720, H = 240, P = { t: 14, r: 8, b: 26, l: 8 };
+  const W = 720, H = 220, P = { t: 14, r: 8, b: 6, l: 8 };
   const vals = data.flatMap((d) => [d.value, d.invested]);
   const lo = Math.min(...vals), hi = Math.max(...vals);
   const pad = (hi - lo) * 0.12 || hi * 0.05 || 1;
@@ -64,12 +64,12 @@ export function ValueChart({ data, format }: { data: { date: string; value: numb
             <circle cx={ip[hover][0]} cy={ip[hover][1]} r="3" fill="var(--muted)" />
           </>
         )}
-        {[0, Math.floor((data.length - 1) / 2), data.length - 1].map((i, k) => (
-          <text key={i} x={x(i)} y={H - 6} textAnchor={k === 0 ? "start" : k === 2 ? "end" : "middle"} fill="var(--subtle)" fontSize="11">
-            {label(data[i].date)}
-          </text>
-        ))}
       </svg>
+      <div className="mt-1 flex justify-between text-[11px] text-subtle">
+        {[0, Math.floor((data.length - 1) / 2), data.length - 1].map((i) => (
+          <span key={i}>{label(data[i].date)}</span>
+        ))}
+      </div>
       {h && (
         <div className="pointer-events-none absolute left-2 top-1 rounded-lg border border-line bg-surface-3/90 px-3 py-2 text-xs backdrop-blur">
           <p className="text-muted">{label(h.date)}</p>

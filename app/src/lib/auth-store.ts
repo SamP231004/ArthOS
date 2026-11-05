@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { useSyncExternalStore } from 'react';
 import { Platform } from 'react-native';
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
@@ -22,7 +23,6 @@ const secureStorage: StateStorage =
 type AuthState = {
   token: string | null;
   user: User | null;
-  hydrated: boolean;
   setSession: (token: string, user: User) => void;
   setUser: (user: User) => void;
   signOut: () => void;
@@ -33,7 +33,6 @@ export const useAuth = create<AuthState>()(
     (set) => ({
       token: null,
       user: null,
-      hydrated: false,
       setSession: (token, user) => set({ token, user }),
       setUser: (user) => set({ user }),
       signOut: () => set({ token: null, user: null }),
@@ -42,7 +41,18 @@ export const useAuth = create<AuthState>()(
       name: 'arthos-auth',
       storage: createJSONStorage(() => secureStorage),
       partialize: (s) => ({ token: s.token, user: s.user }),
-      onRehydrateStorage: () => () => useAuth.setState({ hydrated: true }),
     },
   ),
 );
+
+/**
+ * True once the saved session has loaded. Uses zustand's own flag: with synchronous storage (web) hydration can finish
+ * while the store is still being created, so setting state from a rehydrate callback would never run.
+ */
+export function useHydrated(): boolean {
+  return useSyncExternalStore(
+    (cb) => useAuth.persist.onFinishHydration(cb),
+    () => useAuth.persist.hasHydrated(),
+    () => false,
+  );
+}
