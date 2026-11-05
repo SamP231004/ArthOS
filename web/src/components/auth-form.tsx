@@ -15,7 +15,7 @@ import type { AuthResponse } from "@/lib/types";
 const perks = [
   "Income, expenses and savings rate in one dashboard",
   "Same account on the web and the Android app",
-  "Adaptive daily budgets — arriving in Phase 2",
+  "Adaptive daily budgets that tell you what's safe to spend today",
 ];
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {

@@ -1,12 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Instrument_Serif, Noto_Sans_Devanagari } from "next/font/google";
+import { IBM_Plex_Mono, Manrope, Newsreader, Noto_Sans_Devanagari, Tiro_Devanagari_Hindi } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { themeInitScript } from "@/lib/theme-script";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-const serif = Instrument_Serif({ variable: "--font-serif", subsets: ["latin"], weight: "400", style: ["normal", "italic"] });
+// Type system: Newsreader (editorial serif, optical sizes) for display, Manrope for interface and figures,
+// IBM Plex Mono for labels, Tiro Devanagari Hindi for display Hindi (matches the logo), Noto for UI Hindi.
+const sans = Manrope({ variable: "--font-ui", subsets: ["latin"] });
+const serif = Newsreader({ variable: "--font-serif", subsets: ["latin"], style: ["normal", "italic"], axes: ["opsz"] });
+const mono = IBM_Plex_Mono({ variable: "--font-code", subsets: ["latin"], weight: ["400", "500"] });
+const devaDisplay = Tiro_Devanagari_Hindi({ variable: "--font-deva-display", subsets: ["devanagari"], weight: "400", style: ["normal", "italic"] });
 const deva = Noto_Sans_Devanagari({ variable: "--font-deva", subsets: ["devanagari"], weight: ["400", "600"] });
 
 export const metadata: Metadata = {
@@ -24,7 +27,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" data-theme="dark" data-scroll-behavior="smooth" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} ${serif.variable} ${deva.variable} h-full antialiased`}>
+    <html lang="en" data-theme="dark" data-scroll-behavior="smooth" suppressHydrationWarning className={`${sans.variable} ${serif.variable} ${mono.variable} ${devaDisplay.variable} ${deva.variable} h-full antialiased`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>

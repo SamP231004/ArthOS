@@ -24,9 +24,9 @@ export function Logo({ href = "/", size = "md" }: { href?: string; size?: "md" |
   return (
     <Link href={href} className="group flex items-center gap-2.5" aria-label="ArthOS home">
       <LogoMark size={lg ? 42 : 32} className="transition group-hover:scale-[1.04]" />
-      <span className={`flex items-baseline gap-[3px] leading-none ${lg ? "text-[28px]" : "text-[22px]"}`}>
-        <span className="font-display tracking-tight text-fg">Arth</span>
-        <span className={`font-semibold tracking-[0.14em] text-brand ${lg ? "text-[13px]" : "text-[10.5px]"}`}>OS</span>
+      <span className={`font-display leading-none tracking-tight ${lg ? "text-[28px]" : "text-[22px]"}`}>
+        <span className="text-fg">Arth</span>
+        <span className="font-medium text-brand">OS</span>
       </span>
     </Link>
   );

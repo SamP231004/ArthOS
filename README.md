@@ -28,6 +28,20 @@ Each folder is independent, with its own dependencies, env file and deploy targe
 Data is grouped by month: every income or expense stores a `monthKey` (`YYYY-MM`) with an index on `{userId, monthKey, date}`.
 Money is stored as `Decimal128`.
 
+## Phase 2 — Budget engine (this release)
+
+| Area | Backend | Web | App |
+|---|---|---|---|
+| Fixed daily, adaptive daily and weekly modes | ✅ | ✅ | ✅ |
+| Fixed costs excluded from the allowance (default: Rent, EMI) | ✅ | ✅ | ✅ |
+| Safe to spend today, month remaining, projection, week view | ✅ | ✅ | ✅ |
+| Warnings (80% caution, over today, over month) | ✅ | ✅ | ✅ |
+| Day-by-day calendar history | ✅ | ✅ | ✅ |
+| Step-by-step explanation of today's number | — | ✅ | ✅ |
+
+A budget is set once and carries forward to later months until changed. The engine is pure and unit-tested in
+[`BudgetCalculator`](backend/src/main/java/com/arthos/budget/BudgetCalculator.java).
+
 ## Run locally
 
 **1. Backend** (needs MongoDB: local, Docker, or a free Atlas cluster)
@@ -69,6 +83,8 @@ All endpoints except `/api/auth/*` and `/api/health` need `Authorization: Bearer
 | GET / POST | `/api/expenses?month=&category=&q=&minAmount=&maxAmount=` | filtered list / create |
 | GET / PUT / DELETE | `/api/expenses/{id}` | |
 | GET | `/api/summary?month=YYYY-MM` | dashboard payload |
+| GET / PUT / DELETE | `/api/budget?month=YYYY-MM` | budget status (safe-to-spend today, week, day-by-day calendar); PUT `{limit, mode, excludedCategories}` |
+| POST | `/api/auth/demo` | private demo sandbox (3 months of data + budget), self-deletes after 24h |
 | GET | `/api/health` | liveness |
 
 Errors always use the same shape: `{status, message, fieldErrors?, timestamp}`.
@@ -106,5 +122,5 @@ Set `EXPO_PUBLIC_API_URL` to the production backend URL first, either in `.env` 
 
 ## Roadmap
 
-Phase 2 Budget engine (fixed, adaptive and weekly) → 3 Investments → 4 OCR automation → 5 Insights → 6 Widgets → 7 AI assistant → 8 Scale.
+~~Phase 2 Budget engine~~ ✅ → 3 Investments → 4 OCR automation → 5 Insights → 6 Widgets → 7 AI assistant → 8 Scale.
 See the blueprint for details.

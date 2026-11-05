@@ -1,5 +1,9 @@
 package com.arthos.demo;
 
+import com.arthos.budget.Budget;
+import com.arthos.budget.BudgetController;
+import com.arthos.budget.BudgetMode;
+import com.arthos.budget.BudgetRepository;
 import com.arthos.expense.ExpenseRepository;
 import com.arthos.income.IncomeRepository;
 import com.arthos.user.User;
@@ -25,13 +29,16 @@ public class DemoService {
     private final IncomeRepository incomes;
     private final ExpenseRepository expenses;
     private final PasswordEncoder encoder;
+    private final BudgetRepository budgets;
     private final SecureRandom random = new SecureRandom();
 
-    public DemoService(UserRepository users, IncomeRepository incomes, ExpenseRepository expenses, PasswordEncoder encoder) {
+    public DemoService(UserRepository users, IncomeRepository incomes, ExpenseRepository expenses, PasswordEncoder encoder,
+                       BudgetRepository budgets) {
         this.users = users;
         this.incomes = incomes;
         this.expenses = expenses;
         this.encoder = encoder;
+        this.budgets = budgets;
     }
 
     public User createDemoUser() {
@@ -52,6 +59,16 @@ public class DemoService {
         DemoData.Seed seed = DemoData.generate(u.getId(), today, expiresAt, new Random(random.nextLong()));
         incomes.saveAll(seed.incomes());
         expenses.saveAll(seed.expenses());
+
+        // One adaptive budget on the first demo month; later months inherit it, as a real user's would.
+        Budget b = new Budget();
+        b.setUserId(u.getId());
+        b.setMonthKey(java.time.YearMonth.from(today).minusMonths(DemoData.MONTHS - 1).toString());
+        b.setLimit(BigDecimal.valueOf(40_000));
+        b.setMode(BudgetMode.ADAPTIVE_DAILY);
+        b.setExcludedCategories(BudgetController.DEFAULT_EXCLUDED);
+        b.setExpiresAt(expiresAt);
+        budgets.save(b);
         return u;
     }
 }

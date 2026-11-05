@@ -22,6 +22,7 @@ import { Logo } from "@/components/logo";
 import { BudgetSimulator } from "@/components/marketing/budget-simulator";
 import { ProductPreview } from "@/components/marketing/product-preview";
 import { SiteNav } from "@/components/marketing/site-nav";
+import { SocialLinks } from "@/components/social-links";
 import { buttonClass } from "@/lib/button";
 
 const pillars = [
@@ -33,8 +34,8 @@ const pillars = [
 
 const roadmap = [
   ["01", "Foundation", "Accounts, income & expense tracking, monthly summary", "live"],
-  ["02", "Budget engine", "Fixed, adaptive and weekly budget modes", "next"],
-  ["03", "Investments", "Stocks, MF, gold, bonds with live pricing", "planned"],
+  ["02", "Budget engine", "Fixed, adaptive and weekly budget modes", "live"],
+  ["03", "Investments", "Stocks, MF, gold, bonds with live pricing", "next"],
   ["04", "Automation", "Screenshot-to-transaction OCR, smart categories", "planned"],
   ["05", "Insights", "Trends, anomalies, financial health score", "planned"],
   ["06", "Widgets", "Android home-screen budget & net worth", "planned"],
@@ -64,15 +65,15 @@ export default function Home() {
           <div className="relative mx-auto max-w-6xl px-4 text-center sm:px-6">
             <a href="#roadmap" className="mx-auto inline-flex animate-fade-up items-center gap-2 rounded-full border border-line bg-fg/[0.03] py-1 pl-1 pr-3 text-xs text-muted backdrop-blur transition hover:border-line-strong">
               <span className="rounded-full bg-income/15 px-2 py-0.5 font-medium text-income">Live</span>
-              Phase 1 · Income &amp; expense tracking
+              Phase 2 · The budget engine is here
               <ArrowRight size={12} />
             </a>
 
-            <h1 className="mx-auto mt-8 max-w-4xl animate-fade-up font-display text-[3.2rem] leading-[0.98] tracking-[-0.02em] [animation-delay:80ms] sm:text-7xl lg:text-[5.6rem]">
+            <h1 className="mx-auto mt-8 max-w-4xl animate-fade-up font-display text-[3rem] font-[350] leading-[1.02] tracking-[-0.035em] [animation-delay:80ms] sm:text-[4.25rem] lg:text-[5.25rem]">
               <span className="text-silver">Take control</span>
               <br />
               <span className="text-silver">of your </span>
-              <span className="font-deva font-semibold text-accent">अर्थ</span>
+              <span className="font-deva text-accent">अर्थ</span>
             </h1>
 
             <p className="mx-auto mt-7 max-w-xl animate-fade-up text-base leading-relaxed text-muted [animation-delay:160ms] sm:text-lg">
@@ -329,16 +330,17 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-line">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.5fr_1fr_1fr]">
+        <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-14 sm:px-6 md:flex-row md:items-center md:justify-between">
           <div>
             <Logo />
             <p className="mt-4 max-w-xs text-sm text-muted">The personal financial operating system. Take control of your अर्थ.</p>
           </div>
-          <FooterCol title="Product" links={[["Features", "#product"], ["Budget engine", "#budget"], ["Roadmap", "#roadmap"]]} />
-          <FooterCol title="Account" links={[["Sign in", "/login"], ["Create account", "/register"], ["FAQ", "#faq"]]} />
-        </div>
-        <div className="border-t border-line">
-          <p className="mx-auto max-w-6xl px-4 py-6 text-xs text-subtle sm:px-6">© ArthOS. Made in India for people who want clarity over their money.</p>
+          <div className="md:text-right">
+            <p className="mb-3 text-xs text-subtle">
+              Designed &amp; built by <span className="text-fg-2">Samarth Patel</span>
+            </p>
+            <SocialLinks />
+          </div>
         </div>
       </footer>
     </div>
@@ -350,20 +352,5 @@ function Tag({ icon: Icon, children }: { icon: typeof Wallet; children: React.Re
     <span className="inline-flex items-center gap-2 text-xs font-medium text-brand">
       <Icon size={14} /> {children}
     </span>
-  );
-}
-
-function FooterCol({ title, links }: { title: string; links: [string, string][] }) {
-  return (
-    <div>
-      <p className="text-xs font-medium uppercase tracking-widest text-subtle">{title}</p>
-      <ul className="mt-4 space-y-2.5 text-sm">
-        {links.map(([l, h]) => (
-          <li key={l}>
-            <a href={h} className="text-muted transition hover:text-fg">{l}</a>
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }

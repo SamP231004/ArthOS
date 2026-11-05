@@ -17,6 +17,10 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Label>Expenses</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon src={require('@/assets/images/tabIcons/expense.png')} renderingMode="template" />
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="budget">
+        <NativeTabs.Trigger.Label>Budget</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon src={require('@/assets/images/tabIcons/budget.png')} renderingMode="template" />
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="settings">
         <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon src={require('@/assets/images/tabIcons/settings.png')} renderingMode="template" />

@@ -11,6 +11,7 @@ export const C = {
   brandFg: '#fff7f3',
   income: '#4cc38a',
   expense: '#f07167',
+  warn: '#e8b45c',
   info: '#84b6d8',
 } as const;
 

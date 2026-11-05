@@ -4,6 +4,7 @@ import { ArrowDownLeft, ArrowRight, ArrowUpRight, PiggyBank, Plus, Receipt, Spar
 import Link from "next/link";
 import { useState } from "react";
 import { Avatar } from "@/components/avatar";
+import { BudgetCard } from "@/components/budget/budget-card";
 import { CATEGORY_COLORS, DailyBars, Donut, Sparkline, SpendCurve } from "@/components/charts";
 import { MonthPicker } from "@/components/month-picker";
 import { ExpenseModal, IncomeModal } from "@/components/transaction-forms";
@@ -115,8 +116,7 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
                 ? "Spending is running ahead of the calendar."
                 : spentPct < monthPct - 5
                   ? "Spending is comfortably behind the calendar."
-                  : "Spending is tracking the calendar."}{" "}
-              Budgets arrive in Phase 2.
+                  : "Spending is tracking the calendar."}
             </p>
           </div>
           <div>
@@ -131,6 +131,8 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
           </div>
         </div>
       </section>
+
+      <BudgetCard month={s.month} currency={cur} />
 
       {/* KPIs */}
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">

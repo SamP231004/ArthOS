@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { useAuth } from "./auth-store";
-import type { Expense, ExpenseInput, Income, IncomeInput, MonthSummary, User } from "./types";
+import type { BudgetInput, BudgetStatus, Expense, ExpenseInput, Income, IncomeInput, MonthSummary, User } from "./types";
 
 export const keys = {
   me: ["me"] as const,
@@ -36,6 +36,7 @@ function useInvalidateMoney() {
     qc.invalidateQueries({ queryKey: ["expenses"] });
     qc.invalidateQueries({ queryKey: ["income"] });
     qc.invalidateQueries({ queryKey: ["expense"] });
+    qc.invalidateQueries({ queryKey: ["budget"] });
   };
 }
 
@@ -86,4 +87,24 @@ export function useIncome(id?: string) {
 
 export function useExpense(id?: string) {
   return useQuery({ queryKey: ["expense", id], queryFn: () => api<Expense>(`/api/expenses/${id}`), enabled: !!id });
+}
+export function useBudget(month: string) {
+  return useQuery({ queryKey: ["budget", month], queryFn: () => api<BudgetStatus>(`/api/budget?month=${month}`) });
+}
+
+export function useSaveBudget(month: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: BudgetInput) => api<BudgetStatus>(`/api/budget?month=${month}`, { method: "PUT", body: input }),
+    // later months inherit this budget, so refresh every month's budget view
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["budget"] }),
+  });
+}
+
+export function useDeleteBudget(month: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api<BudgetStatus>(`/api/budget?month=${month}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["budget"] }),
+  });
 }

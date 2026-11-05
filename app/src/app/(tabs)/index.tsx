@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { MonthPicker } from '@/components/month-picker';
 import { Screen } from '@/components/screen';
@@ -8,7 +8,8 @@ import { Button, Card, ErrorNote, Loading, T } from '@/components/ui';
 import { C, R, S } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-store';
 import { dayLabel, label, money } from '@/lib/format';
-import { useSummary } from '@/lib/queries';
+import { STATUS_META } from '@/lib/budget-meta';
+import { useBudget, useSummary } from '@/lib/queries';
 import type { MonthSummary } from '@/lib/types';
 import { useMonth } from '@/lib/ui-store';
 
@@ -53,6 +54,8 @@ function Summary({ s }: { s: MonthSummary }) {
         </View>
         <T variant="small">{spentPct.toFixed(0)}% of income spent · Budgets arrive in Phase 2</T>
       </Card>
+
+      <BudgetMini month={s.month} cur={cur} />
 
       {/* One-tap quick add */}
       <View style={{ flexDirection: 'row', gap: S.md }}>
@@ -106,6 +109,37 @@ function Summary({ s }: { s: MonthSummary }) {
         </>
       )}
     </>
+  );
+}
+
+function BudgetMini({ month, cur }: { month: string; cur: string }) {
+  const { data: b } = useBudget(month);
+  if (!b) return null;
+  if (!b.configured) {
+    return (
+      <Pressable onPress={() => router.push('/budget')}>
+        <Card style={{ gap: 4 }}>
+          <T variant="h2">Set a budget</T>
+          <T variant="muted">Turn your month into one number: how much is safe to spend today.</T>
+        </Card>
+      </Pressable>
+    );
+  }
+  const st = STATUS_META[b.status];
+  const closed = b.daysRemaining === 0;
+  return (
+    <Pressable onPress={() => router.push('/budget')}>
+      <Card style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View style={{ gap: 2 }}>
+          <T variant="small">{closed ? 'Budget · month closed' : 'Safe to spend today'}</T>
+          <T style={{ fontSize: 24, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+            {money(closed ? Math.abs(b.remainingMonth) : b.status === 'UPCOMING' ? b.todayAllowance : b.todayRemaining, cur)}
+          </T>
+          <T variant="small">{money(b.remainingMonth, cur)} left this month</T>
+        </View>
+        <T variant="small" style={{ color: st.tone === 'expense' ? C.expense : st.tone === 'income' ? C.income : C.brandText }}>{st.label} ›</T>
+      </Card>
+    </Pressable>
   );
 }
 

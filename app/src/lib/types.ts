@@ -78,3 +78,37 @@ export type MonthSummary = {
 };
 
 export type ApiErrorBody = { status: number; message: string; fieldErrors?: Record<string, string> };
+// ---- Budget engine (Phase 2) — mirrors backend/src/main/java/com/arthos/budget/BudgetStatus.java ----
+export const BUDGET_MODES = ["ADAPTIVE_DAILY", "FIXED_DAILY", "WEEKLY"] as const;
+export type BudgetMode = (typeof BUDGET_MODES)[number];
+export type BudgetState = "ON_TRACK" | "CAUTION" | "OVER" | "OVER_MONTH" | "UPCOMING" | "COMPLETED";
+export type BudgetDayStatus = "UNDER" | "NEAR" | "OVER" | "TODAY" | "FUTURE";
+
+export type BudgetStatus = {
+  month: string;
+  configured: boolean;
+  inherited: boolean;
+  inheritedFrom?: string;
+  limit: number;
+  mode: BudgetMode;
+  excludedCategories: ExpenseCategory[];
+  daysInMonth: number;
+  dayOfMonth: number;
+  daysRemaining: number;
+  spentMonth: number;
+  spentToday: number;
+  spentBeforeToday: number;
+  excludedSpent: number;
+  remainingMonth: number;
+  baseDailyAllowance: number;
+  todayAllowance: number;
+  todayRemaining: number;
+  week: { index: number; start: string; end: string; days: number; allowance: number; spent: number; remaining: number; daysLeft: number; dailyGuide: number };
+  status: BudgetState;
+  usedPct?: number;
+  elapsedPct: number;
+  projectedSpend?: number;
+  days: { date: string; spent: number; allowance: number; status: BudgetDayStatus }[];
+};
+
+export type BudgetInput = { limit: number; mode: BudgetMode; excludedCategories: ExpenseCategory[] };

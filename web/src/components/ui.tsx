@@ -56,7 +56,7 @@ export function Badge({ tone = "neutral", children }: { tone?: "neutral" | "inco
     income: "bg-income/10 text-income ring-income/20",
     expense: "bg-expense/10 text-expense ring-expense/20",
     info: "bg-info/10 text-info ring-info/20",
-    gold: "bg-brand/10 text-brand ring-brand/25",
+    gold: "bg-warn/10 text-warn ring-warn/25",
   }[tone];
   return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium ring-1 ring-inset ${t}`}>{children}</span>;
 }
