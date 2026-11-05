@@ -21,6 +21,11 @@ arthos:
     # Must be at least 32 characters. Always override in production.
     secret: ${JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}
     expiry-hours: ${JWT_EXPIRY_HOURS:168}
+  google:
+    # OAuth 2.0 Web client ID from Google Cloud Console. Empty = Google sign-in disabled.
+    client-id: ${GOOGLE_CLIENT_ID:}
+    # Optional extra accepted audiences, comma-separated (e.g. the Android client ID).
+    extra-client-ids: ${GOOGLE_EXTRA_CLIENT_IDS:}
   cors:
     # Comma-separated list. Supports patterns like https://*.vercel.app
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8081,http://localhost:19006}

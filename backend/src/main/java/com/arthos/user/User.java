@@ -22,7 +22,14 @@ public class User {
     @Indexed(unique = true)
     private String email;
 
+    /** Null for accounts created with Google that never set a password. */
     private String passwordHash;
+
+    /** Google account subject ("sub"), set when the user signs in with Google. */
+    @Indexed(unique = true, sparse = true)
+    private String googleId;
+
+    private String avatarUrl;
 
     private String currency = "INR";
 
@@ -55,6 +62,10 @@ public class User {
     public void setEmail(String email) { this.email = email; }
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+    public String getGoogleId() { return googleId; }
+    public void setGoogleId(String googleId) { this.googleId = googleId; }
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
     public String getTimezone() { return timezone; }

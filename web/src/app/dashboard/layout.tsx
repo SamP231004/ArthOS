@@ -27,15 +27,14 @@ function initials(name?: string) {
 
 function DemoBanner() {
   const router = useRouter();
-  const qc = useQueryClient();
-  const { user, signOut } = useAuth();
+  const user = useAuth((s) => s.user);
   const [now] = useState(() => Date.now());
   if (!user?.demo) return null;
   const hours = user.expiresAt ? Math.max(1, Math.round((new Date(user.expiresAt).getTime() - now) / 3_600_000)) : 24;
 
+  // Keep the demo session until they register: signing out first made the dashboard's guard race us to /login.
+  // The register form replaces the session on success.
   function convert() {
-    signOut();
-    qc.clear();
     router.push("/register");
   }
 
@@ -58,15 +57,17 @@ function DemoBanner() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const qc = useQueryClient();
   const { user, signOut } = useAuth();
   const isActive = (href: string) => (href === "/dashboard" ? pathname === href : pathname.startsWith(href));
 
+  // Full navigation after sign-out: avoids racing the auth guard's redirect and discards any page state
+  // Next.js keeps alive between routes (e.g. a half-finished demo start).
   function logout() {
+    const dest = user?.demo ? "/" : "/login";
     signOut();
     qc.clear();
-    router.replace(user?.demo ? "/" : "/login");
+    window.location.replace(dest);
   }
 
   return (
@@ -108,9 +109,14 @@ function Shell({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="panel mt-auto flex items-center gap-3 p-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-accent-1 to-accent-3 text-xs font-semibold text-accent-fg">
-            {initials(user?.name)}
-          </span>
+          {user?.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- remote Google avatar; next/image would need remotePatterns
+            <img src={user.avatarUrl} alt="" referrerPolicy="no-referrer" className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-line-strong" />
+          ) : (
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-accent-1 to-accent-3 text-xs font-semibold text-accent-fg">
+              {initials(user?.name)}
+            </span>
+          )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{user?.name}</p>
             <p className="truncate text-[11px] text-subtle">{user?.demo ? "Demo account" : user?.email}</p>

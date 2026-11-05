@@ -1,6 +1,8 @@
 package com.arthos;
 
 import com.arthos.auth.AuthController;
+import com.arthos.auth.GoogleTokenVerifier;
+import com.arthos.auth.GoogleTokenVerifier.GoogleIdentity;
 import com.arthos.auth.JwtService;
 import com.arthos.config.SecurityConfig;
 import com.arthos.demo.DemoRateLimiter;
@@ -40,6 +42,7 @@ class ApiWebLayerTest {
     @MockitoBean ExpenseRepository expenses;
     @MockitoBean MongoTemplate mongo;
     @MockitoBean DemoService demoService;
+    @MockitoBean GoogleTokenVerifier google;
 
     @Test
     void registerIssuesTokenAndNormalizesEmail() throws Exception {
@@ -120,6 +123,72 @@ class ApiWebLayerTest {
                 .andExpect(status().isTooManyRequests());
         mvc.perform(post("/api/auth/demo").with(r -> { r.setRemoteAddr("198.51.100.1"); return r; }))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void googleSignInCreatesThenLinksAccounts() throws Exception {
+        when(google.enabled()).thenReturn(true);
+        when(google.verify("tok-new")).thenReturn(Optional.of(new GoogleIdentity("g-1", "New.Person@Gmail.com", true, "New Person", "https://pic")));
+        when(users.findByGoogleId("g-1")).thenReturn(Optional.empty());
+        when(users.findByEmail("new.person@gmail.com")).thenReturn(Optional.empty());
+        when(users.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            if (u.getId() == null) u.setId("u-new");
+            return u;
+        });
+        mvc.perform(post("/api/auth/google").contentType(MediaType.APPLICATION_JSON).content("{\"credential\":\"tok-new\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty())
+                .andExpect(jsonPath("$.user.email").value("new.person@gmail.com"))
+                .andExpect(jsonPath("$.user.name").value("New Person"))
+                .andExpect(jsonPath("$.user.avatarUrl").value("https://pic"))
+                .andExpect(jsonPath("$.user.onboardingCompleted").value(false));
+
+        // existing password account with the same verified email gets linked, keeping its profile
+        User existing = user();
+        existing.setOnboardingCompleted(true);
+        when(google.verify("tok-link")).thenReturn(Optional.of(new GoogleIdentity("g-2", "asha@example.com", true, "Asha G", null)));
+        when(users.findByGoogleId("g-2")).thenReturn(Optional.empty());
+        when(users.findByEmail("asha@example.com")).thenReturn(Optional.of(existing));
+        mvc.perform(post("/api/auth/google").contentType(MediaType.APPLICATION_JSON).content("{\"credential\":\"tok-link\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.id").value("u1"))
+                .andExpect(jsonPath("$.user.name").value("Asha"))
+                .andExpect(jsonPath("$.user.onboardingCompleted").value(true));
+        org.junit.jupiter.api.Assertions.assertEquals("g-2", existing.getGoogleId());
+    }
+
+    @Test
+    void googleSignInRejectsBadOrUnverifiedTokens() throws Exception {
+        when(google.enabled()).thenReturn(true);
+        when(google.verify("bad")).thenReturn(Optional.empty());
+        when(google.verify("unverified")).thenReturn(Optional.of(new GoogleIdentity("g-3", "x@y.com", false, "X", null)));
+        mvc.perform(post("/api/auth/google").contentType(MediaType.APPLICATION_JSON).content("{\"credential\":\"bad\"}"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/auth/google").contentType(MediaType.APPLICATION_JSON).content("{\"credential\":\"unverified\"}"))
+                .andExpect(status().isUnauthorized());
+
+        when(google.enabled()).thenReturn(false);
+        mvc.perform(post("/api/auth/google").contentType(MediaType.APPLICATION_JSON).content("{\"credential\":\"bad\"}"))
+                .andExpect(status().isServiceUnavailable());
+    }
+
+    @Test
+    void providersExposeGoogleClientIdOnlyWhenConfigured() throws Exception {
+        when(google.webClientId()).thenReturn(Optional.empty());
+        mvc.perform(get("/api/auth/providers")).andExpect(status().isOk()).andExpect(jsonPath("$.google").doesNotExist());
+        when(google.webClientId()).thenReturn(Optional.of("123.apps.googleusercontent.com"));
+        mvc.perform(get("/api/auth/providers")).andExpect(jsonPath("$.google.clientId").value("123.apps.googleusercontent.com"));
+    }
+
+    @Test
+    void passwordLoginRefusesGoogleOnlyAccounts() throws Exception {
+        User g = user();
+        g.setPasswordHash(null);
+        when(users.findByEmail("asha@example.com")).thenReturn(Optional.of(g));
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"asha@example.com\",\"password\":\"whatever123\"}"))
+                .andExpect(status().isUnauthorized());
     }
 
     private static User user() {

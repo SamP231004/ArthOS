@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DemoButton } from "./demo-button";
+import { GoogleButton } from "./google-button";
 import { Logo } from "./logo";
 import { ThemeToggle } from "./theme-toggle";
 import { Button, ErrorNote, Field, Input } from "./ui";
@@ -55,15 +56,17 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
 
   return (
-    <div className="grid min-h-screen flex-1 lg:grid-cols-[1.05fr_1fr]">
+    <div className="relative grid min-h-screen flex-1 lg:grid-cols-[1fr_1fr]">
+      <div className="absolute right-4 top-4 z-10 sm:right-6 sm:top-6">
+        <ThemeToggle />
+      </div>
       {/* Brand panel */}
-      <aside className="noise relative hidden overflow-hidden border-r border-line bg-bg-2 lg:flex lg:flex-col lg:justify-between lg:p-12">
+      <aside className="noise relative hidden overflow-hidden border-r border-line bg-bg-2 lg:flex lg:items-center lg:justify-center lg:p-12">
         <div className="bg-grid pointer-events-none absolute inset-0 opacity-60" />
         <div className="pointer-events-none absolute -left-40 top-1/3 h-[520px] w-[520px] rounded-full bg-brand/10 blur-[120px]" />
-        <div className="relative">
-          <Logo />
-        </div>
-        <div className="relative max-w-md">
+        <div className="relative flex min-h-[560px] w-full max-w-md flex-col justify-between gap-12 py-4">
+        <Logo />
+        <div>
           <p className="eyebrow">Personal financial OS</p>
           <h2 className="mt-5 font-display text-5xl leading-[1.05] tracking-tight">
             <span className="text-silver">Every rupee,</span>
@@ -81,7 +84,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             ))}
           </ul>
         </div>
-        <div className="panel relative max-w-sm p-5">
+        <div className="panel max-w-sm p-5">
           <p className="text-xs text-subtle">This month · remaining</p>
           <p className="tabular mt-1 text-3xl font-semibold">₹38,420</p>
           <div className="mt-3 h-1.5 rounded-full bg-fg/5">
@@ -89,16 +92,21 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           </div>
           <p className="mt-2 text-xs text-income">41.8% of income kept so far</p>
         </div>
+        </div>
       </aside>
 
       {/* Form */}
       <div className="relative flex items-center justify-center px-4 py-14 sm:px-8">
-        <ThemeToggle className="absolute right-4 top-4 sm:right-6 sm:top-6" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(50%_100%_at_50%_0%,rgb(var(--glow)/0.08),transparent)] lg:hidden" />
         <div className="relative w-full max-w-[400px] animate-fade-up">
           <div className="mb-10 lg:hidden">
             <Logo />
           </div>
+          {user?.demo && (
+            <p className="mb-6 rounded-xl border border-brand/25 bg-brand/[0.06] px-3.5 py-2.5 text-sm text-fg-2">
+              {mode === "register" ? "Create your account to keep your own data. Your demo sandbox stays available until it expires." : "You're in a demo session — sign in to switch to your own account."}
+            </p>
+          )}
           <h1 className="font-display text-4xl tracking-tight">{mode === "login" ? "Welcome back" : "Create your account"}</h1>
           <p className="mt-2 text-sm text-muted">
             {mode === "login" ? "Sign in to your financial control center." : "Free during early access. Takes under a minute."}
@@ -134,8 +142,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             <span className="hairline flex-1" /> or <span className="hairline flex-1" />
           </div>
 
-          <div className="flex flex-col items-stretch [&>span]:w-full [&_button]:w-full">
-            <DemoButton size="lg">Explore with demo data</DemoButton>
+          <div className="space-y-3">
+            <GoogleButton onError={setError} />
+            <div className="flex flex-col items-stretch [&>span]:w-full [&_button]:w-full">
+              <DemoButton size="lg">Explore with demo data</DemoButton>
+            </div>
           </div>
           <p className="mt-2.5 text-center text-xs text-subtle">A private sandbox with 3 months of sample data. No sign-up.</p>
 

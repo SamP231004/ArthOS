@@ -12,7 +12,7 @@ const cats = [
 /** Static, hand-tuned replica of the dashboard for the hero. Not wired to data. */
 export function ProductPreview() {
   return (
-    <div className="relative mx-auto w-full max-w-5xl">
+    <div className="relative mx-auto w-full max-w-6xl">
       {/* glow */}
       <div className="pointer-events-none absolute -inset-x-10 -top-10 bottom-0 rounded-[3rem] bg-[radial-gradient(60%_50%_at_50%_20%,rgb(var(--glow)/0.22),transparent_70%)] blur-2xl" />
 

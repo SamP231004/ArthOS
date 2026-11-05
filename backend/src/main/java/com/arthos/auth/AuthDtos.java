@@ -36,4 +36,12 @@ public final class AuthDtos {
     }
 
     public record AuthResponse(String token, Instant expiresAt, UserResponse user) {}
+
+    /** The ID token ("credential") returned by Google Identity Services. */
+    public record GoogleLoginRequest(@NotBlank String credential) {}
+
+    /** Which sign-in methods the clients should offer. */
+    public record ProvidersResponse(GoogleProvider google) {
+        public record GoogleProvider(String clientId) {}
+    }
 }

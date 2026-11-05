@@ -62,7 +62,7 @@ export default function Home() {
           <div className="bg-grid pointer-events-none absolute inset-0" />
           <div className="pointer-events-none absolute left-1/2 top-0 h-[620px] w-[1100px] -translate-x-1/2 glow-top" />
 
-          <div className="relative mx-auto max-w-6xl px-4 text-center sm:px-6">
+          <div className="relative mx-auto max-w-7xl px-4 text-center sm:px-6">
             <a href="#roadmap" className="mx-auto inline-flex animate-fade-up items-center gap-2 rounded-full border border-line bg-fg/[0.03] py-1 pl-1 pr-3 text-xs text-muted backdrop-blur transition hover:border-line-strong">
               <span className="rounded-full bg-income/15 px-2 py-0.5 font-medium text-income">Live</span>
               Phase 2 · The budget engine is here
@@ -73,7 +73,7 @@ export default function Home() {
               <span className="text-silver">Take control</span>
               <br />
               <span className="text-silver">of your </span>
-              <span className="font-deva text-accent">अर्थ</span>
+              <span className="font-deva text-accent inline-block px-[0.04em] pt-[0.22em] -mt-[0.22em] leading-[1.15]">अर्थ</span>
             </h1>
 
             <p className="mx-auto mt-7 max-w-xl animate-fade-up text-base leading-relaxed text-muted [animation-delay:160ms] sm:text-lg">
@@ -99,7 +99,7 @@ export default function Home() {
         </section>
 
         {/* ───────────── Four questions ───────────── */}
-        <section className="relative mx-auto max-w-6xl px-4 py-24 sm:px-6">
+        <section className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6">
           <div className="max-w-2xl">
             <p className="eyebrow">The promise</p>
             <h2 className="mt-4 font-display text-4xl leading-tight tracking-tight sm:text-5xl">
@@ -119,7 +119,7 @@ export default function Home() {
         </section>
 
         {/* ───────────── Bento ───────────── */}
-        <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
+        <section className="mx-auto max-w-7xl px-4 pb-24 sm:px-6">
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div className="max-w-2xl">
               <p className="eyebrow">Product</p>
@@ -230,7 +230,7 @@ export default function Home() {
 
         {/* ───────────── Budget simulator ───────────── */}
         <section id="budget" className="scroll-mt-28 border-y border-line bg-bg-2/60">
-          <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
+          <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
             <div className="max-w-2xl">
               <p className="eyebrow">The budget engine</p>
               <h2 className="mt-4 font-display text-4xl leading-tight tracking-tight sm:text-5xl">
@@ -245,7 +245,7 @@ export default function Home() {
         </section>
 
         {/* ───────────── Security ───────────── */}
-        <section className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
+        <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
           <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:items-center">
             <div>
               <p className="eyebrow">Private by design</p>
@@ -272,7 +272,7 @@ export default function Home() {
         </section>
 
         {/* ───────────── Roadmap ───────────── */}
-        <section id="roadmap" className="mx-auto max-w-6xl scroll-mt-28 px-4 pb-24 sm:px-6">
+        <section id="roadmap" className="mx-auto max-w-7xl scroll-mt-28 px-4 pb-24 sm:px-6">
           <p className="eyebrow">Roadmap</p>
           <h2 className="mt-4 font-display text-4xl tracking-tight sm:text-5xl">Built in the open, phase by phase.</h2>
           <div className="mt-12 grid gap-px overflow-hidden rounded-3xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
@@ -311,7 +311,7 @@ export default function Home() {
 
         {/* ───────────── CTA ───────────── */}
         <section className="px-4 pb-24 sm:px-6">
-          <div className="panel-glow noise relative mx-auto max-w-6xl overflow-hidden px-6 py-20 text-center">
+          <div className="panel-glow noise relative mx-auto max-w-7xl overflow-hidden px-6 py-20 text-center">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_60%_at_50%_100%,rgb(var(--glow)/0.18),transparent_70%)]" />
             <div className="relative">
               <h2 className="font-display text-5xl tracking-tight sm:text-6xl">
@@ -330,7 +330,7 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-line">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-14 sm:px-6 md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-14 sm:px-6 md:flex-row md:items-center md:justify-between">
           <div>
             <Logo />
             <p className="mt-4 max-w-xs text-sm text-muted">The personal financial operating system. Take control of your अर्थ.</p>

@@ -37,6 +37,8 @@ export function DemoButton({
       router.push("/dashboard");
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Couldn't start the demo");
+    } finally {
+      // Next.js preserves this page's state when the user navigates back, so never leave it "loading".
       setLoading(false);
     }
   }

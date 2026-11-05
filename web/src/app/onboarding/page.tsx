@@ -38,7 +38,9 @@ function Onboarding() {
 
   return (
     <div className="relative flex flex-1 items-center justify-center px-4 py-12">
-      <ThemeToggle className="absolute right-4 top-4" />
+      <div className="absolute right-4 top-4 z-10">
+        <ThemeToggle />
+      </div>
       <div className="pointer-events-none absolute inset-x-0 top-0 h-96 bg-[radial-gradient(50%_100%_at_50%_0%,rgb(var(--glow)/0.1),transparent)]" />
       <div className="relative w-full max-w-md">
         <div className="mb-8 flex justify-center">

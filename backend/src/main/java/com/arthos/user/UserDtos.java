@@ -15,6 +15,7 @@ public final class UserDtos {
             String id,
             String name,
             String email,
+            String avatarUrl,
             String currency,
             String timezone,
             BigDecimal monthlyIncomeTarget,
@@ -24,7 +25,7 @@ public final class UserDtos {
             Instant createdAt) {
 
         public static UserResponse from(User u) {
-            return new UserResponse(u.getId(), u.getName(), u.getEmail(), u.getCurrency(), u.getTimezone(),
+            return new UserResponse(u.getId(), u.getName(), u.getEmail(), u.getAvatarUrl(), u.getCurrency(), u.getTimezone(),
                     u.getMonthlyIncomeTarget(), u.isOnboardingCompleted(), u.isDemo(), u.getExpiresAt(), u.getCreatedAt());
         }
     }

@@ -1,6 +1,8 @@
 package com.arthos.auth;
 
 import com.arthos.auth.AuthDtos.AuthResponse;
+import com.arthos.auth.AuthDtos.GoogleLoginRequest;
+import com.arthos.auth.AuthDtos.ProvidersResponse;
 import com.arthos.auth.AuthDtos.LoginRequest;
 import com.arthos.auth.AuthDtos.RegisterRequest;
 import com.arthos.common.ApiException;
@@ -27,13 +29,16 @@ public class AuthController {
     private final JwtService jwt;
     private final DemoService demo;
     private final DemoRateLimiter demoLimiter;
+    private final GoogleTokenVerifier google;
 
-    public AuthController(UserRepository users, PasswordEncoder encoder, JwtService jwt, DemoService demo, DemoRateLimiter demoLimiter) {
+    public AuthController(UserRepository users, PasswordEncoder encoder, JwtService jwt, DemoService demo, DemoRateLimiter demoLimiter,
+                          GoogleTokenVerifier google) {
         this.users = users;
         this.encoder = encoder;
         this.jwt = jwt;
         this.demo = demo;
         this.demoLimiter = demoLimiter;
+        this.google = google;
     }
 
     @PostMapping("/register")
@@ -57,8 +62,44 @@ public class AuthController {
     @PostMapping("/login")
     AuthResponse login(@Valid @RequestBody LoginRequest req) {
         User u = users.findByEmail(normalize(req.email()))
-                .filter(found -> encoder.matches(req.password(), found.getPasswordHash()))
+                .filter(found -> found.getPasswordHash() != null && encoder.matches(req.password(), found.getPasswordHash()))
                 .orElseThrow(() -> ApiException.unauthorized("Invalid email or password"));
+        return respond(u);
+    }
+
+    @GetMapping("/providers")
+    ProvidersResponse providers() {
+        return new ProvidersResponse(google.webClientId().map(ProvidersResponse.GoogleProvider::new).orElse(null));
+    }
+
+    /**
+     * Sign in with Google. Finds the account by Google ID, else links an existing account with the same verified
+     * email, else creates a new account (which then goes through onboarding).
+     */
+    @PostMapping("/google")
+    AuthResponse google(@Valid @RequestBody GoogleLoginRequest req) {
+        if (!google.enabled()) throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "Google sign-in isn't configured yet");
+        GoogleTokenVerifier.GoogleIdentity id = google.verify(req.credential())
+                .orElseThrow(() -> ApiException.unauthorized("Google sign-in failed. Please try again."));
+        if (id.email() == null || !id.emailVerified()) throw ApiException.unauthorized("Your Google email address isn't verified");
+
+        String email = normalize(id.email());
+        User u = users.findByGoogleId(id.subject())
+                .or(() -> users.findByEmail(email).filter(existing -> !existing.isDemo()))
+                .orElseGet(User::new);
+        boolean isNew = u.getId() == null;
+        if (isNew) {
+            u.setEmail(email);
+            u.setName(id.name() != null && !id.name().isBlank() ? id.name().trim() : email.substring(0, email.indexOf('@')));
+        }
+        u.setGoogleId(id.subject());
+        if (id.picture() != null) u.setAvatarUrl(id.picture());
+        try {
+            u = users.save(u);
+        } catch (DuplicateKeyException e) {
+            // two first-time sign-ins racing: the other request created the account
+            u = users.findByGoogleId(id.subject()).orElseThrow(() -> ApiException.conflict("Please try signing in again"));
+        }
         return respond(u);
     }
 
