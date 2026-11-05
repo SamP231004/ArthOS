@@ -97,7 +97,7 @@ public final class BudgetCalculator {
                 week, status,
                 limit.signum() > 0 ? spentMonth.multiply(HUNDRED).divide(limit, 1, RoundingMode.HALF_UP) : null,
                 BigDecimal.valueOf(t).multiply(HUNDRED).divide(BigDecimal.valueOf(n), 1, RoundingMode.HALF_UP),
-                projected, days);
+                projected, days, List.of());
     }
 
     /** Allowance for each day 1..n under the given mode, as of the spending recorded so far. */

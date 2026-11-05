@@ -52,7 +52,18 @@ public record BudgetStatus(
         /** Straight-line projection of month-end spending at the current pace; null before any day elapsed. */
         BigDecimal projectedSpend,
 
-        List<Day> days) {
+        List<Day> days,
+
+        /** Today's figures under every mode, for a one-tap mode switch (filled by the controller). */
+        List<ModeOption> modes) {
+
+    public record ModeOption(BudgetMode mode, BigDecimal todayAllowance, BigDecimal todayRemaining, BigDecimal weekRemaining, Status status) {}
+
+    public BudgetStatus withModes(List<ModeOption> options) {
+        return new BudgetStatus(month, configured, inherited, inheritedFrom, limit, mode, excludedCategories, daysInMonth, dayOfMonth,
+                daysRemaining, spentMonth, spentToday, spentBeforeToday, excludedSpent, remainingMonth, baseDailyAllowance,
+                todayAllowance, todayRemaining, week, status, usedPct, elapsedPct, projectedSpend, days, options);
+    }
 
     public enum Status {
         /** Comfortably within today's (or this week's) allowance. */
@@ -78,6 +89,6 @@ public record BudgetStatus(
 
     public static BudgetStatus notConfigured(String month) {
         return new BudgetStatus(month, false, false, null, null, null, List.of(), 0, 0, 0, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, List.of());
+                null, null, null, null, null, null, null, null, null, List.of(), List.of());
     }
 }

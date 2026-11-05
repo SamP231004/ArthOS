@@ -111,7 +111,11 @@ export type BudgetStatus = {
   elapsedPct: number;
   projectedSpend?: number;
   days: { date: string; spent: number; allowance: number; status: BudgetDayStatus }[];
+  /** Today's figures under every mode, so the page can preview a switch before it's made. */
+  modes?: BudgetModeOption[];
 };
+
+export type BudgetModeOption = { mode: BudgetMode; todayAllowance: number; todayRemaining: number; weekRemaining: number; status: BudgetState };
 
 export type BudgetInput = { limit: number; mode: BudgetMode; excludedCategories: ExpenseCategory[] };
 

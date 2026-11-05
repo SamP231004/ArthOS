@@ -98,8 +98,14 @@ public class BudgetController {
         Optional<Budget> budget = own.isPresent() ? own : budgets.findFirstByUserIdAndMonthKeyLessThanOrderByMonthKeyDesc(userId, key);
         if (budget.isEmpty()) return BudgetStatus.notConfigured(key);
         Budget b = budget.get();
-        return BudgetCalculator.calculate(ym, LocalDate.now(zone), b.getLimit(), b.getMode(), b.getExcludedCategories(),
-                expenses.findByUserIdAndMonthKeyOrderByDateDescCreatedAtDesc(userId, key),
-                own.isPresent() ? null : b.getMonthKey());
+        var monthExpenses = expenses.findByUserIdAndMonthKeyOrderByDateDescCreatedAtDesc(userId, key);
+        LocalDate today = LocalDate.now(zone);
+        String from = own.isPresent() ? null : b.getMonthKey();
+        BudgetStatus main = BudgetCalculator.calculate(ym, today, b.getLimit(), b.getMode(), b.getExcludedCategories(), monthExpenses, from);
+        List<BudgetStatus.ModeOption> options = java.util.Arrays.stream(BudgetMode.values()).map(m -> {
+            BudgetStatus s = m == b.getMode() ? main : BudgetCalculator.calculate(ym, today, b.getLimit(), m, b.getExcludedCategories(), monthExpenses, from);
+            return new BudgetStatus.ModeOption(m, s.todayAllowance(), s.todayRemaining(), s.week().remaining(), s.status());
+        }).toList();
+        return main.withModes(options);
     }
 }

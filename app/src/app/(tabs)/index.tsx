@@ -91,7 +91,7 @@ function Summary({ s }: { s: MonthSummary }) {
       <PortfolioMini />
 
       <View style={st.grid}>
-        <Stat label="Income" value={money(s.totalIncome, cur)} color={c.income} sub={s.incomeTargetProgress != null ? `${s.incomeTargetProgress}% of target` : `${s.incomeCount} entries`} />
+        <Stat label="Income" value={money(s.totalIncome, cur)} color={c.income} sub={`${s.incomeCount} ${s.incomeCount === 1 ? 'entry' : 'entries'}`} />
         <Stat label="Spent" value={money(s.totalExpense, cur)} color={c.expense} sub={`${s.expenseCount} transactions`} />
         <Stat label="Spent today" value={money(s.todayExpense, cur)} sub={`Avg ${money(s.averageDailyExpense, cur)}/day`} />
         <Stat label="Savings rate" value={s.savingsRate != null ? `${s.savingsRate}%` : '—'} color={c.brand} sub="of income kept" />

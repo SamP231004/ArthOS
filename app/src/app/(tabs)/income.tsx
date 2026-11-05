@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth-store';
 import { dayLabel, label, money } from '@/lib/format';
 import { useIncomes } from '@/lib/queries';
 import { useMonth } from '@/lib/ui-store';
-import { alpha, R, S, useTheme } from '@/theme';
+import { S, useTheme } from '@/theme';
 
 export default function IncomeTab() {
   const { c } = useTheme();
@@ -18,8 +18,8 @@ export default function IncomeTab() {
   const cur = user?.currency ?? 'INR';
   const { data, isLoading, error, refetch, isRefetching } = useIncomes(month);
   const total = (data ?? []).reduce((a, i) => a + i.amount, 0);
-  const target = user?.monthlyIncomeTarget;
-  const pct = target ? Math.min(100, (total / target) * 100) : null;
+  const recurring = (data ?? []).filter((i) => i.recurring).reduce((a, i) => a + i.amount, 0);
+  const count = data?.length ?? 0;
 
   return (
     <Screen refreshing={isRefetching} onRefresh={refetch}>
@@ -35,16 +35,10 @@ export default function IncomeTab() {
       <Card glow style={{ gap: S.xs }}>
         <T variant="muted">↙ Received this month</T>
         <T variant="big" style={{ color: c.income }}>{money(total, cur)}</T>
-        {pct != null ? (
-          <>
-            <View style={{ height: 8, borderRadius: R.pill, backgroundColor: alpha(c.fg, 0.06), overflow: 'hidden', marginTop: S.sm }}>
-              <View style={{ height: 8, width: `${pct}%`, backgroundColor: c.income, borderRadius: R.pill }} />
-            </View>
-            <T variant="small">{pct.toFixed(0)}% of your {money(target, cur)} target</T>
-          </>
-        ) : (
-          <T variant="small">Set a monthly target in Settings to track progress</T>
-        )}
+        <T variant="small">
+          {count} {count === 1 ? 'entry' : 'entries'}
+          {recurring > 0 ? ` · ${money(recurring, cur)} recurring` : ''}
+        </T>
       </Card>
 
       {isLoading ? (

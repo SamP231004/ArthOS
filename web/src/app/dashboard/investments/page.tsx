@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ChartPie, ChevronDown, LayoutGrid, Minus, Pencil, Plus, RefreshCw, Trash2, TrendingUp, Wallet } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ArrowDown, ArrowUp, ChartPie, ChevronDown, ChevronsUpDown, LayoutGrid, Minus, Pencil, Plus, RefreshCw, Trash2, TrendingUp, Wallet } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Donut } from "@/components/charts";
 import { AddHoldingModal } from "@/components/invest/add-holding";
 import { ContributionChart } from "@/components/invest/contribution-chart";
@@ -11,6 +11,7 @@ import { ValueChart } from "@/components/invest/value-chart";
 import { PageHeader } from "@/components/page-header";
 import { Button, ErrorNote, Modal, Skeleton } from "@/components/ui";
 import { money } from "@/lib/format";
+import { indianMarketStatus } from "@/lib/market";
 import { useDeleteHolding, usePortfolio } from "@/lib/queries";
 import type { AssetClass, HoldingView, Portfolio, PortfolioRange } from "@/lib/types";
 
@@ -101,6 +102,11 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
   const pl = current - invested;
   const day = items.reduce((s, h) => s + h.dayChange, 0);
   const asOf = p.pricesAsOf ? new Date(p.pricesAsOf).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : null;
+  const [market, setMarket] = useState(() => indianMarketStatus());
+  useEffect(() => {
+    const t = setInterval(() => setMarket(indianMarketStatus()), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   return (
     <div className="grid items-start gap-6 2xl:grid-cols-[1fr_300px]">
@@ -123,8 +129,12 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
           <Cell k="Today" v={`${day >= 0 ? "+" : "−"}${money(Math.abs(day))}`} tone={tone(day)} sub={signedPct(current - day ? (day / (current - day)) * 100 : 0)} />
           <div className="col-span-full flex items-center justify-between border-t border-line px-4 py-2.5 text-xs text-muted">
             <span className="flex items-center gap-2">
-              <span className={`h-2 w-2 rounded-full ${asOf ? "bg-income" : "bg-warn"}`} />
-              {asOf ? `Live prices · ${asOf}` : "Prices pending"}
+              <span className={`relative flex h-2 w-2 rounded-full ${market.open ? "bg-income" : "bg-subtle"}`}>
+                {market.open && <span className="absolute inset-0 animate-ping rounded-full bg-income opacity-60" />}
+              </span>
+              <span className={market.open ? "font-medium text-income" : "font-medium text-fg-2"}>{market.label}</span>
+              <span className="text-subtle">· {market.detail}</span>
+              <span className="text-subtle">· {asOf ? `prices as of ${asOf}` : "prices pending"}</span>
             </span>
             <button onClick={refresh} className="rounded-lg p-1 text-subtle transition hover:bg-fg/5 hover:text-fg" aria-label="Refresh prices">
               <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
@@ -138,10 +148,10 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
             <thead>
               <tr className="border-b border-line text-left text-[11px] uppercase tracking-[0.12em] text-subtle">
                 {COLS.map(([k, l]) => (
-                  <th key={k} className={`py-3 font-medium ${k === "name" ? "pl-2 pr-3" : "px-3 text-right"}`}>
+                  <th key={k} className={`py-3 font-medium ${k === "name" ? "pl-2 pr-3" : k === "invested" ? "px-3 text-center" : "px-3 text-right"}`}>
                     <button onClick={() => setSort((s) => ({ key: k, dir: s.key === k ? (s.dir === 1 ? -1 : 1) : k === "name" ? 1 : -1 }))} className="inline-flex items-center gap-1 hover:text-fg">
                       {l}
-                      {sort.key === k && (sort.dir === 1 ? <ArrowUp size={11} /> : <ArrowDown size={11} />)}
+                      {sort.key === k ? sort.dir === 1 ? <ArrowUp size={11} /> : <ArrowDown size={11} /> : <ChevronsUpDown size={11} className="opacity-40" />}
                     </button>
                   </th>
                 ))}
@@ -166,9 +176,9 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
                       </div>
                     </td>
                     <td className="tabular px-3 py-3.5 text-right">{fmtQty(h.quantity)}{h.assetClass === "GOLD" ? " g" : ""}</td>
-                    <td className="px-3 py-3.5 text-right">
+                    <td className="px-3 py-3.5 text-center">
                       <p className="tabular">{money(h.invested)}</p>
-                      <div className="mt-1 flex items-center justify-end gap-2">
+                      <div className="mt-1 flex items-center justify-center gap-2">
                         <span className="h-1 w-16 overflow-hidden rounded-full bg-fg/[0.07]">
                           <span className="block h-full rounded-full" style={{ width: `${share}%`, background: M.color }} />
                         </span>

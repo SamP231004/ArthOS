@@ -141,11 +141,7 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
       {/* KPIs */}
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi icon={ArrowDownLeft} tone="text-income" label="Income" value={fmt(s.totalIncome)}>
-          {s.incomeTargetProgress != null ? (
-            <span className="text-income">{s.incomeTargetProgress}% <span className="text-subtle">of target</span></span>
-          ) : (
-            <span className="text-subtle">{s.incomeCount} entries</span>
-          )}
+          <span className="text-subtle">{s.incomeCount} {s.incomeCount === 1 ? "entry" : "entries"}</span>
         </Kpi>
         <Kpi icon={Receipt} tone="text-expense" label="Spent" value={fmt(s.totalExpense)} aside={<Sparkline values={s.dailyExpense.map((d) => d.amount)} color="var(--expense)" className="h-8 w-20" />}>
           <span className="text-subtle">{s.expenseCount} transactions</span>

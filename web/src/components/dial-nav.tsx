@@ -78,7 +78,7 @@ export function DialNav({ items, activeHref }: { items: DialItem[]; activeHref: 
           onClick={() => setOpen((o) => !o)}
           aria-label={open ? "Close navigation" : `Navigation: ${active.label}. Open menu`}
           aria-expanded={open}
-          className="absolute bottom-3 left-1/2 grid h-[62px] w-[62px] -translate-x-1/2 place-items-center rounded-full btn-primary transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+          className="absolute bottom-3 left-1/2 grid h-[62px] w-[62px] place-items-center rounded-full btn-primary transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
           style={{ transform: `translateX(-50%) rotate(${open ? 135 : 0}deg)` }}
         >
           {/* segmented bezel */}

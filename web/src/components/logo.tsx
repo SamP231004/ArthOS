@@ -1,21 +1,29 @@
 import Link from "next/link";
 import { ARTH_OFFSET, ARTH_PATH } from "@/lib/brand";
 
-/** ArthOS mark: "अर्थ" in ivory on a crimson tile. Outlined SVG, so it is identical at every size and theme. */
+/**
+ * ArthOS mark: "अर्थ" in ivory on a crimson tile. The tile is a CSS gradient (not an SVG <linearGradient>): a gradient
+ * id shared by several marks resolves to the first one in the document, and when that copy sits in a hidden sidebar
+ * the browser paints no tile at all, leaving the ivory glyph invisible on the light theme.
+ */
 export function LogoMark({ size = 32, className = "" }: { size?: number; className?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" className={`shrink-0 ${className}`} role="img" aria-label="अर्थ">
-      <defs>
-        <linearGradient id="arthos-mark" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#c43a35" />
-          <stop offset="0.55" stopColor="#a31c1b" />
-          <stop offset="1" stopColor="#6e1110" />
-        </linearGradient>
-      </defs>
-      <rect width="32" height="32" rx="9" fill="url(#arthos-mark)" />
-      <rect x="0.3" y="0.3" width="31.4" height="31.4" rx="8.7" fill="none" stroke="#fff" strokeOpacity="0.16" strokeWidth="0.6" />
-      <path transform={`translate(${ARTH_OFFSET.x} ${ARTH_OFFSET.y})`} fill="#fff7f3" d={ARTH_PATH} />
-    </svg>
+    <span
+      role="img"
+      aria-label="अर्थ"
+      className={`inline-grid shrink-0 place-items-center ${className}`}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: (size * 9) / 32,
+        background: "linear-gradient(135deg, #c43a35 0%, #a31c1b 55%, #6e1110 100%)",
+        boxShadow: "inset 0 0 0 0.6px rgb(255 255 255 / 0.16)",
+      }}
+    >
+      <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
+        <path transform={`translate(${ARTH_OFFSET.x} ${ARTH_OFFSET.y})`} fill="#fff7f3" d={ARTH_PATH} />
+      </svg>
+    </span>
   );
 }
 

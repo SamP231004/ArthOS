@@ -16,7 +16,6 @@ export default function SettingsPage() {
     name: user.name,
     currency: user.currency,
     timezone: user.timezone,
-    monthlyIncomeTarget: user.monthlyIncomeTarget?.toString() ?? "",
   });
   const [saved, setSaved] = useState(false);
 
@@ -28,7 +27,6 @@ export default function SettingsPage() {
         name: f.name,
         currency: f.currency,
         timezone: f.timezone,
-        monthlyIncomeTarget: f.monthlyIncomeTarget === "" ? undefined : Number(f.monthlyIncomeTarget),
       });
       setSaved(true);
     } catch {
@@ -50,10 +48,7 @@ export default function SettingsPage() {
           </Field>
         </Section>
 
-        <Section title="Money" desc="Your earning target and display currency.">
-          <Field label="Monthly income target">
-            <Input type="number" min={0} step="0.01" value={f.monthlyIncomeTarget} onChange={(e) => setF({ ...f, monthlyIncomeTarget: e.target.value })} />
-          </Field>
+        <Section title="Money" desc="How amounts are shown, and when your day rolls over.">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Currency">
               <Select value={f.currency} onChange={(e) => setF({ ...f, currency: e.target.value })}>

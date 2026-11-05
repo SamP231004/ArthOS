@@ -58,7 +58,6 @@ public class DemoService {
         u.setName("Samarth Patel");
         u.setEmail("demo-" + tag + "@demo.arthos.app");
         u.setPasswordHash(encoder.encode(UUID.randomUUID().toString())); // unguessable: demo accounts can't log in by password
-        u.setMonthlyIncomeTarget(BigDecimal.valueOf(100_000));
         u.setOnboardingCompleted(true);
         u.setDemo(true);
         u.setExpiresAt(expiresAt);

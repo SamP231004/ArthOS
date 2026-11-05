@@ -37,13 +37,13 @@ export default function BudgetTab() {
       ) : !b ? null : editing || !b.configured ? (
         <BudgetEditor month={month} current={b} onDone={() => setEditing(false)} canCancel={b.configured} />
       ) : (
-        <BudgetView b={b} fmt={fmt} />
+        <BudgetView b={b} fmt={fmt} month={month} />
       )}
     </Screen>
   );
 }
 
-function BudgetView({ b, fmt }: { b: BudgetStatus; fmt: (n: number) => string }) {
+function BudgetView({ b, fmt, month }: { b: BudgetStatus; fmt: (n: number) => string; month: string }) {
   const { c } = useTheme();
   const s = useStyles(make);
   const toneOf = (t: Tone) => ({ income: c.income, gold: c.warn, expense: c.expense, neutral: c.muted, info: c.info })[t];
@@ -60,6 +60,8 @@ function BudgetView({ b, fmt }: { b: BudgetStatus; fmt: (n: number) => string })
           <Text style={{ color: b.status === 'CAUTION' ? c.fg2 : c.expense, fontSize: 13, fontFamily: F.ui }}>⚠ {warn}</Text>
         </View>
       )}
+
+      <ModeSwitch b={b} fmt={fmt} month={month} />
 
       <Card glow style={{ gap: S.sm }}>
         <View style={{ flexDirection: 'row', gap: S.sm, flexWrap: 'wrap' }}>
@@ -106,6 +108,54 @@ function BudgetView({ b, fmt }: { b: BudgetStatus; fmt: (n: number) => string })
         <Calendar b={b} fmt={fmt} />
       </Card>
     </>
+  );
+}
+
+/** One-tap switch between the three modes, each previewing today's number under it. */
+function ModeSwitch({ b, fmt, month }: { b: BudgetStatus; fmt: (n: number) => string; month: string }) {
+  const { c } = useTheme();
+  const s = useStyles(make);
+  const save = useSaveBudget(month);
+  const [pending, setPending] = useState<BudgetMode | null>(null);
+  const closed = b.daysRemaining === 0;
+  const upcoming = b.status === 'UPCOMING';
+  const byMode = new Map((b.modes ?? []).map((m) => [m.mode, m]));
+  const pick = (mode: BudgetMode) => {
+    if (mode === b.mode || save.isPending) return;
+    setPending(mode);
+    save.mutate({ limit: b.limit, mode, excludedCategories: b.excludedCategories }, { onSettled: () => setPending(null) });
+  };
+  const short = { ADAPTIVE_DAILY: 'Adaptive', FIXED_DAILY: 'Fixed', WEEKLY: 'Weekly' } as const;
+
+  return (
+    <View style={{ gap: S.xs }}>
+      <T variant="label">Pace my budget</T>
+      <View style={s.switch} accessibilityRole="radiogroup">
+        {BUDGET_MODES.map((m) => {
+          const active = m === b.mode;
+          const o = byMode.get(m);
+          const value = !o ? null : m === 'WEEKLY' ? o.weekRemaining : upcoming ? o.todayAllowance : o.todayRemaining;
+          return (
+            <Pressable
+              key={m}
+              onPress={() => pick(m)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: active, busy: pending === m }}
+              style={[s.seg, active && s.segActive]}>
+              <Text style={{ color: active ? c.fg : c.fg2, fontFamily: active ? F.uiSemibold : F.uiMedium, fontSize: 13 }}>{short[m]}</Text>
+              {!closed && value != null && (
+                <Text style={{ color: value < 0 ? c.expense : active ? c.brand : c.muted, fontFamily: F.uiSemibold, fontSize: 12, marginTop: 2 }} numberOfLines={1} adjustsFontSizeToFit>
+                  {pending === m ? 'Switching…' : fmt(Math.abs(value))}
+                </Text>
+              )}
+              <Text style={{ color: c.subtle, fontFamily: F.ui, fontSize: 10, marginTop: 1 }}>{m === 'WEEKLY' ? (value != null && value < 0 ? 'over this week' : 'this week') : upcoming ? 'per day' : 'today'}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <T variant="small">{MODE_META[b.mode].short} · tap to switch</T>
+      <ErrorNote message={save.error?.message} />
+    </View>
   );
 }
 
@@ -197,6 +247,9 @@ const make = (c: Palette) =>
     marker: { position: 'absolute', top: 0, bottom: 0, width: 2, backgroundColor: c.fg },
     stepNo: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: c.lineStrong, color: c.muted, fontSize: 11, textAlign: 'center', lineHeight: 20, fontFamily: F.mono },
     grid: { flexDirection: 'row', flexWrap: 'wrap' },
+    switch: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: R.lg, borderWidth: 1, borderColor: c.line, backgroundColor: alpha(c.fg, 0.02) },
+    seg: { flex: 1, alignItems: 'center', paddingVertical: S.sm, paddingHorizontal: 4, borderRadius: R.md, borderWidth: 1, borderColor: 'transparent' },
+    segActive: { backgroundColor: c.surface, borderColor: alpha(c.brand, 0.45) },
     cell: { width: `${100 / 7}%`, aspectRatio: 1, padding: 2 },
     weekday: { color: c.subtle, fontSize: 11, textAlign: 'center', aspectRatio: undefined, paddingVertical: 4, fontFamily: F.uiMedium },
     day: { flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: R.sm },

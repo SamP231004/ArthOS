@@ -22,6 +22,7 @@ const nav = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
+const SETTINGS = "/dashboard/settings";
 const soon = ["Automation", "Insights", "Widgets"];
 
 function initials(name?: string) {
@@ -103,7 +104,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
         {!collapsed && <p className="mt-9 px-3 text-[10.5px] font-medium uppercase tracking-[0.16em] text-subtle">Money</p>}
         <nav className={`${collapsed ? "mt-6" : "mt-2"} space-y-0.5`}>
-          {nav.map((n) => {
+          {nav.filter((n) => n.href !== SETTINGS).map((n) => {
             const active = isActive(n.href);
             return (
               <Link
@@ -136,7 +137,25 @@ function Shell({ children }: { children: React.ReactNode }) {
           </>
         )}
 
-        <div className={`mt-auto flex items-center ${collapsed ? "flex-col gap-2" : "panel gap-3 p-3"}`}>
+        {(() => {
+          const n = nav.find((x) => x.href === SETTINGS)!;
+          const active = isActive(n.href);
+          return (
+            <Link
+              href={n.href}
+              title={collapsed ? n.label : undefined}
+              className={`group relative mb-2 mt-auto flex items-center rounded-xl py-2.5 text-sm transition ${collapsed ? "justify-center px-0" : "gap-3 px-3"} ${
+                active ? "bg-fg/[0.06] text-fg" : "text-muted hover:bg-fg/[0.03] hover:text-fg"
+              }`}
+            >
+              {active && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-brand" />}
+              <n.icon size={collapsed ? 19 : 17} className={active ? "text-brand" : "text-subtle group-hover:text-fg-2"} />
+              {!collapsed && n.label}
+            </Link>
+          );
+        })()}
+
+        <div className={`flex items-center ${collapsed ? "flex-col gap-2" : "panel gap-3 p-3"}`}>
           {user?.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- remote Google avatar; next/image would need remotePatterns
             <img src={user.avatarUrl} alt="" referrerPolicy="no-referrer" title={collapsed ? user.name : undefined} className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-line-strong" />

@@ -16,7 +16,6 @@ export default function SettingsScreen() {
   const { user, signOut } = useAuth();
   const update = useUpdateProfile();
   const [name, setName] = useState(user?.name ?? '');
-  const [target, setTarget] = useState(user?.monthlyIncomeTarget?.toString() ?? '');
   const [currency, setCurrency] = useState(user?.currency ?? 'INR');
 
   if (!user) return null;
@@ -50,7 +49,6 @@ export default function SettingsScreen() {
 
       <Card style={{ gap: S.md }}>
         <T variant="label">Money</T>
-        <Input label="Monthly income target" value={target} keyboardType="decimal-pad" onChangeText={(t) => setTarget(t.replace(/[^0-9.]/g, ''))} />
         <View style={{ gap: S.sm }}>
           <T variant="label">Currency</T>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.sm }}>
@@ -64,7 +62,7 @@ export default function SettingsScreen() {
         <Button
           title={update.isSuccess ? 'Saved ✓' : 'Save changes'}
           loading={update.isPending}
-          onPress={() => update.mutate({ name: name.trim() || user.name, currency, monthlyIncomeTarget: target === '' ? undefined : Number(target) })}
+          onPress={() => update.mutate({ name: name.trim() || user.name, currency })}
         />
       </Card>
 

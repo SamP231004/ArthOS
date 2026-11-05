@@ -15,7 +15,6 @@ function Onboarding() {
   const router = useRouter();
   const user = useAuth((s) => s.user)!;
   const update = useUpdateProfile();
-  const [target, setTarget] = useState(user.monthlyIncomeTarget?.toString() ?? "");
   const [currency, setCurrency] = useState(user.currency ?? "INR");
   const [timezone, setTimezone] = useState(
     user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata",
@@ -27,7 +26,6 @@ function Onboarding() {
       await update.mutateAsync({
         currency,
         timezone,
-        monthlyIncomeTarget: target ? Number(target) : undefined,
         onboardingCompleted: true,
       });
       router.replace("/dashboard");
@@ -48,14 +46,11 @@ function Onboarding() {
         </div>
         <form onSubmit={finish} className="panel-glow animate-fade-up p-7 sm:p-9">
           <p className="eyebrow">Step 1 of 1 · Setup</p>
-          <h1 className="mt-3 font-display text-4xl leading-tight tracking-tight">Hi {user.name.split(" ")[0]}, let&apos;s set up your month</h1>
+          <h1 className="mt-3 font-display text-4xl leading-tight tracking-tight">Hi {user.name.split(" ")[0]}, let&apos;s get you set up</h1>
           <p className="mt-2 text-sm text-muted">
-            A monthly earning target lets ArthOS show how close you are each month. You can change it anytime.
+            Pick your currency and timezone — they decide how money is shown and when your day and month roll over.
           </p>
           <div className="mt-6 space-y-4">
-            <Field label="Monthly income target" hint="Optional — what you expect to earn in a typical month">
-              <Input type="number" inputMode="decimal" min={0} step="0.01" placeholder="e.g. 80000" value={target} onChange={(e) => setTarget(e.target.value)} />
-            </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Currency">
                 <Select value={currency} onChange={(e) => setCurrency(e.target.value)}>

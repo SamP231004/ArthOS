@@ -7,6 +7,7 @@ import { Screen } from '@/components/screen';
 import { Button, Card, Chip, ErrorNote, Loading, Segmented, T } from '@/components/ui';
 import { money } from '@/lib/format';
 import { CLASS_META, fmtQty, signedPct, toneColor } from '@/lib/invest-meta';
+import { indianMarketStatus } from '@/lib/market';
 import { usePortfolio } from '@/lib/queries';
 import type { AssetClass, HoldingView, Portfolio, PortfolioRange } from '@/lib/types';
 import { alpha, F, R, S, useStyles, useTheme, type Palette } from '@/theme';
@@ -63,6 +64,7 @@ function Holdings({ p }: { p: Portfolio }) {
   const day = items.reduce((x, h) => x + h.dayChange, 0);
   const asOf = p.pricesAsOf ? new Date(p.pricesAsOf).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : null;
   const t = p.totals;
+  const market = indianMarketStatus();
 
   return (
     <>
@@ -91,8 +93,10 @@ function Holdings({ p }: { p: Portfolio }) {
         <Cell k="Today" v={`${day >= 0 ? '+' : '−'}${money(Math.abs(day), 'INR', true)}`} color={toneColor(c, day)} sub={signedPct(current - day ? (day / (current - day)) * 100 : 0)} />
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: asOf ? c.income : c.warn }} />
-        <T variant="small">{asOf ? `Live prices · ${asOf} · pull to refresh` : 'Prices pending'}</T>
+        <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: market.open ? c.income : c.subtle }} />
+        <T variant="small" style={{ flex: 1 }}>
+          <Text style={{ color: market.open ? c.income : c.fg2, fontFamily: F.uiSemibold }}>{market.label}</Text> · {market.detail} · {asOf ? `prices as of ${asOf}` : 'prices pending'}
+        </T>
       </View>
 
       <Card style={{ padding: 0 }}>

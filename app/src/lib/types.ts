@@ -110,7 +110,11 @@ export type BudgetStatus = {
   elapsedPct: number;
   projectedSpend?: number;
   days: { date: string; spent: number; allowance: number; status: BudgetDayStatus }[];
+  /** Today's figures under every mode, so the switcher can preview each before it's chosen. */
+  modes?: BudgetModeOption[];
 };
+
+export type BudgetModeOption = { mode: BudgetMode; todayAllowance: number; todayRemaining: number; weekRemaining: number; status: BudgetState };
 
 export type BudgetInput = { limit: number; mode: BudgetMode; excludedCategories: ExpenseCategory[] };
 // ---- Investments (Phase 3) — mirrors backend/src/main/java/com/arthos/portfolio/PortfolioView.java ----

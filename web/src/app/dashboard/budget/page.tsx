@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, CalendarDays, Gauge, Info, Pencil, Repeat, Sparkles, TrendingUp } from "lucide-react";
+import { AlertTriangle, CalendarDays, Check, Gauge, Info, Loader2, Pencil, Repeat, Sparkles, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { BudgetCalendar } from "@/components/budget/budget-calendar";
 import { BudgetModal } from "@/components/budget/budget-form";
@@ -10,9 +10,9 @@ import { PageHeader } from "@/components/page-header";
 import { Badge, Button, ErrorNote, Skeleton } from "@/components/ui";
 import { useAuth } from "@/lib/auth-store";
 import { dayLabel, label, money, monthLabel } from "@/lib/format";
-import { useBudget } from "@/lib/queries";
+import { useBudget, useSaveBudget } from "@/lib/queries";
 import { useMonth } from "@/lib/ui-store";
-import { BUDGET_MODES, type BudgetStatus } from "@/lib/types";
+import { BUDGET_MODES, type BudgetMode, type BudgetStatus } from "@/lib/types";
 
 export default function BudgetPage() {
   const month = useMonth();
@@ -42,7 +42,7 @@ export default function BudgetPage() {
       ) : b && !b.configured ? (
         <Setup onStart={() => setEditing(true)} />
       ) : (
-        b && <Configured b={b} fmt={fmt} />
+        b && <Configured b={b} fmt={fmt} month={month} />
       )}
 
       <BudgetModal open={editing} onClose={() => setEditing(false)} month={month} current={b} />
@@ -74,7 +74,7 @@ function Setup({ onStart }: { onStart: () => void }) {
   );
 }
 
-function Configured({ b, fmt }: { b: BudgetStatus; fmt: (n: number) => string }) {
+function Configured({ b, fmt, month }: { b: BudgetStatus; fmt: (n: number) => string; month: string }) {
   const st = STATUS_META[b.status];
   const warn = warningFor(b, fmt);
   const steps = explain(b, fmt);
@@ -96,6 +96,8 @@ function Configured({ b, fmt }: { b: BudgetStatus; fmt: (n: number) => string })
           {warn}
         </div>
       )}
+
+      <ModeSwitch b={b} fmt={fmt} month={month} />
 
       {/* Hero */}
       <section className="panel-glow overflow-hidden p-6 sm:p-8">
@@ -199,6 +201,75 @@ function Configured({ b, fmt }: { b: BudgetStatus; fmt: (n: number) => string })
         </div>
       </section>
     </>
+  );
+}
+
+/**
+ * One-tap switch between the three budget modes. Each option previews what today would look like under it, so the
+ * choice is made on real numbers rather than descriptions.
+ */
+function ModeSwitch({ b, fmt, month }: { b: BudgetStatus; fmt: (n: number) => string; month: string }) {
+  const save = useSaveBudget(month);
+  const [pending, setPending] = useState<BudgetMode | null>(null);
+  const closed = b.daysRemaining === 0;
+  const upcoming = b.status === "UPCOMING";
+  const byMode = new Map((b.modes ?? []).map((m) => [m.mode, m]));
+
+  const pick = (mode: BudgetMode) => {
+    if (mode === b.mode || save.isPending) return;
+    setPending(mode);
+    save.mutate({ limit: b.limit, mode, excludedCategories: b.excludedCategories }, { onSettled: () => setPending(null) });
+  };
+
+  return (
+    <section aria-label="Budget mode">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-sm font-medium text-fg-2">How should your budget pace you?</h2>
+        <p className="text-xs text-subtle">{closed ? "Switching re-reads the month under the new mode." : "Tap to switch — today's number updates instantly."}</p>
+      </div>
+      <div role="radiogroup" className="grid gap-2 rounded-2xl border border-line bg-fg/[0.02] p-1.5 sm:grid-cols-3">
+        {BUDGET_MODES.map((m) => {
+          const active = m === b.mode;
+          const o = byMode.get(m);
+          const value = !o ? null : m === "WEEKLY" ? o.weekRemaining : upcoming ? o.todayAllowance : o.todayRemaining;
+          const over = value != null && value < 0;
+          const caption = m === "WEEKLY" ? (over ? "over this week" : "left this week") : upcoming ? "per day from day 1" : "safe today";
+          const delta = o && !active && !closed && value != null ? value - (b.mode === "WEEKLY" ? b.week.remaining : upcoming ? b.todayAllowance : b.todayRemaining) : null;
+          return (
+            <button
+              key={m}
+              role="radio"
+              aria-checked={active}
+              onClick={() => pick(m)}
+              disabled={save.isPending}
+              className={`group relative rounded-xl px-4 py-3.5 text-left transition ${
+                active ? "bg-surface shadow-[0_1px_0_rgb(255_255_255/0.04)_inset,0_8px_24px_-12px_rgb(0_0_0/0.45)] ring-1 ring-brand/40" : "hover:bg-fg/[0.04]"
+              } disabled:cursor-wait`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className={`text-sm font-medium ${active ? "text-fg" : "text-fg-2"}`}>{MODE_META[m].name}</span>
+                <span className={`grid h-5 w-5 place-items-center rounded-full border transition ${active ? "border-brand bg-brand text-white" : "border-line-strong text-transparent group-hover:border-fg/30"}`}>
+                  {pending === m ? <Loader2 size={12} className="animate-spin text-fg-2" /> : <Check size={12} strokeWidth={3} />}
+                </span>
+              </div>
+              <p className="mt-0.5 text-[11px] text-subtle">{MODE_META[m].short}</p>
+              {!closed && value != null && (
+                <p className="mt-3 flex items-baseline gap-1.5">
+                  <span className={`tabular text-xl font-semibold tracking-tight ${over ? "text-expense" : active ? "text-silver" : "text-fg-2"}`}>{fmt(Math.abs(value))}</span>
+                  <span className="text-[11px] text-subtle">{caption}</span>
+                </p>
+              )}
+              {delta != null && Math.abs(delta) >= 1 && m !== "WEEKLY" && b.mode !== "WEEKLY" && (
+                <p className={`mt-0.5 text-[11px] ${delta > 0 ? "text-income" : "text-expense"}`}>
+                  {delta > 0 ? "+" : "−"}{fmt(Math.abs(delta))} vs now
+                </p>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {save.error && <p className="mt-2 text-xs text-expense">{save.error.message}</p>}
+    </section>
   );
 }
 
