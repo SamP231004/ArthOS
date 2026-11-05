@@ -2,6 +2,7 @@
 
 import { ArrowDown, ArrowUp, ChevronsUpDown, Download, Repeat } from "lucide-react";
 import { money } from "@/lib/format";
+import { EXPENSE_CATEGORIES, INCOME_TYPES } from "@/lib/types";
 
 /** Building blocks shared by the Income and Expenses ledgers. */
 
@@ -103,6 +104,12 @@ export function ExportButton({ filename, rows }: { filename: string; rows: (stri
       <Download size={15} /> Export
     </button>
   );
+}
+
+/** Chart colour for an expense category or income type, matching the Income/Expenses ledgers. */
+export function tagColor(kind: "INCOME" | "EXPENSE", tag: string): string {
+  const list: readonly string[] = kind === "INCOME" ? INCOME_TYPES : EXPENSE_CATEGORIES;
+  return `var(--c${(Math.max(0, list.indexOf(tag)) % 8) + 1})`;
 }
 
 export function initials(name: string) {

@@ -3,13 +3,13 @@
 import { ArrowDownLeft, ArrowRight, ArrowUpRight, PiggyBank, Plus, Receipt, Sparkles, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { Avatar } from "@/components/avatar";
 import { BudgetCard } from "@/components/budget/budget-card";
 import { PortfolioCard } from "@/components/invest/portfolio-card";
 import { CATEGORY_COLORS, DailyBars, Donut, Sparkline, SpendCurve } from "@/components/charts";
 import { MonthPicker } from "@/components/month-picker";
 import { ExpenseModal, IncomeModal } from "@/components/transaction-forms";
-import { Badge, Button, ErrorNote, Skeleton } from "@/components/ui";
+import { Button, ErrorNote, Skeleton } from "@/components/ui";
+import { initials, tagColor } from "@/components/ledger";
 import { useAuth } from "@/lib/auth-store";
 import { dayLabel, label, money } from "@/lib/format";
 import { useSummary } from "@/lib/queries";
@@ -199,32 +199,131 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
         </div>
       </section>
 
-      {/* Recent */}
-      <section className="panel overflow-hidden">
-        <div className="flex items-center justify-between px-6 pt-6">
+      <RecentActivity s={s} fmt={fmt} />
+    </>
+  );
+}
+
+/** The latest entries across income and expenses, in the same ledger style as the Income/Expenses pages. */
+function RecentActivity({ s, fmt }: { s: MonthSummary; fmt: (n: number) => string }) {
+  const [kind, setKind] = useState<"ALL" | "INCOME" | "EXPENSE">("ALL");
+  const rows = s.recent.filter((r) => kind === "ALL" || r.kind === kind);
+  const net = rows.reduce((a, r) => a + (r.kind === "INCOME" ? r.amount : -r.amount), 0);
+  const href = (k: string) => (k === "INCOME" ? "/dashboard/income" : "/dashboard/expenses");
+  const tabs = [
+    { k: "ALL", label: "All", n: s.recent.length },
+    { k: "INCOME", label: "In", n: s.recent.filter((r) => r.kind === "INCOME").length },
+    { k: "EXPENSE", label: "Out", n: s.recent.filter((r) => r.kind === "EXPENSE").length },
+  ] as const;
+
+  return (
+    <section className="panel overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-6">
+        <div>
           <h2 className="font-medium">Recent activity</h2>
-          <Link href="/dashboard/expenses" className="flex items-center gap-1 text-xs text-muted transition hover:text-brand">
+          <p className="mt-0.5 text-xs text-subtle">Latest entries this month · open one to see its ledger</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div role="tablist" className="flex rounded-xl border border-line bg-fg/[0.02] p-0.5 text-xs">
+            {tabs.map((t) => (
+              <button
+                key={t.k}
+                role="tab"
+                aria-selected={kind === t.k}
+                onClick={() => setKind(t.k)}
+                className={`rounded-lg px-3 py-1.5 font-medium transition ${kind === t.k ? "bg-surface text-fg shadow-sm ring-1 ring-line-strong" : "text-muted hover:text-fg"}`}
+              >
+                {t.label} <span className="tabular text-subtle">{t.n}</span>
+              </button>
+            ))}
+          </div>
+          <Link href={href(kind)} className="flex items-center gap-1 text-xs text-muted transition hover:text-brand">
             View all <ArrowRight size={12} />
           </Link>
         </div>
-        <ul className="mt-3 divide-y divide-line">
-          {s.recent.map((r) => (
-            <li key={`${r.kind}-${r.id}`} className="flex items-center gap-4 px-6 py-3.5 transition hover:bg-fg/[0.02]">
-              <Avatar text={r.label} income={r.kind === "INCOME"} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{r.label}</p>
-                <p className="text-xs text-subtle">{dayLabel(r.date)}</p>
-              </div>
-              <Badge tone={r.kind === "INCOME" ? "income" : "neutral"}>{label(r.tag)}</Badge>
-              <span className={`tabular w-28 text-right text-sm font-medium ${r.kind === "INCOME" ? "text-income" : ""}`}>
-                {r.kind === "INCOME" ? "+" : "−"}
-                {fmt(r.amount)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </>
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="px-6 py-10 text-center text-sm text-muted">Nothing here yet this month.</p>
+      ) : (
+        <>
+          <div className="mt-4 hidden overflow-x-auto md:block">
+            <table className="w-full whitespace-nowrap text-sm">
+              <thead className="text-[11px] text-subtle">
+                <tr className="border-y border-line bg-fg/[0.015]">
+                  <th className="px-6 py-2.5 text-left font-medium">Date</th>
+                  <th className="px-3 py-2.5 text-left font-medium">Description</th>
+                  <th className="px-3 py-2.5 text-left font-medium">Category</th>
+                  <th className="px-3 py-2.5 text-left font-medium">Flow</th>
+                  <th className="px-6 py-2.5 text-right font-medium">Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {rows.map((r) => {
+                  const color = tagColor(r.kind, r.tag);
+                  const income = r.kind === "INCOME";
+                  return (
+                    <tr key={`${r.kind}-${r.id}`} className="relative transition hover:bg-fg/[0.025]">
+                      <td className="px-6 py-3.5 text-muted">
+                        <Link href={href(r.kind)} className="after:absolute after:inset-0" aria-label={`${r.label}, ${fmt(r.amount)}`}>{dayLabel(r.date)}</Link>
+                      </td>
+                      <td className="px-3 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-[11px] font-semibold" style={{ background: `color-mix(in oklab, ${color} 14%, transparent)`, color }}>
+                            {initials(r.label)}
+                          </span>
+                          <span className="max-w-[320px] truncate font-medium">{r.label}</span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3.5">
+                        <span className="inline-flex items-center gap-1.5 text-fg-2"><span className="h-2 w-2 rounded-full" style={{ background: color }} />{label(r.tag)}</span>
+                      </td>
+                      <td className="px-3 py-3.5">
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${income ? "bg-income/10 text-income" : "bg-expense/10 text-expense"}`}>
+                          {income ? <ArrowDownLeft size={11} /> : <ArrowUpRight size={11} />} {income ? "In" : "Out"}
+                        </span>
+                      </td>
+                      <td className={`tabular px-6 py-3.5 text-right font-semibold ${income ? "text-income" : ""}`}>
+                        {income ? "+" : "−"}{fmt(r.amount)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-line-strong bg-fg/[0.02] text-sm">
+                  <td className="px-6 py-3 text-subtle" colSpan={4}>
+                    {kind === "ALL" ? "Net of" : "Total of"} {rows.length} shown · {s.incomeCount + s.expenseCount} entries this month
+                  </td>
+                  <td className={`tabular px-6 py-3 text-right font-semibold ${net >= 0 ? "text-income" : ""}`}>
+                    {net >= 0 ? "+" : "−"}{fmt(Math.abs(net))}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <ul className="mt-3 divide-y divide-line md:hidden">
+            {rows.map((r) => {
+              const color = tagColor(r.kind, r.tag);
+              const income = r.kind === "INCOME";
+              return (
+                <li key={`${r.kind}-${r.id}`}>
+                  <Link href={href(r.kind)} className="flex items-center gap-3 px-5 py-3.5">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-[11px] font-semibold" style={{ background: `color-mix(in oklab, ${color} 14%, transparent)`, color }}>{initials(r.label)}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">{r.label}</span>
+                      <span className="block truncate text-xs text-subtle">{label(r.tag)} · {dayLabel(r.date)}</span>
+                    </span>
+                    <span className={`tabular text-sm font-semibold ${income ? "text-income" : ""}`}>{income ? "+" : "−"}{fmt(r.amount)}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+    </section>
   );
 }
 
