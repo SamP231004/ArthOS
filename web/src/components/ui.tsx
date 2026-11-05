@@ -94,10 +94,11 @@ export function Modal({ open, title, subtitle, onClose, children }: { open: bool
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="panel-glow max-h-[92vh] w-full animate-sheet overflow-y-auto rounded-b-none p-6 sm:max-w-lg sm:rounded-3xl sm:p-7"
+        className="panel-glow flex max-h-[92vh] w-full animate-sheet flex-col overflow-hidden rounded-b-none sm:max-w-lg sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-6 flex items-start justify-between gap-4">
+        {/* header stays put; only the body scrolls, with a slim scrollbar inset from the rounded corners */}
+        <div className="flex shrink-0 items-start justify-between gap-4 px-6 pb-5 pt-6 sm:px-7 sm:pt-7">
           <div>
             <h2 className="font-display text-2xl">{title}</h2>
             {subtitle && <p className="mt-0.5 text-sm text-muted">{subtitle}</p>}
@@ -106,7 +107,7 @@ export function Modal({ open, title, subtitle, onClose, children }: { open: bool
             <X size={18} />
           </button>
         </div>
-        {children}
+        <div className="scroll-slim mb-2 mr-1.5 min-h-0 flex-1 overflow-y-auto pb-4 pl-6 pr-4.5 sm:mb-3 sm:pl-7 sm:pr-5.5">{children}</div>
       </div>
     </div>
   );
