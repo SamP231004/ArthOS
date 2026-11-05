@@ -42,6 +42,14 @@ Money is stored as `Decimal128`.
 A budget is set once and carries forward to later months until changed. The engine is pure and unit-tested in
 [`BudgetCalculator`](backend/src/main/java/com/arthos/budget/BudgetCalculator.java).
 
+## Phase 3 — Investments (this release)
+
+Stocks & ETFs (NSE/BSE via Yahoo Finance), mutual funds (AMFI NAVs via mfapi.in), gold (COMEX spot × USD/INR, per gram,
+24K/22K, digital/physical/SGB) and bonds (coupon, maturity, manual or face-value pricing). Holdings keep dated buy/sell
+lots, so the engine computes average-cost P&L, realised gains, day change, per-holding and portfolio XIRR, allocation by
+class and horizon, and a value-vs-invested history. Price providers sit behind a swappable interface with a Mongo-backed
+cache and a 15-minute refresh job. APIs: `/api/portfolio`, `/api/holdings` (+ `/lots`), `/api/market/search|quote`.
+
 ## Run locally
 
 **1. Backend** (needs MongoDB: local, Docker, or a free Atlas cluster)
@@ -122,5 +130,5 @@ Set `EXPO_PUBLIC_API_URL` to the production backend URL first, either in `.env` 
 
 ## Roadmap
 
-~~Phase 2 Budget engine~~ ✅ → 3 Investments → 4 OCR automation → 5 Insights → 6 Widgets → 7 AI assistant → 8 Scale.
+~~Phase 2 Budget engine~~ ✅ → ~~3 Investments~~ ✅ → 4 OCR automation → 5 Insights → 6 Widgets → 7 AI assistant → 8 Scale.
 See the blueprint for details.
