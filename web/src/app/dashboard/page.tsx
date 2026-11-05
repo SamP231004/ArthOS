@@ -207,7 +207,7 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
         </div>
         <ul className="mt-3 divide-y divide-line">
           {s.recent.map((r) => (
-            <li key={`${r.kind}-${r.id}`} className="flex items-center gap-4 px-6 py-3.5 transition hover:bg-white/[0.02]">
+            <li key={`${r.kind}-${r.id}`} className="flex items-center gap-4 px-6 py-3.5 transition hover:bg-fg/[0.02]">
               <Avatar text={r.label} income={r.kind === "INCOME"} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{r.label}</p>
@@ -228,9 +228,9 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
 
 function Meter({ label, value, tone }: { label: string; value: number; tone: "income" | "expense" | "gold" | "neutral" }) {
   const bg = {
-    income: "linear-gradient(90deg, #2a9d6b, var(--income))",
-    expense: "linear-gradient(90deg, #c24d4d, var(--expense))",
-    gold: "linear-gradient(90deg, var(--gold-3), var(--gold-1))",
+    income: "linear-gradient(90deg, var(--income-2), var(--income))",
+    expense: "linear-gradient(90deg, var(--expense-2), var(--expense))",
+    gold: "linear-gradient(90deg, var(--accent-3), var(--accent-1))",
     neutral: "rgb(255 255 255 / 0.25)",
   }[tone];
   return (
@@ -239,7 +239,7 @@ function Meter({ label, value, tone }: { label: string; value: number; tone: "in
         <span className="text-muted">{label}</span>
         <span className="tabular text-fg-2">{value.toFixed(0)}%</span>
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+      <div className="h-1.5 overflow-hidden rounded-full bg-fg/[0.06]">
         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${value}%`, background: bg }} />
       </div>
     </div>
@@ -264,7 +264,7 @@ function Kpi({
   return (
     <div className="panel p-5">
       <div className="flex items-start justify-between">
-        <span className={`grid h-9 w-9 place-items-center rounded-xl bg-white/[0.04] ring-1 ring-inset ring-white/[0.06] ${tone}`}>
+        <span className={`grid h-9 w-9 place-items-center rounded-xl bg-fg/[0.04] ring-1 ring-inset ring-fg/[0.06] ${tone}`}>
           <Icon size={16} />
         </span>
         {aside}

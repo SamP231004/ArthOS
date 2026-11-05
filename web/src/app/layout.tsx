@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif, Noto_Sans_Devanagari } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { themeInitScript } from "@/lib/theme-script";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -14,11 +15,19 @@ export const metadata: Metadata = {
     "ArthOS is a personal financial operating system. Income, expenses, budgets, investments and net worth — in one calm, intelligent place.",
 };
 
-export const viewport: Viewport = { themeColor: "#060608" };
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#06110c" },
+    { media: "(prefers-color-scheme: light)", color: "#f6f4ef" },
+  ],
+};
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${geistSans.variable} ${geistMono.variable} ${serif.variable} ${deva.variable} h-full antialiased`}>
+    <html lang="en" data-theme="dark" data-scroll-behavior="smooth" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} ${serif.variable} ${deva.variable} h-full antialiased`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
       </body>

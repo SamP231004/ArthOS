@@ -59,7 +59,7 @@ export function Chip({ label, active, onPress }: { label: string; active?: boole
       style={[styles.chip, active && { borderColor: C.brand, backgroundColor: C.brand + '26' }]}
       accessibilityRole="button"
       accessibilityState={{ selected: !!active }}>
-      <Text style={[styles.chipText, active && { color: C.brand }]}>{label}</Text>
+      <Text style={[styles.chipText, active && { color: C.brandText }]}>{label}</Text>
     </Pressable>
   );
 }

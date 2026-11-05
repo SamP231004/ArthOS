@@ -4,7 +4,7 @@ import { C } from '@/constants/theme';
 
 export default function TabsLayout() {
   return (
-    <NativeTabs backgroundColor={C.surface} indicatorColor={C.brand + '33'} labelStyle={{ default: { color: C.muted }, selected: { color: C.brand } }} iconColor={{ default: C.muted, selected: C.brand }}>
+    <NativeTabs backgroundColor={C.surface} indicatorColor={C.brand + '33'} labelStyle={{ default: { color: C.muted }, selected: { color: C.brandText } }} iconColor={{ default: C.muted, selected: C.brandText }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon src={require('@/assets/images/tabIcons/home.png')} renderingMode="template" />

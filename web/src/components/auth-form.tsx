@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DemoButton } from "./demo-button";
 import { Logo } from "./logo";
+import { ThemeToggle } from "./theme-toggle";
 import { Button, ErrorNote, Field, Input } from "./ui";
 import { api, ApiError } from "@/lib/api";
 import { useAuth, useHydrated } from "@/lib/auth-store";
@@ -67,7 +68,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           <h2 className="mt-5 font-display text-5xl leading-[1.05] tracking-tight">
             <span className="text-silver">Every rupee,</span>
             <br />
-            <span className="italic text-gold">in motion.</span>
+            <span className="italic text-accent">in motion.</span>
           </h2>
           <ul className="mt-10 space-y-3.5">
             {perks.map((p) => (
@@ -83,8 +84,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         <div className="panel relative max-w-sm p-5">
           <p className="text-xs text-subtle">This month · remaining</p>
           <p className="tabular mt-1 text-3xl font-semibold">₹38,420</p>
-          <div className="mt-3 h-1.5 rounded-full bg-white/5">
-            <div className="h-full w-[58%] rounded-full bg-gradient-to-r from-gold-3 to-gold-1" />
+          <div className="mt-3 h-1.5 rounded-full bg-fg/5">
+            <div className="h-full w-[58%] rounded-full bg-gradient-to-r from-accent-3 to-accent-1" />
           </div>
           <p className="mt-2 text-xs text-income">41.8% of income kept so far</p>
         </div>
@@ -92,7 +93,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
       {/* Form */}
       <div className="relative flex items-center justify-center px-4 py-14 sm:px-8">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(50%_100%_at_50%_0%,rgb(227_191_118/0.08),transparent)] lg:hidden" />
+        <ThemeToggle className="absolute right-4 top-4 sm:right-6 sm:top-6" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(50%_100%_at_50%_0%,rgb(var(--glow)/0.08),transparent)] lg:hidden" />
         <div className="relative w-full max-w-[400px] animate-fade-up">
           <div className="mb-10 lg:hidden">
             <Logo />
@@ -105,7 +107,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           <form onSubmit={submit} className="mt-9 space-y-4">
             {mode === "register" && (
               <Field label="Full name" error={fieldErrors.name}>
-                <Input value={form.name} onChange={set("name")} autoComplete="name" required maxLength={80} placeholder="Aarav Mehta" />
+                <Input value={form.name} onChange={set("name")} autoComplete="name" required maxLength={80} placeholder="Samarth Patel" />
               </Field>
             )}
             <Field label="Email" error={fieldErrors.email}>

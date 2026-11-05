@@ -1,6 +1,6 @@
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 
 import { Screen } from './screen';
 import { Button, ErrorNote, Input, T } from './ui';
@@ -52,11 +52,9 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Screen edges={['top', 'bottom']}>
         <View style={styles.brand}>
-          <View style={styles.mark}>
-            <Text style={styles.markText}>अ</Text>
-          </View>
+          <Image source={require('@/assets/images/icon-mark.png')} style={styles.mark} />
           <Text style={styles.wordmark}>
-            Arth<Text style={{ color: C.brand }}>OS</Text>
+            Arth<Text style={{ color: C.brandText }}>OS</Text>
           </Text>
           <T variant="muted">Take control of your अर्थ</T>
         </View>
@@ -99,7 +97,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6 }}>
           <T variant="muted">{mode === 'login' ? 'New to ArthOS?' : 'Already have an account?'}</T>
           <Link href={mode === 'login' ? '/register' : '/login'} replace>
-            <Text style={{ color: C.brand, fontSize: 14 }}>{mode === 'login' ? 'Create an account' : 'Sign in'}</Text>
+            <Text style={{ color: C.brandText, fontSize: 14 }}>{mode === 'login' ? 'Create an account' : 'Sign in'}</Text>
           </Link>
         </View>
       </Screen>
@@ -109,7 +107,6 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
 
 const styles = StyleSheet.create({
   brand: { alignItems: 'center', gap: S.sm, marginTop: S.xxl, marginBottom: S.lg },
-  mark: { width: 56, height: 56, borderRadius: R.lg, backgroundColor: C.brand, alignItems: 'center', justifyContent: 'center' },
-  markText: { color: C.brandFg, fontSize: 28, fontWeight: '700' },
+  mark: { width: 60, height: 60, borderRadius: R.lg },
   wordmark: { color: C.fg, fontSize: 28, fontWeight: '700', letterSpacing: -0.5 },
 });

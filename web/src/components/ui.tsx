@@ -52,7 +52,7 @@ export function Card({ className = "", children }: { className?: string; childre
 
 export function Badge({ tone = "neutral", children }: { tone?: "neutral" | "income" | "expense" | "info" | "gold"; children: React.ReactNode }) {
   const t = {
-    neutral: "bg-white/5 text-muted ring-white/10",
+    neutral: "bg-fg/5 text-muted ring-fg/10",
     income: "bg-income/10 text-income ring-income/20",
     expense: "bg-expense/10 text-expense ring-expense/20",
     info: "bg-info/10 text-info ring-info/20",
@@ -102,7 +102,7 @@ export function Modal({ open, title, subtitle, onClose, children }: { open: bool
             <h2 className="font-display text-2xl">{title}</h2>
             {subtitle && <p className="mt-0.5 text-sm text-muted">{subtitle}</p>}
           </div>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-muted transition hover:bg-white/5 hover:text-fg" aria-label="Close">
+          <button onClick={onClose} className="rounded-lg p-1.5 text-muted transition hover:bg-fg/5 hover:text-fg" aria-label="Close">
             <X size={18} />
           </button>
         </div>

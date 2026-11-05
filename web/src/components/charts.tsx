@@ -68,12 +68,12 @@ export function SpendCurve({
       >
         <defs>
           <linearGradient id={`${id}-a`} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0" stopColor="var(--gold-2)" stopOpacity="0.32" />
-            <stop offset="1" stopColor="var(--gold-2)" stopOpacity="0" />
+            <stop offset="0" stopColor="var(--accent-2)" stopOpacity="0.32" />
+            <stop offset="1" stopColor="var(--accent-2)" stopOpacity="0" />
           </linearGradient>
           <linearGradient id={`${id}-l`} x1="0" x2="1">
-            <stop offset="0" stopColor="var(--gold-3)" />
-            <stop offset="1" stopColor="var(--gold-1)" />
+            <stop offset="0" stopColor="var(--accent-3)" />
+            <stop offset="1" stopColor="var(--accent-1)" />
           </linearGradient>
         </defs>
         {[0.25, 0.5, 0.75].map((f) => (
@@ -89,7 +89,7 @@ export function SpendCurve({
         )}
         {area && <path d={area} fill={`url(#${id}-a)`} />}
         {line && <path d={line} fill="none" stroke={`url(#${id}-l)`} strokeWidth="2.5" strokeLinecap="round" />}
-        {pts.length > 0 && <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="4.5" fill="var(--gold-1)" stroke="var(--bg)" strokeWidth="2" />}
+        {pts.length > 0 && <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="4.5" fill="var(--accent-1)" stroke="var(--bg)" strokeWidth="2" />}
         {h != null && pts[h] && (
           <>
             <line x1={pts[h][0]} x2={pts[h][0]} y1={P.t} y2={H - P.b} stroke="var(--line-strong)" />
@@ -112,7 +112,7 @@ export function SpendCurve({
   );
 }
 
-export const CATEGORY_COLORS = ["#e3bf76", "#7aa2ff", "#3ecf8e", "#f27272", "#a78bfa", "#f59e0b", "#22d3ee", "#71717a"];
+export const CATEGORY_COLORS = ["var(--c1)", "var(--c4)", "var(--c2)", "var(--c6)", "var(--c5)", "var(--c3)", "var(--c7)", "var(--c8)"];
 
 export function Donut({ data, size = 168, center }: { data: { label: string; value: number }[]; size?: number; center?: React.ReactNode }) {
   const total = data.reduce((a, d) => a + d.value, 0) || 1;
@@ -147,7 +147,7 @@ export function Donut({ data, size = 168, center }: { data: { label: string; val
   );
 }
 
-export function Sparkline({ values, color = "var(--gold-2)", className = "h-8 w-24" }: { values: number[]; color?: string; className?: string }) {
+export function Sparkline({ values, color = "var(--accent-2)", className = "h-8 w-24" }: { values: number[]; color?: string; className?: string }) {
   const id = useId();
   if (values.length < 2) return <div className={className} />;
   const max = Math.max(...values, 1);
@@ -175,14 +175,14 @@ export function DailyBars({ data, format }: { data: { date: string; amount: numb
   return (
     <div className="relative">
       <div className="relative flex h-44 items-end gap-[3px]" onPointerLeave={() => setHover(null)}>
-        <div className="pointer-events-none absolute inset-x-0 border-t border-dashed border-white/15" style={{ bottom: `${(avg / max) * 100}%` }} />
+        <div className="pointer-events-none absolute inset-x-0 border-t border-dashed border-fg/15" style={{ bottom: `${(avg / max) * 100}%` }} />
         {data.map((d, i) => (
           <div key={d.date} className="flex h-full flex-1 items-end" onPointerEnter={() => setHover(i)}>
             <div
               className="w-full rounded-t-[3px] transition-colors"
               style={{
                 height: `${Math.max(2, (d.amount / max) * 100)}%`,
-                background: hover === i ? "var(--gold-1)" : d.amount > avg * 1.6 ? "var(--expense)" : "linear-gradient(180deg, var(--gold-2), var(--gold-3))",
+                background: hover === i ? "var(--accent-1)" : d.amount > avg * 1.6 ? "var(--expense)" : "linear-gradient(180deg, var(--accent-2), var(--accent-3))",
                 opacity: d.amount === 0 ? 0.2 : hover == null || hover === i ? 1 : 0.55,
               }}
             />

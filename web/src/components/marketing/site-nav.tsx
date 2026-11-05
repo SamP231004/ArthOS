@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "../logo";
 import { buttonClass } from "@/lib/button";
+import { ThemeToggle } from "../theme-toggle";
 
 const links = [
   ["Product", "#product"],
@@ -12,7 +13,7 @@ const links = [
 export function SiteNav() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between rounded-2xl border border-line bg-bg/60 py-2.5 pl-4 pr-2.5 shadow-[0_10px_40px_-10px_rgb(0_0_0/0.6)] backdrop-blur-xl">
+      <nav className="mx-auto flex max-w-6xl items-center justify-between rounded-2xl border border-line bg-bg/70 py-2.5 pl-4 pr-2.5 shadow-[0_10px_40px_-10px_rgb(0_0_0/0.6)] backdrop-blur-xl">
         <Logo />
         <div className="hidden items-center gap-1 md:flex">
           {links.map(([l, h]) => (
@@ -22,6 +23,7 @@ export function SiteNav() {
           ))}
         </div>
         <div className="flex items-center gap-1.5">
+          <ThemeToggle />
           <Link href="/login" className={buttonClass("ghost", "sm")}>
             Sign in
           </Link>

@@ -1,16 +1,17 @@
-// ArthOS design tokens: kept in sync with web/src/app/globals.css.
+// ArthOS design tokens (dark "Forest" theme), kept in sync with web/src/app/globals.css.
 export const C = {
-  bg: '#0a0d12',
-  surface: '#11161e',
-  surface2: '#171e28',
-  border: '#232c39',
-  fg: '#e8ecf2',
-  muted: '#8b96a8',
-  brand: '#f2c14e',
-  brandFg: '#1a1406',
-  income: '#34d399',
-  expense: '#f87171',
-  info: '#60a5fa',
+  bg: '#06110c', // forest green
+  surface: '#0c1a13',
+  surface2: '#11221a',
+  border: '#1e3329',
+  fg: '#f2efe8',
+  muted: '#a5b0a9',
+  brand: '#b52a27', // crimson for fills (buttons, active states)
+  brandText: '#ec7a74', // crimson tuned for text on forest
+  brandFg: '#fff7f3',
+  income: '#4cc38a',
+  expense: '#f07167',
+  info: '#84b6d8',
 } as const;
 
 export const S = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;

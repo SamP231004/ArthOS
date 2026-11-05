@@ -29,7 +29,7 @@ export default function Onboarding() {
   return (
     <Screen edges={['top', 'bottom']}>
       <View style={{ gap: S.xs, marginTop: S.xl }}>
-        <T variant="small" style={{ color: C.brand }}>Step 1 of 1</T>
+        <T variant="small" style={{ color: C.brandText }}>Step 1 of 1</T>
         <T variant="title">Hi {user.name.split(' ')[0]}, let&apos;s set up your month</T>
         <T variant="muted">A monthly earning target lets ArthOS show how close you are each month. You can change it anytime.</T>
       </View>

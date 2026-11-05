@@ -42,8 +42,8 @@ export default function IncomePage() {
           <p className="tabular mt-2 text-4xl font-semibold tracking-tight text-income sm:text-5xl">{money(total, cur)}</p>
           {pct != null ? (
             <>
-              <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/[0.06]">
-                <div className="h-full rounded-full bg-gradient-to-r from-[#2a9d6b] to-income transition-all duration-700" style={{ width: `${pct}%` }} />
+              <div className="mt-6 h-2 overflow-hidden rounded-full bg-fg/[0.06]">
+                <div className="h-full rounded-full bg-gradient-to-r from-[var(--income-2)] to-income transition-all duration-700" style={{ width: `${pct}%` }} />
               </div>
               <p className="mt-2 text-xs text-subtle">
                 {pct.toFixed(0)}% of your {money(target, cur)} target
@@ -71,7 +71,7 @@ export default function IncomePage() {
           <ul className="divide-y divide-line">
             {data.map((i) => (
               <li key={i.id}>
-                <button onClick={() => setEditing(i)} className="flex w-full items-center gap-4 px-6 py-4 text-left transition hover:bg-white/[0.025]">
+                <button onClick={() => setEditing(i)} className="flex w-full items-center gap-4 px-6 py-4 text-left transition hover:bg-fg/[0.025]">
                   <Avatar text={i.source} income />
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-2 truncate font-medium">
@@ -100,7 +100,7 @@ export default function IncomePage() {
 function MiniStat({ icon: Icon, label, value }: { icon: typeof Target; label: string; value: string }) {
   return (
     <div className="panel flex items-center gap-4 p-5">
-      <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/[0.04] text-brand ring-1 ring-inset ring-white/[0.06]">
+      <span className="grid h-10 w-10 place-items-center rounded-xl bg-fg/[0.04] text-brand ring-1 ring-inset ring-fg/[0.06]">
         <Icon size={17} />
       </span>
       <div>

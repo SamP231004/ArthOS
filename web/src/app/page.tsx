@@ -59,10 +59,10 @@ export default function Home() {
         {/* ───────────── Hero ───────────── */}
         <section className="noise relative pt-36 sm:pt-44">
           <div className="bg-grid pointer-events-none absolute inset-0" />
-          <div className="pointer-events-none absolute left-1/2 top-0 h-[620px] w-[1100px] -translate-x-1/2 bg-[radial-gradient(50%_50%_at_50%_0%,rgb(227_191_118/0.16),transparent_70%)]" />
+          <div className="pointer-events-none absolute left-1/2 top-0 h-[620px] w-[1100px] -translate-x-1/2 glow-top" />
 
           <div className="relative mx-auto max-w-6xl px-4 text-center sm:px-6">
-            <a href="#roadmap" className="mx-auto inline-flex animate-fade-up items-center gap-2 rounded-full border border-line bg-white/[0.03] py-1 pl-1 pr-3 text-xs text-muted backdrop-blur transition hover:border-line-strong">
+            <a href="#roadmap" className="mx-auto inline-flex animate-fade-up items-center gap-2 rounded-full border border-line bg-fg/[0.03] py-1 pl-1 pr-3 text-xs text-muted backdrop-blur transition hover:border-line-strong">
               <span className="rounded-full bg-income/15 px-2 py-0.5 font-medium text-income">Live</span>
               Phase 1 · Income &amp; expense tracking
               <ArrowRight size={12} />
@@ -72,7 +72,7 @@ export default function Home() {
               <span className="text-silver">Take control</span>
               <br />
               <span className="text-silver">of your </span>
-              <span className="font-deva font-semibold text-gold">अर्थ</span>
+              <span className="font-deva font-semibold text-accent">अर्थ</span>
             </h1>
 
             <p className="mx-auto mt-7 max-w-xl animate-fade-up text-base leading-relaxed text-muted [animation-delay:160ms] sm:text-lg">
@@ -124,7 +124,7 @@ export default function Home() {
               <p className="eyebrow">Product</p>
               <h2 className="mt-4 font-display text-4xl leading-tight tracking-tight sm:text-5xl">
                 More than a tracker. <br className="hidden sm:block" />
-                <span className="italic text-gold">A control panel for every rupee.</span>
+                <span className="italic text-accent">A control panel for every rupee.</span>
               </h2>
             </div>
             <DemoButton>See it with real data</DemoButton>
@@ -143,7 +143,7 @@ export default function Home() {
                     className="flex-1 rounded-t-md"
                     style={{
                       height: `${h}%`,
-                      background: h > 85 ? "var(--expense)" : i > 7 ? "linear-gradient(180deg,var(--gold-1),var(--gold-3))" : "rgb(255 255 255 / .12)",
+                      background: h > 85 ? "var(--expense)" : i > 7 ? "linear-gradient(180deg,var(--accent-1),var(--accent-3))" : "color-mix(in oklab, var(--fg) 14%, transparent)",
                       opacity: i > 7 ? 1 : 0.8,
                     }}
                   />
@@ -155,7 +155,7 @@ export default function Home() {
             <div className="panel p-7 md:col-span-2">
               <Tag icon={ScanLine}>Screenshot → transaction</Tag>
               <h3 className="mt-4 text-xl font-medium">Share a receipt. We&apos;ll do the typing.</h3>
-              <div className="mt-6 space-y-2 rounded-2xl border border-line bg-black/30 p-4 font-mono text-[11px]">
+              <div className="mt-6 space-y-2 rounded-2xl border border-line bg-bg/60 p-4 font-mono text-[11px]">
                 <div className="flex justify-between"><span className="text-subtle">Paid to</span><span>Third Wave Coffee</span></div>
                 <div className="flex justify-between"><span className="text-subtle">Amount</span><span className="text-brand">₹386.00</span></div>
                 <div className="flex justify-between"><span className="text-subtle">Category</span><span className="text-info">Food · auto</span></div>
@@ -172,10 +172,10 @@ export default function Home() {
               <div className="mt-6 flex items-center gap-5">
                 <svg viewBox="0 0 42 42" className="h-24 w-24 -rotate-90">
                   {[
-                    [44, 0, "#e3bf76"],
-                    [28, 44, "#7aa2ff"],
-                    [16, 72, "#3ecf8e"],
-                    [12, 88, "#a78bfa"],
+                    [44, 0, "var(--c1)"],
+                    [28, 44, "var(--c4)"],
+                    [16, 72, "var(--c2)"],
+                    [12, 88, "var(--c5)"],
                   ].map(([v, o, c]) => (
                     <circle key={c as string} cx="21" cy="21" r="15.9" fill="none" stroke={c as string} strokeWidth="5" strokeDasharray={`${(v as number) - 1} 100`} strokeDashoffset={-(o as number)} pathLength={100} />
                   ))}
@@ -193,7 +193,7 @@ export default function Home() {
             <div className="panel p-7 md:col-span-2">
               <Tag icon={Sparkles}>Plain-language insights</Tag>
               <h3 className="mt-4 text-xl font-medium">Answers, not just charts.</h3>
-              <div className="mt-6 rounded-2xl rounded-tl-sm border border-line bg-white/[0.03] p-4 text-sm leading-relaxed text-fg-2">
+              <div className="mt-6 rounded-2xl rounded-tl-sm border border-line bg-fg/[0.03] p-4 text-sm leading-relaxed text-fg-2">
                 You kept <span className="text-income">41%</span> of your income in October — your best month yet. Dining out was the only category above average.
               </div>
             </div>
@@ -204,15 +204,15 @@ export default function Home() {
               <h3 className="mt-4 text-xl font-medium">Your number, without opening the app.</h3>
               <div className="mx-auto mt-6 w-40 rounded-[1.4rem] border border-line-strong bg-gradient-to-b from-surface-3 to-surface p-4 shadow-2xl">
                 <p className="text-[10px] text-subtle">Today · safe to spend</p>
-                <p className="tabular mt-1 text-2xl font-semibold text-gold">₹1,240</p>
-                <div className="mt-3 h-1 rounded-full bg-white/10"><div className="h-1 w-2/5 rounded-full bg-brand" /></div>
+                <p className="tabular mt-1 text-2xl font-semibold text-accent">₹1,240</p>
+                <div className="mt-3 h-1 rounded-full bg-fg/10"><div className="h-1 w-2/5 rounded-full bg-brand" /></div>
               </div>
             </div>
 
             {/* Sync */}
             <div className="panel flex flex-col justify-between gap-6 p-7 md:col-span-6 md:flex-row md:items-center">
               <div className="flex items-start gap-4">
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white/5 text-brand"><Layers size={20} /></span>
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-fg/5 text-brand"><Layers size={20} /></span>
                 <div>
                   <h3 className="text-lg font-medium">Android app + web, one account</h3>
                   <p className="mt-1 text-sm text-muted">Log on your phone in two taps. Review on a big screen. Everything stays in sync.</p>
@@ -233,7 +233,7 @@ export default function Home() {
             <div className="max-w-2xl">
               <p className="eyebrow">The budget engine</p>
               <h2 className="mt-4 font-display text-4xl leading-tight tracking-tight sm:text-5xl">
-                Monthly limits, turned into <span className="italic text-gold">one daily decision.</span>
+                Monthly limits, turned into <span className="italic text-accent">one daily decision.</span>
               </h2>
               <p className="mt-4 text-muted">Move the sliders. Watch how an adaptive budget responds to a real month instead of punishing it.</p>
             </div>
@@ -311,10 +311,10 @@ export default function Home() {
         {/* ───────────── CTA ───────────── */}
         <section className="px-4 pb-24 sm:px-6">
           <div className="panel-glow noise relative mx-auto max-w-6xl overflow-hidden px-6 py-20 text-center">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_60%_at_50%_100%,rgb(227_191_118/0.18),transparent_70%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_60%_at_50%_100%,rgb(var(--glow)/0.18),transparent_70%)]" />
             <div className="relative">
               <h2 className="font-display text-5xl tracking-tight sm:text-6xl">
-                Know what <span className="italic text-gold">remains.</span>
+                Know what <span className="italic text-accent">remains.</span>
               </h2>
               <p className="mx-auto mt-4 max-w-md text-muted">Start in seconds on the web. The Android app uses the same account.</p>
               <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">

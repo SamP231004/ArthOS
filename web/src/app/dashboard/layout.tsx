@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
 import { Logo } from "@/components/logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { buttonClass } from "@/lib/button";
 import { useAuth } from "@/lib/auth-store";
 
@@ -70,8 +71,9 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-1">
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-line bg-bg-2/80 px-3 py-5 backdrop-blur md:flex">
-        <div className="px-3">
+        <div className="flex items-center justify-between pl-3">
           <Logo href="/dashboard" />
+          <ThemeToggle />
         </div>
 
         <p className="mt-9 px-3 text-[10.5px] font-medium uppercase tracking-[0.16em] text-subtle">Money</p>
@@ -83,7 +85,7 @@ function Shell({ children }: { children: React.ReactNode }) {
                 key={n.href}
                 href={n.href}
                 className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
-                  active ? "bg-white/[0.06] text-fg shadow-[inset_0_1px_0_rgb(255_255_255/0.05)]" : "text-muted hover:bg-white/[0.03] hover:text-fg"
+                  active ? "bg-fg/[0.06] text-fg shadow-[inset_0_1px_0_rgb(var(--hl)/0.05)]" : "text-muted hover:bg-fg/[0.03] hover:text-fg"
                 }`}
               >
                 {active && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-brand" />}
@@ -105,14 +107,14 @@ function Shell({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="panel mt-auto flex items-center gap-3 p-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-gold-1 to-gold-3 text-xs font-semibold text-brand-fg">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-accent-1 to-accent-3 text-xs font-semibold text-accent-fg">
             {initials(user?.name)}
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{user?.name}</p>
             <p className="truncate text-[11px] text-subtle">{user?.demo ? "Demo account" : user?.email}</p>
           </div>
-          <button onClick={logout} className="rounded-lg p-1.5 text-subtle transition hover:bg-white/5 hover:text-expense" aria-label="Sign out" title="Sign out">
+          <button onClick={logout} className="rounded-lg p-1.5 text-subtle transition hover:bg-fg/5 hover:text-expense" aria-label="Sign out" title="Sign out">
             <LogOut size={16} />
           </button>
         </div>
@@ -122,12 +124,15 @@ function Shell({ children }: { children: React.ReactNode }) {
         <DemoBanner />
         <header className="flex items-center justify-between border-b border-line px-4 py-3 md:hidden">
           <Logo href="/dashboard" />
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
           <button onClick={logout} className="rounded-lg p-2 text-muted" aria-label="Sign out">
             <LogOut size={18} />
           </button>
+          </div>
         </header>
         <main className="relative mx-auto w-full max-w-7xl flex-1 px-4 py-7 sm:px-8 sm:py-10">
-          <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-80 bg-[radial-gradient(60%_100%_at_50%_0%,rgb(227_191_118/0.05),transparent)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-80 glow-soft" />
           {children}
         </main>
       </div>
@@ -136,7 +141,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         {nav.map((n) => {
           const active = isActive(n.href);
           return (
-            <Link key={n.href} href={n.href} className={`flex flex-col items-center gap-1 rounded-xl py-2 text-[10.5px] ${active ? "bg-white/[0.06] text-brand" : "text-subtle"}`}>
+            <Link key={n.href} href={n.href} className={`flex flex-col items-center gap-1 rounded-xl py-2 text-[10.5px] ${active ? "bg-fg/[0.06] text-brand" : "text-subtle"}`}>
               <n.icon size={18} />
               {n.label}
             </Link>

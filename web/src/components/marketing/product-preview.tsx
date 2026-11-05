@@ -2,11 +2,11 @@ import { ArrowDownLeft, ArrowUpRight, ChartPie, LayoutDashboard, Receipt, Settin
 import { LogoMark } from "../logo";
 
 const cats = [
-  ["Rent", 24000, "#e3bf76"],
-  ["Food", 9840, "#7aa2ff"],
-  ["Groceries", 6420, "#3ecf8e"],
-  ["Shopping", 5210, "#f27272"],
-  ["Transport", 3180, "#a78bfa"],
+  ["Rent", 24000, "var(--c1)"],
+  ["Food", 9840, "var(--c4)"],
+  ["Groceries", 6420, "var(--c2)"],
+  ["Shopping", 5210, "var(--c6)"],
+  ["Transport", 3180, "var(--c5)"],
 ] as const;
 
 /** Static, hand-tuned replica of the dashboard for the hero. Not wired to data. */
@@ -14,23 +14,23 @@ export function ProductPreview() {
   return (
     <div className="relative mx-auto w-full max-w-5xl">
       {/* glow */}
-      <div className="pointer-events-none absolute -inset-x-10 -top-10 bottom-0 rounded-[3rem] bg-[radial-gradient(60%_50%_at_50%_20%,rgb(227_191_118/0.22),transparent_70%)] blur-2xl" />
+      <div className="pointer-events-none absolute -inset-x-10 -top-10 bottom-0 rounded-[3rem] bg-[radial-gradient(60%_50%_at_50%_20%,rgb(var(--glow)/0.22),transparent_70%)] blur-2xl" />
 
       <div className="panel-glow relative overflow-hidden p-0">
         {/* window chrome */}
         <div className="flex items-center gap-2 border-b border-line px-4 py-3">
-          <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-          <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-          <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-          <span className="mx-auto rounded-md bg-white/[0.04] px-3 py-1 font-mono text-[10.5px] text-subtle">arthos · dashboard</span>
+          <span className="h-2.5 w-2.5 rounded-full bg-fg/15" />
+          <span className="h-2.5 w-2.5 rounded-full bg-fg/15" />
+          <span className="h-2.5 w-2.5 rounded-full bg-fg/15" />
+          <span className="mx-auto rounded-md bg-fg/[0.04] px-3 py-1 font-mono text-[10.5px] text-subtle">arthos · dashboard</span>
         </div>
 
         <div className="flex">
           {/* mini sidebar */}
           <div className="hidden w-14 shrink-0 flex-col items-center gap-4 border-r border-line py-5 sm:flex">
-            <LogoMark className="h-7 w-7 text-xs" />
+            <LogoMark size={28} />
             {[LayoutDashboard, ArrowDownLeft, ArrowUpRight, ChartPie, Settings].map((I, i) => (
-              <span key={i} className={`grid h-8 w-8 place-items-center rounded-lg ${i === 0 ? "bg-white/[0.07] text-brand" : "text-subtle"}`}>
+              <span key={i} className={`grid h-8 w-8 place-items-center rounded-lg ${i === 0 ? "bg-fg/[0.07] text-brand" : "text-subtle"}`}>
                 <I size={15} />
               </span>
             ))}
@@ -40,11 +40,11 @@ export function ProductPreview() {
             <div className="flex items-end justify-between">
               <div>
                 <p className="text-[11px] text-subtle">November 2026</p>
-                <p className="font-display text-xl sm:text-2xl">Good evening, Aarav</p>
+                <p className="font-display text-xl sm:text-2xl">Good evening, Samarth</p>
               </div>
               <div className="hidden gap-2 sm:flex">
                 <span className="btn-glass rounded-lg px-3 py-1.5 text-[11px]">+ Income</span>
-                <span className="btn-gold rounded-lg px-3 py-1.5 text-[11px] font-medium">+ Expense</span>
+                <span className="btn-primary rounded-lg px-3 py-1.5 text-[11px] font-medium">+ Expense</span>
               </div>
             </div>
 
@@ -58,14 +58,14 @@ export function ProductPreview() {
                 <svg viewBox="0 0 300 90" className="mt-3 h-24 w-full" aria-hidden>
                   <defs>
                     <linearGradient id="pp-a" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0" stopColor="#e3bf76" stopOpacity=".35" />
-                      <stop offset="1" stopColor="#e3bf76" stopOpacity="0" />
+                      <stop offset="0" stopColor="var(--c1)" stopOpacity=".35" />
+                      <stop offset="1" stopColor="var(--c1)" stopOpacity="0" />
                     </linearGradient>
                   </defs>
-                  <line x1="0" y1="88" x2="300" y2="6" stroke="#3ecf8e" strokeOpacity=".45" strokeDasharray="4 5" />
-                  <path d="M0,86 C20,70 30,66 50,64 S80,60 100,55 S130,52 150,46 S180,41 200,38" fill="none" stroke="#e3bf76" strokeWidth="2.2" />
+                  <line x1="0" y1="88" x2="300" y2="6" stroke="var(--c2)" strokeOpacity=".45" strokeDasharray="4 5" />
+                  <path d="M0,86 C20,70 30,66 50,64 S80,60 100,55 S130,52 150,46 S180,41 200,38" fill="none" stroke="var(--c1)" strokeWidth="2.2" />
                   <path d="M0,86 C20,70 30,66 50,64 S80,60 100,55 S130,52 150,46 S180,41 200,38 L200,90 L0,90Z" fill="url(#pp-a)" />
-                  <circle cx="200" cy="38" r="4" fill="#f6e2b3" stroke="#060608" strokeWidth="2" />
+                  <circle cx="200" cy="38" r="4" fill="var(--accent-1)" stroke="var(--bg)" strokeWidth="2" />
                 </svg>
               </div>
 
@@ -81,7 +81,7 @@ export function ProductPreview() {
                         </span>
                         <span className="tabular text-subtle">₹{v.toLocaleString("en-IN")}</span>
                       </div>
-                      <div className="mt-1 h-1 rounded-full bg-white/5">
+                      <div className="mt-1 h-1 rounded-full bg-fg/5">
                         <div className="h-1 rounded-full" style={{ width: `${(v / 24000) * 100}%`, background: c }} />
                       </div>
                     </div>

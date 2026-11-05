@@ -4,9 +4,9 @@ export type ButtonSize = "sm" | "md" | "lg";
 
 export function buttonClass(variant: ButtonVariant = "primary", size: ButtonSize = "md") {
   const v = {
-    primary: "btn-gold",
+    primary: "btn-primary",
     secondary: "btn-glass",
-    ghost: "text-muted hover:text-fg hover:bg-white/5",
+    ghost: "text-muted hover:text-fg hover:bg-fg/5",
     danger: "text-expense hover:bg-expense/10",
   }[variant];
   const s = { sm: "h-8 px-3 text-xs rounded-lg", md: "h-10 px-4 text-sm rounded-xl", lg: "h-12 px-6 text-[15px] rounded-xl" }[size];

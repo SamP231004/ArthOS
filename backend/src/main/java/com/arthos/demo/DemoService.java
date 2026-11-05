@@ -39,7 +39,7 @@ public class DemoService {
         String tag = UUID.randomUUID().toString().substring(0, 8);
 
         User u = new User();
-        u.setName("Aarav Mehta");
+        u.setName("Samarth Patel");
         u.setEmail("demo-" + tag + "@demo.arthos.app");
         u.setPasswordHash(encoder.encode(UUID.randomUUID().toString())); // unguessable: demo accounts can't log in by password
         u.setMonthlyIncomeTarget(BigDecimal.valueOf(100_000));

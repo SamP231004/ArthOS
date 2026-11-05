@@ -69,7 +69,7 @@ export default function ExpensesPage() {
               <ul className="divide-y divide-line">
                 {items.map((e) => (
                   <li key={e.id}>
-                    <button onClick={() => setEditing(e)} className="flex w-full items-center gap-4 px-6 py-3.5 text-left transition hover:bg-white/[0.025]">
+                    <button onClick={() => setEditing(e)} className="flex w-full items-center gap-4 px-6 py-3.5 text-left transition hover:bg-fg/[0.025]">
                       <Avatar text={e.merchant ?? label(e.category)} />
                       <div className="min-w-0 flex-1">
                         <p className="flex items-center gap-2 truncate font-medium">
