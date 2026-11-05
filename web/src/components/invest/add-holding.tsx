@@ -7,7 +7,8 @@ import { Button, ErrorNote, Field, Input, Modal, Select } from "../ui";
 import { ApiError } from "@/lib/api";
 import { money, todayISO } from "@/lib/format";
 import { useMarketSearch, useQuote, useSaveHolding } from "@/lib/queries";
-import { ASSET_CLASSES, HORIZONS, type AssetClass, type BondType, type GoldForm, type GoldPurity, type Horizon, type SymbolMatch } from "@/lib/types";
+import { ASSET_CLASSES, HORIZONS, type AssetClass, type BondType, type GoldForm, type GoldPurity, type Horizon, type SymbolMatch, type FundingSource } from "@/lib/types";
+import { FundingPicker } from "./funding-picker";
 
 export function AddHoldingModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [cls, setCls] = useState<AssetClass | null>(null);
@@ -58,6 +59,7 @@ function HoldingForm({ cls, onBack, onDone }: { cls: AssetClass; onBack: () => v
   const [maturity, setMaturity] = useState("");
   const [bondType, setBondType] = useState<BondType>("GOVERNMENT");
   const [manualPrice, setManualPrice] = useState("");
+  const [fundedFrom, setFundedFrom] = useState<FundingSource>("SAVINGS");
 
   const quote = useQuote(cls, picked?.symbol);
   const live = quote.data?.price;
@@ -89,7 +91,7 @@ function HoldingForm({ cls, onBack, onDone }: { cls: AssetClass; onBack: () => v
           maturityDate: cls === "BOND" ? maturity : undefined,
           bondType: cls === "BOND" ? bondType : undefined,
           manualPrice: manualPrice ? Number(manualPrice) : undefined,
-          firstLot: { type: "BUY", date, quantity, price: Number(effectivePrice) },
+          firstLot: { type: "BUY", date, quantity, price: Number(effectivePrice), fundedFrom },
         },
       });
       onDone();
@@ -216,6 +218,7 @@ function HoldingForm({ cls, onBack, onDone }: { cls: AssetClass; onBack: () => v
               <span className="tabular font-semibold">{money(total)}</span>
             </p>
           )}
+          <FundingPicker value={fundedFrom} onChange={setFundedFrom} amount={total} date={date} />
         </>
       )}
 

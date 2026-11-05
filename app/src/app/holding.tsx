@@ -4,12 +4,13 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, Text, View } from 're
 
 import { Sparkline } from '@/components/charts';
 import { DateField, isISODate } from '@/components/date-field';
+import { FundingPicker } from '@/components/funding-picker';
 import { Screen } from '@/components/screen';
 import { Badge, Button, Card, Chip, ErrorNote, Input, Loading, Segmented, T } from '@/components/ui';
 import { dateLabel, money, todayISO } from '@/lib/format';
 import { CLASS_META, fmtQty, holdingSubtitle, HORIZON_META, signedPct, SOURCE_LABEL, toneColor } from '@/lib/invest-meta';
 import { useAddLot, useDeleteHolding, useDeleteLot, useHolding, useSaveHolding } from '@/lib/queries';
-import { HORIZONS, type HoldingView, type Horizon, type LotType } from '@/lib/types';
+import { HORIZONS, type FundingSource, type HoldingView, type Horizon, type LotType } from '@/lib/types';
 import { alpha, F, R, S, useTheme } from '@/theme';
 
 type Tab = 'overview' | 'trade' | 'settings';
@@ -74,7 +75,11 @@ function Overview({ h }: { h: HoldingView }) {
             <T variant="small" style={{ flex: 1 }}>{dateLabel(l.date)}</T>
             <View style={{ alignItems: 'flex-end' }}>
               <T style={{ fontSize: 13, fontVariant: ['tabular-nums'] }}>{fmtQty(l.quantity)} × {money(l.price)}</T>
-              <T variant="small">{money(l.amount)}{l.note ? ` · ${l.note}` : ''}</T>
+              <T variant="small">
+                {money(l.amount)}
+                {l.type === 'BUY' ? (l.fundedFrom === 'SPENDING' ? ' · from spending' : ' · from savings') : ' · to savings'}
+                {l.note && l.note !== 'Paid from spending money' ? ` · ${l.note}` : ''}
+              </T>
             </View>
             {h.lots.length > 1 && (
               <Pressable
@@ -98,6 +103,7 @@ function Trade({ h, onDone }: { h: HoldingView; onDone: () => void }) {
   const [qty, setQty] = useState('');
   const [price, setPrice] = useState(String(h.price));
   const [date, setDate] = useState(todayISO());
+  const [fundedFrom, setFundedFrom] = useState<FundingSource>('SAVINGS');
   const num = (t: string) => t.replace(/[^0-9.]/g, '');
   return (
     <Card style={{ gap: S.md }}>
@@ -112,16 +118,22 @@ function Trade({ h, onDone }: { h: HoldingView; onDone: () => void }) {
       <DateField value={date} onChange={setDate} />
       {Number(qty) > 0 && Number(price) > 0 && (
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', backgroundColor: alpha(c.fg, 0.04), borderRadius: R.md, padding: S.md }}>
-          <T variant="muted">{type === 'BUY' ? 'Total cost' : 'Proceeds'}</T>
+          <T variant="muted">{type === 'BUY' ? 'Total cost' : 'Proceeds → savings'}</T>
           <Text style={{ color: c.fg, fontFamily: F.uiSemibold }}>{money(Number(qty) * Number(price))}</Text>
         </View>
       )}
+      {type === 'BUY' && <FundingPicker value={fundedFrom} onChange={setFundedFrom} amount={Number(qty) * Number(price) || 0} date={date} />}
       <ErrorNote message={add.error?.message} />
       <Button
         title={type === 'BUY' ? 'Add purchase' : 'Record sale'}
         loading={add.isPending}
         disabled={!(Number(qty) > 0) || price === '' || !isISODate(date)}
-        onPress={() => add.mutate({ type, date, quantity: Number(qty), price: Number(price), note: h.assetClass === 'MUTUAL_FUND' && type === 'BUY' ? 'SIP' : undefined }, { onSuccess: onDone })}
+        onPress={() =>
+          add.mutate(
+            { type, date, quantity: Number(qty), price: Number(price), note: h.assetClass === 'MUTUAL_FUND' && type === 'BUY' ? 'SIP' : undefined, fundedFrom: type === 'BUY' ? fundedFrom : undefined },
+            { onSuccess: onDone },
+          )
+        }
       />
     </Card>
   );

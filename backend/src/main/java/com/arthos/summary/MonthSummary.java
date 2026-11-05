@@ -1,5 +1,6 @@
 package com.arthos.summary;
 
+import com.arthos.savings.SavingsAccount;
 import com.arthos.user.SavingsRule;
 
 import java.math.BigDecimal;
@@ -26,10 +27,12 @@ public record MonthSummary(
         BigDecimal savedFirst,
         /** Income after saving first: what this month's spending is allowed to come out of. */
         BigDecimal spendable,
-        /** spendable − totalExpense; negative means spending has eaten into the money set aside. */
+        /** spendable − totalExpense − investments paid from spending; negative means spending ate into savings. */
         BigDecimal leftToSpend,
-        /** Buys recorded in investments this month (savings actually put to work). */
+        /** All buys recorded in investments this month, whichever pot paid for them. */
         BigDecimal investedThisMonth,
+        /** The savings account for this month, carried forward from earlier months. */
+        SavingsAccount savings,
         BigDecimal todayExpense,
         BigDecimal averageDailyExpense,
         List<CategoryTotal> expenseByCategory,

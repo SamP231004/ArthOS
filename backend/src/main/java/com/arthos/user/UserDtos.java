@@ -22,6 +22,7 @@ public final class UserDtos {
             BigDecimal monthlyIncomeTarget,
             SavingsRule.Mode savingsMode,
             BigDecimal savingsValue,
+            BigDecimal savingsStartingBalance,
             boolean onboardingCompleted,
             boolean demo,
             Instant expiresAt,
@@ -29,7 +30,8 @@ public final class UserDtos {
 
         public static UserResponse from(User u) {
             return new UserResponse(u.getId(), u.getName(), u.getEmail(), u.getAvatarUrl(), u.getCurrency(), u.getTimezone(),
-                    u.getMonthlyIncomeTarget(), u.savingsRule().mode(), u.savingsRule().value(), u.isOnboardingCompleted(), u.isDemo(), u.getExpiresAt(), u.getCreatedAt());
+                    u.getMonthlyIncomeTarget(), u.savingsRule().mode(), u.savingsRule().value(),
+                    u.getSavingsStartingBalance() == null ? BigDecimal.ZERO : u.getSavingsStartingBalance(), u.isOnboardingCompleted(), u.isDemo(), u.getExpiresAt(), u.getCreatedAt());
         }
     }
 
@@ -41,5 +43,6 @@ public final class UserDtos {
             @DecimalMin(value = "0", message = "must be zero or more") BigDecimal monthlyIncomeTarget,
             SavingsRule.Mode savingsMode,
             @DecimalMin(value = "0", message = "must be zero or more") @Digits(integer = 13, fraction = 2) BigDecimal savingsValue,
+            @DecimalMin(value = "0", message = "must be zero or more") @Digits(integer = 13, fraction = 2) BigDecimal savingsStartingBalance,
             Boolean onboardingCompleted) {}
 }

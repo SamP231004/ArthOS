@@ -5,6 +5,7 @@ import com.arthos.expense.ExpenseCategory;
 import com.arthos.expense.PaymentSource;
 import com.arthos.income.Income;
 import com.arthos.income.IncomeType;
+import com.arthos.savings.SavingsAccount;
 import com.arthos.user.SavingsRule;
 import org.junit.jupiter.api.Test;
 
@@ -55,15 +56,20 @@ class MonthSummaryCalculatorTest {
         List<Expense> expenses = List.of(expense("15000", ExpenseCategory.RENT, 1), expense("1000", ExpenseCategory.FOOD, 5));
 
         MonthSummary pct = MonthSummaryCalculator.calculate(NOV, today, "INR", null,
-                new SavingsRule(SavingsRule.Mode.PERCENT, new BigDecimal("25")), new BigDecimal("5000"), incomes, expenses);
+                new SavingsRule(SavingsRule.Mode.PERCENT, new BigDecimal("25")), account(new BigDecimal("5000"), BigDecimal.ZERO), incomes, expenses);
         assertEquals(0, new BigDecimal("15000").compareTo(pct.savedFirst()));
         assertEquals(0, new BigDecimal("45000").compareTo(pct.spendable()));
         assertEquals(0, new BigDecimal("29000").compareTo(pct.leftToSpend()));
         assertEquals(0, new BigDecimal("5000").compareTo(pct.investedThisMonth()));
 
+        // a buy paid from spending money is this month's spending
+        MonthSummary spentOnInvesting = MonthSummaryCalculator.calculate(NOV, today, "INR", null,
+                new SavingsRule(SavingsRule.Mode.PERCENT, new BigDecimal("25")), account(BigDecimal.ZERO, new BigDecimal("4000")), incomes, expenses);
+        assertEquals(0, new BigDecimal("25000").compareTo(spentOnInvesting.leftToSpend()));
+
         // a fixed amount can't exceed what has actually arrived
         MonthSummary fixed = MonthSummaryCalculator.calculate(NOV, today, "INR", null,
-                new SavingsRule(SavingsRule.Mode.FIXED, new BigDecimal("80000")), BigDecimal.ZERO, incomes, expenses);
+                new SavingsRule(SavingsRule.Mode.FIXED, new BigDecimal("80000")), null, incomes, expenses);
         assertEquals(0, new BigDecimal("60000").compareTo(fixed.savedFirst()));
         assertEquals(0, BigDecimal.ZERO.compareTo(fixed.spendable()));
         assertTrue(fixed.leftToSpend().signum() < 0);
@@ -87,6 +93,11 @@ class MonthSummaryCalculatorTest {
         MonthSummary future = MonthSummaryCalculator.calculate(YearMonth.of(2026, 12), LocalDate.of(2026, 11, 5), "INR", null, List.of(), List.of());
         assertEquals(0, future.daysElapsed());
         assertTrue(future.dailyExpense().isEmpty());
+    }
+
+    private static SavingsAccount account(BigDecimal fromSavings, BigDecimal fromSpending) {
+        return new SavingsAccount(NOV.toString(), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, fromSavings, BigDecimal.ZERO,
+                BigDecimal.ZERO, fromSpending, List.of());
     }
 
     private static Income income(String amount, IncomeType type, int day) {

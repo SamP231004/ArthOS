@@ -43,6 +43,9 @@ public class User {
     private SavingsRule.Mode savingsMode;
     @Field(targetType = FieldType.DECIMAL128)
     private BigDecimal savingsValue;
+    /** Savings the user already had before tracking with ArthOS; opens the savings account. */
+    @Field(targetType = FieldType.DECIMAL128)
+    private BigDecimal savingsStartingBalance;
 
     private boolean onboardingCompleted;
 
@@ -82,6 +85,8 @@ public class User {
     public void setSavingsMode(SavingsRule.Mode savingsMode) { this.savingsMode = savingsMode; }
     public BigDecimal getSavingsValue() { return savingsValue; }
     public void setSavingsValue(BigDecimal savingsValue) { this.savingsValue = savingsValue; }
+    public BigDecimal getSavingsStartingBalance() { return savingsStartingBalance; }
+    public void setSavingsStartingBalance(BigDecimal savingsStartingBalance) { this.savingsStartingBalance = savingsStartingBalance; }
     public boolean isOnboardingCompleted() { return onboardingCompleted; }
     public void setOnboardingCompleted(boolean onboardingCompleted) { this.onboardingCompleted = onboardingCompleted; }
     public boolean isDemo() { return demo; }

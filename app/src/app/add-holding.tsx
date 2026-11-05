@@ -3,13 +3,14 @@ import { useDeferredValue, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 
 import { DateField, isISODate } from '@/components/date-field';
+import { FundingPicker } from '@/components/funding-picker';
 import { Screen } from '@/components/screen';
 import { Button, Card, Chip, ErrorNote, Input, T } from '@/components/ui';
 import { ApiError } from '@/lib/api';
 import { money, todayISO } from '@/lib/format';
 import { CLASS_META, HORIZON_META } from '@/lib/invest-meta';
 import { useMarketSearch, useQuote, useSaveHolding } from '@/lib/queries';
-import { ASSET_CLASSES, HORIZONS, type AssetClass, type BondType, type GoldForm, type GoldPurity, type Horizon, type SymbolMatch } from '@/lib/types';
+import { ASSET_CLASSES, HORIZONS, type AssetClass, type BondType, type GoldForm, type FundingSource, type GoldPurity, type Horizon, type SymbolMatch } from '@/lib/types';
 import { alpha, F, R, S, useTheme } from '@/theme';
 
 export default function AddHolding() {
@@ -64,6 +65,7 @@ function Form({ cls, onBack }: { cls: AssetClass; onBack: () => void }) {
   const [maturity, setMaturity] = useState('');
   const [bondType, setBondType] = useState<BondType>('GOVERNMENT');
   const [manual, setManual] = useState('');
+  const [fundedFrom, setFundedFrom] = useState<FundingSource>('SAVINGS');
 
   const quote = useQuote(cls, picked?.symbol);
   const factor = cls === 'GOLD' && purity === 'K22' && goldForm !== 'SGB' ? 0.916 : 1;
@@ -92,7 +94,7 @@ function Form({ cls, onBack }: { cls: AssetClass; onBack: () => void }) {
           maturityDate: cls === 'BOND' ? maturity : undefined,
           bondType: cls === 'BOND' ? bondType : undefined,
           manualPrice: manual ? Number(manual) : undefined,
-          firstLot: { type: 'BUY', date, quantity, price: Number(effPrice) },
+          firstLot: { type: 'BUY', date, quantity, price: Number(effPrice), fundedFrom },
         },
       },
       { onSuccess: () => router.back() },
@@ -214,6 +216,7 @@ function Form({ cls, onBack }: { cls: AssetClass; onBack: () => void }) {
                 <T variant="num" style={{ fontSize: 15 }}>{money(quantity * Number(effPrice))}</T>
               </View>
             )}
+            <FundingPicker value={fundedFrom} onChange={setFundedFrom} amount={quantity * Number(effPrice) || 0} date={date} />
           </View>
         )}
 

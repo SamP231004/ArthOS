@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { BudgetCard } from "@/components/budget/budget-card";
 import { PortfolioCard } from "@/components/invest/portfolio-card";
+import { SavingsAccountCard } from "@/components/savings-account-card";
 import { CATEGORY_COLORS, DailyBars, Donut, Sparkline, SpendCurve } from "@/components/charts";
 import { MonthPicker } from "@/components/month-picker";
 import { ExpenseModal, IncomeModal } from "@/components/transaction-forms";
@@ -105,7 +106,10 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
               {whole}
               {paise && <span className="text-2xl text-subtle">.{paise}</span>}
             </p>
-            <p className="mt-2 text-xs text-subtle">After saving first · {fmt(s.totalIncome)} in − {fmt(s.savedFirst)} saved − {fmt(s.totalExpense)} spent</p>
+            <p className="mt-2 text-xs text-subtle">
+              After saving first · {fmt(s.totalIncome)} in − {fmt(s.savedFirst)} saved − {fmt(s.totalExpense)} spent
+              {s.savings?.investedFromSpending > 0 && <> − {fmt(s.savings.investedFromSpending)} invested</>}
+            </p>
 
             <FlowBar s={s} fmt={fmt} />
 
@@ -143,6 +147,8 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
         <BudgetCard month={s.month} currency={cur} />
         <PortfolioCard />
       </section>
+
+      {s.savings && <SavingsAccountCard a={s.savings} currency={cur} />}
 
       {/* KPIs */}
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -391,9 +397,12 @@ function insight(s: MonthSummary, fmt: (n: number) => string): string {
   if (s.totalIncome === 0) return "No income yet this month. When it lands, your savings are set aside first and the rest becomes your spending money.";
   if (s.net < 0) return `You've spent more than you've earned this month — your savings are gone and then some. Biggest lever: ${lever}.`;
   if (s.leftToSpend < 0) return `You've dipped ${fmt(-s.leftToSpend)} into the ${fmt(s.savedFirst)} you set aside. Biggest lever: ${lever}.`;
-  if (s.savedFirst > 0 && s.investedThisMonth >= s.savedFirst) return `Your ${fmt(s.savedFirst)} of savings is fully invested this month — money put to work before it could be spent.`;
-  if (s.savedFirst > 0 && s.investedThisMonth > 0)
-    return `${fmt(s.investedThisMonth)} of your ${fmt(s.savedFirst)} savings is invested — ${fmt(s.savedFirst - s.investedThisMonth)} still waiting to be put to work.`;
+  if (s.savings && s.savings.closing < 0) return `Your savings account is overdrawn by ${fmt(-s.savings.closing)} — investments have run ahead of what you've saved.`;
+  const fromSavings = s.savings?.investedFromSavings ?? 0;
+  const balance = s.savings?.closing ?? 0;
+  if (s.savedFirst > 0 && fromSavings >= s.savedFirst) return `This month's ${fmt(s.savedFirst)} of savings is fully invested — money put to work before it could be spent.`;
+  if (fromSavings > 0) return `${fmt(fromSavings)} invested from savings this month — ${fmt(Math.max(balance, 0))} still in your savings account to put to work.`;
+  if (balance > 0 && s.savedFirst > 0) return `${fmt(s.savedFirst)} saved first this month — your savings account now holds ${fmt(balance)}, ready to invest.`;
   const top = s.expenseByCategory[0];
   if (top && top.share >= 40) return `Savings are safe. ${label(top.category)} is ${top.share}% of your spending — your largest fixed lever.`;
   return `Savings are safe — ${fmt(s.leftToSpend)} is yours to spend, guilt-free.`;
@@ -404,10 +413,12 @@ function FlowBar({ s, fmt }: { s: MonthSummary; fmt: (n: number) => string }) {
   if (s.totalIncome <= 0) return null;
   const T = Math.max(s.totalIncome, s.totalExpense);
   const dip = Math.max(0, Math.min(s.savedFirst, -s.leftToSpend));
+  const fromSpending = s.savings?.investedFromSpending ?? 0;
   const parts = [
     { key: "saved", label: "Saved first", v: s.savedFirst - dip, color: "var(--income)" },
     { key: "dip", label: "Spent from savings", v: dip, color: "var(--expense)", striped: true },
     { key: "spent", label: "Spent", v: Math.min(s.totalExpense, s.spendable), color: "color-mix(in oklab, var(--expense) 70%, transparent)" },
+    { key: "invested", label: "Invested from spending", v: Math.min(fromSpending, Math.max(0, s.spendable - s.totalExpense)), color: "var(--info)" },
     { key: "left", label: "Left", v: Math.max(0, s.leftToSpend), color: "color-mix(in oklab, var(--fg) 12%, transparent)" },
   ].filter((p) => p.v > 0);
   return (

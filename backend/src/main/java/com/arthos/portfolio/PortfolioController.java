@@ -28,7 +28,9 @@ public class PortfolioController {
             @NotNull @PastOrPresent LocalDate date,
             @NotNull @DecimalMin(value = "0.000001", message = "must be greater than 0") BigDecimal quantity,
             @NotNull @DecimalMin(value = "0", message = "can't be negative") BigDecimal price,
-            @Size(max = 200) String note) {}
+            @Size(max = 200) String note,
+            /** Buys only: SAVINGS (default) or SPENDING. */
+            FundingSource fundedFrom) {}
 
     /** Create (with the first purchase) or update a holding. Class-specific fields are validated in code. */
     public record HoldingRequest(
@@ -131,7 +133,9 @@ public class PortfolioController {
     }
 
     private static Holding.Lot lot(LotRequest r) {
-        return new Holding.Lot(UUID.randomUUID().toString(), r.type(), r.date(), r.quantity(), r.price(), blank(r.note()));
+        Holding.Lot l = new Holding.Lot(UUID.randomUUID().toString(), r.type(), r.date(), r.quantity(), r.price(), blank(r.note()));
+        if (r.type() == LotType.BUY) l.setFundedFrom(r.fundedFrom() == null ? FundingSource.SAVINGS : r.fundedFrom());
+        return l;
     }
 
     private static BigDecimal held(Holding h, LocalDate asOf) {

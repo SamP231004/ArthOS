@@ -43,6 +43,14 @@ public class Holding {
 
     public enum LotType { BUY, SELL }
 
+    /** Where the money for a purchase came from. */
+    public enum FundingSource {
+        /** Out of the savings account (money already set aside). */
+        SAVINGS,
+        /** Out of this month's spending money: counted as that month's spending. */
+        SPENDING
+    }
+
     public static class Lot {
         private String id;
         private LotType type;
@@ -53,6 +61,8 @@ public class Holding {
         @Field(targetType = FieldType.DECIMAL128)
         private BigDecimal price;
         private String note;
+        /** Buys only; null (older data) means SAVINGS. */
+        private FundingSource fundedFrom;
 
         public Lot() {}
 
@@ -71,6 +81,11 @@ public class Holding {
         public BigDecimal getQuantity() { return quantity; }
         public BigDecimal getPrice() { return price; }
         public String getNote() { return note; }
+        public void setNote(String note) { this.note = note; }
+        public FundingSource getFundedFrom() { return fundedFrom; }
+        public void setFundedFrom(FundingSource fundedFrom) { this.fundedFrom = fundedFrom; }
+        /** Effective source for a buy (null for sales). */
+        public FundingSource fundedFrom() { return type == LotType.SELL ? null : fundedFrom == null ? FundingSource.SAVINGS : fundedFrom; }
     }
 
     @Id

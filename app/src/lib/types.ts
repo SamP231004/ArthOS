@@ -13,6 +13,7 @@ export type User = {
   monthlyIncomeTarget?: number;
   savingsMode: SavingsMode;
   savingsValue: number;
+  savingsStartingBalance: number;
   onboardingCompleted: boolean;
   /** Sandbox account from "Explore the demo"; self-deletes at expiresAt. */
   demo?: boolean;
@@ -77,6 +78,7 @@ export type MonthSummary = {
   spendable: number;
   leftToSpend: number;
   investedThisMonth: number;
+  savings: SavingsAccount;
   todayExpense: number;
   averageDailyExpense: number;
   expenseByCategory: { category: ExpenseCategory; amount: number; share: number }[];
@@ -167,7 +169,7 @@ export type HoldingView = {
   gold?: { form: GoldForm; purity: GoldPurity; grams: number; pricePerGram24k: number };
   bond?: { faceValue: number; couponRate: number; maturityDate: string; bondType: BondType; annualCoupon: number; nextCouponDate?: string; yearsToMaturity?: number; currentYield?: number };
   spark: number[];
-  lots: { id: string; type: LotType; date: string; quantity: number; price: number; amount: number; note?: string }[];
+  lots: { id: string; type: LotType; date: string; quantity: number; price: number; amount: number; note?: string; fundedFrom?: FundingSource }[];
 };
 
 export type Portfolio = {
@@ -184,7 +186,21 @@ export type Portfolio = {
 export type SymbolMatch = { symbol: string; name: string; exchange: string; assetClass: AssetClass };
 export type Quote = { price: number; previousClose?: number; asOf: string; source: string };
 
-export type LotInput = { type: LotType; date: string; quantity: number; price: number; note?: string };
+export type FundingSource = 'SAVINGS' | 'SPENDING';
+export type LotInput = { type: LotType; date: string; quantity: number; price: number; note?: string; fundedFrom?: FundingSource };
+
+/** Savings account — mirrors backend/src/main/java/com/arthos/savings/SavingsAccount.java. */
+export type SavingsAccount = {
+  month: string;
+  startingBalance: number;
+  opening: number;
+  savedFirst: number;
+  investedFromSavings: number;
+  saleProceeds: number;
+  closing: number;
+  investedFromSpending: number;
+  history: { month: string; opening: number; saved: number; invested: number; proceeds: number; closing: number }[];
+};
 export type HoldingInput = {
   assetClass: AssetClass;
   name: string;

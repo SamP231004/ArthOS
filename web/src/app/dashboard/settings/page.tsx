@@ -19,6 +19,7 @@ export default function SettingsPage() {
     timezone: user.timezone,
     savingsMode: user.savingsMode ?? "PERCENT",
     savingsValue: String(user.savingsValue ?? 20),
+    startingBalance: String(user.savingsStartingBalance ?? 0),
   });
   const [saved, setSaved] = useState(false);
 
@@ -32,6 +33,7 @@ export default function SettingsPage() {
         timezone: f.timezone,
         savingsMode: f.savingsMode,
         savingsValue: Number(f.savingsValue) || 0,
+        savingsStartingBalance: Number(f.startingBalance) || 0,
       });
       setSaved(true);
     } catch {
@@ -60,6 +62,9 @@ export default function SettingsPage() {
             currency={f.currency}
             onChange={(savingsMode, savingsValue) => setF({ ...f, savingsMode, savingsValue })}
           />
+          <Field label="Savings you already had" hint="Opens your savings account. Every month's saved-first amount is added on top and carried forward.">
+            <Input type="number" min={0} step="any" inputMode="decimal" value={f.startingBalance} onChange={(e) => setF({ ...f, startingBalance: e.target.value })} className="tabular" />
+          </Field>
         </Section>
 
         <Section title="Money" desc="How amounts are shown, and when your day rolls over.">

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ChartPie, ChevronDown, ChevronsUpDown, LayoutGrid, Minus, Pencil, Plus, RefreshCw, Trash2, TrendingUp, Wallet } from "lucide-react";
+import { ArrowDown, ArrowUp, ChartPie, ChevronDown, ChevronsUpDown, LayoutGrid, Minus, Pencil, PiggyBank, Plus, RefreshCw, Trash2, TrendingUp, Wallet } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Donut } from "@/components/charts";
 import { AddHoldingModal } from "@/components/invest/add-holding";
@@ -12,7 +12,8 @@ import { PageHeader } from "@/components/page-header";
 import { Button, ErrorNote, Modal, Skeleton } from "@/components/ui";
 import { money } from "@/lib/format";
 import { indianMarketStatus } from "@/lib/market";
-import { useDeleteHolding, usePortfolio } from "@/lib/queries";
+import { useDeleteHolding, usePortfolio, useSummary } from "@/lib/queries";
+import { useMonth } from "@/lib/ui-store";
 import type { AssetClass, HoldingView, Portfolio, PortfolioRange } from "@/lib/types";
 
 type Tab = AssetClass;
@@ -31,9 +32,18 @@ export default function InvestmentsPage() {
   const [open, setOpen] = useState<{ id: string; tab: DetailTab } | null>(null);
   const selected = p?.holdings.find((h) => h.id === open?.id) ?? null;
 
+  const month = useMonth();
+  const savings = useSummary(month).data?.savings;
   return (
     <div className="space-y-6">
       <PageHeader title="Investments" subtitle="Stocks, mutual funds, gold and bonds — one live portfolio.">
+        {savings && (
+          <span className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm ${savings.closing < 0 ? "border-expense/30 text-expense" : "border-line text-fg-2"}`} title="Savings account balance: saved first every month, carried forward">
+            <PiggyBank size={15} className="text-brand" />
+            <span className="text-muted">{savings.closing < 0 ? "Savings overdrawn" : "Savings to invest"}</span>
+            <span className="tabular font-semibold">{money(Math.abs(savings.closing))}</span>
+          </span>
+        )}
         <div className="flex rounded-xl border border-line bg-surface p-1 text-sm">
           {([["holdings", "Holdings", LayoutGrid], ["analysis", "Analysis", ChartPie]] as [View, string, typeof ChartPie][]).map(([v, l, I]) => (
             <button key={v} onClick={() => setView(v)} className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition ${view === v ? "bg-fg/[0.07] text-fg" : "text-muted hover:text-fg"}`}>

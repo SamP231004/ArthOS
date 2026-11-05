@@ -37,7 +37,8 @@ public record PortfolioView(
 
     public enum PriceSource { LIVE, MANUAL, FACE_VALUE, COST }
 
-    public record LotView(String id, LotType type, LocalDate date, BigDecimal quantity, BigDecimal price, BigDecimal amount, String note) {}
+    public record LotView(String id, LotType type, LocalDate date, BigDecimal quantity, BigDecimal price, BigDecimal amount, String note,
+                          Holding.FundingSource fundedFrom) {}
 
     public record GoldInfo(GoldForm form, GoldPurity purity, BigDecimal grams, BigDecimal pricePerGram24k) {}
 

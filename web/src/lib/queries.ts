@@ -72,7 +72,7 @@ export function useUpdateProfile() {
   const qc = useQueryClient();
   const setUser = useAuth((s) => s.setUser);
   return useMutation({
-    mutationFn: (patch: Partial<Pick<User, "name" | "currency" | "timezone" | "monthlyIncomeTarget" | "savingsMode" | "savingsValue" | "onboardingCompleted">>) =>
+    mutationFn: (patch: Partial<Pick<User, "name" | "currency" | "timezone" | "monthlyIncomeTarget" | "savingsMode" | "savingsValue" | "savingsStartingBalance" | "onboardingCompleted">>) =>
       api<User>("/api/users/me", { method: "PATCH", body: patch }),
     onSuccess: (user) => {
       setUser(user);
@@ -105,7 +105,10 @@ export function useDeleteBudget(month: string) {
 // ---- Investments ----
 function useInvalidatePortfolio() {
   const qc = useQueryClient();
-  return () => qc.invalidateQueries({ queryKey: ["portfolio"] });
+  return () => {
+    qc.invalidateQueries({ queryKey: ["portfolio"] });
+    qc.invalidateQueries({ queryKey: ["summary"] }); // buys move money out of savings or spending
+  };
 }
 
 export function usePortfolio(range: PortfolioRange) {

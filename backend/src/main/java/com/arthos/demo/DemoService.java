@@ -6,7 +6,11 @@ import com.arthos.budget.BudgetMode;
 import com.arthos.budget.BudgetRepository;
 import com.arthos.expense.ExpenseRepository;
 import com.arthos.market.MarketDataService;
+import com.arthos.market.MarketTypes;
+import com.arthos.portfolio.Holding;
 import com.arthos.portfolio.HoldingRepository;
+import com.arthos.savings.SavingsAccount;
+import com.arthos.savings.SavingsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.arthos.income.IncomeRepository;
@@ -16,10 +20,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
@@ -73,7 +80,7 @@ public class DemoService {
         // One adaptive budget on the first demo month; later months inherit it, as a real user's would.
         Budget b = new Budget();
         b.setUserId(u.getId());
-        b.setMonthKey(java.time.YearMonth.from(today).minusMonths(DemoData.MONTHS - 1).toString());
+        b.setMonthKey(YearMonth.from(today).minusMonths(DemoData.MONTHS - 1).toString());
         b.setLimit(BigDecimal.valueOf(40_000));
         b.setMode(BudgetMode.ADAPTIVE_DAILY);
         b.setExcludedCategories(BudgetController.DEFAULT_EXCLUDED);
@@ -82,10 +89,38 @@ public class DemoService {
 
         // Investments priced from real history on each purchase date (falls back to fixed prices if sources are down).
         try {
-            holdings.saveAll(DemoPortfolio.build(u.getId(), today, expiresAt, market.histories(DemoPortfolio.marketKeys())));
+            var histories = market.histories(DemoPortfolio.marketKeys());
+            var portfolio = DemoPortfolio.build(u.getId(), today, expiresAt, histories);
+            fundFromSavings(u, portfolio, seed, today, histories.getOrDefault("GOLD:XAU", List.of()));
+            holdings.saveAll(portfolio);
         } catch (Exception e) {
             log.warn("Demo portfolio skipped: {}", e.getMessage());
         }
         return u;
+    }
+
+    /**
+     * Pays for the demo portfolio the way a saver would: every buy comes out of the savings account except a small gold
+     * top-up this month paid from spending money (so both choices show), and the account opens with savings Samarth
+     * already had — the portfolio predates the six months of tracked income — sized so it never dips below ~₹60k.
+     */
+    private void fundFromSavings(User u, List<Holding> portfolio, DemoData.Seed seed, LocalDate today, List<MarketTypes.PricePoint> gold) {
+        LocalDate day = today.minusDays(2).isBefore(today.withDayOfMonth(1)) ? today : today.minusDays(2);
+        portfolio.stream()
+                .filter(h -> h.getAssetClass() == Holding.AssetClass.GOLD && h.getGoldForm() == Holding.GoldForm.DIGITAL)
+                .findFirst()
+                .ifPresent(h -> {
+                    BigDecimal price = gold.stream().filter(p -> !p.date().isAfter(day)).reduce((x, y) -> y).map(MarketTypes.PricePoint::close)
+                            .orElse(h.getLots().getLast().getPrice()).setScale(2, RoundingMode.HALF_UP);
+                    Holding.Lot topUp = new Holding.Lot(UUID.randomUUID().toString(), Holding.LotType.BUY, day, new BigDecimal("0.5"), price, "Gold top-up");
+                    topUp.setFundedFrom(Holding.FundingSource.SPENDING);
+                    h.getLots().add(topUp);
+                });
+        BigDecimal low = SavingsAccount.lowestBalance(YearMonth.from(today), u.savingsRule(),
+                SavingsService.incomeByMonth(seed.incomes()), SavingsService.flows(portfolio));
+        BigDecimal start = low.negate().add(BigDecimal.valueOf(60_000)).max(BigDecimal.valueOf(60_000))
+                .divide(BigDecimal.valueOf(1000), 0, RoundingMode.CEILING).multiply(BigDecimal.valueOf(1000));
+        u.setSavingsStartingBalance(start);
+        users.save(u);
     }
 }

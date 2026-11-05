@@ -46,6 +46,7 @@ public class UserController {
             u.setSavingsMode(mode);
             u.setSavingsValue(value);
         }
+        if (req.savingsStartingBalance() != null) u.setSavingsStartingBalance(req.savingsStartingBalance());
         if (req.onboardingCompleted() != null) u.setOnboardingCompleted(req.onboardingCompleted());
         return UserResponse.from(users.save(u));
     }

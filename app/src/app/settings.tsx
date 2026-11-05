@@ -21,6 +21,7 @@ export default function SettingsScreen() {
   const [currency, setCurrency] = useState(user?.currency ?? 'INR');
   const [savingsMode, setSavingsMode] = useState<SavingsMode>(user?.savingsMode ?? 'PERCENT');
   const [savingsValue, setSavingsValue] = useState(String(user?.savingsValue ?? 20));
+  const [startingBalance, setStartingBalance] = useState(String(user?.savingsStartingBalance ?? 0));
 
   if (!user) return null;
 
@@ -63,6 +64,13 @@ export default function SettingsScreen() {
             setSavingsValue(v);
           }}
         />
+        <Input
+          label="Savings you already had"
+          keyboardType="decimal-pad"
+          value={startingBalance}
+          onChangeText={(t) => setStartingBalance(t.replace(/[^0-9.]/g, ''))}
+          hint="Opens your savings account; each month's saved-first amount is added and carried forward."
+        />
       </Card>
 
       <Card style={{ gap: S.md }}>
@@ -80,7 +88,7 @@ export default function SettingsScreen() {
         <Button
           title={update.isSuccess ? 'Saved ✓' : 'Save changes'}
           loading={update.isPending}
-          onPress={() => update.mutate({ name: name.trim() || user.name, currency, savingsMode, savingsValue: Number(savingsValue) || 0 })}
+          onPress={() => update.mutate({ name: name.trim() || user.name, currency, savingsMode, savingsValue: Number(savingsValue) || 0, savingsStartingBalance: Number(startingBalance) || 0 })}
         />
       </Card>
 

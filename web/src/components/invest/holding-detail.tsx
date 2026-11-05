@@ -7,7 +7,8 @@ import { CLASS_META, HORIZON_META, SOURCE_LABEL, fmtQty, holdingSubtitle, signed
 import { Badge, Button, ErrorNote, Field, Input, Modal, Select } from "../ui";
 import { dateLabel, money, todayISO } from "@/lib/format";
 import { useAddLot, useDeleteHolding, useDeleteLot, useSaveHolding } from "@/lib/queries";
-import { HORIZONS, type HoldingView, type Horizon, type LotType } from "@/lib/types";
+import { HORIZONS, type HoldingView, type Horizon, type LotType, type FundingSource } from "@/lib/types";
+import { FundingPicker } from "./funding-picker";
 
 export type DetailTab = "overview" | "trade" | "settings" | "withdraw";
 
@@ -97,7 +98,11 @@ function Lots({ h }: { h: HoldingView }) {
             <span className="text-muted">{dateLabel(l.date)}</span>
             <span className="tabular ml-auto text-right">
               {fmtQty(l.quantity)} × {money(l.price)}
-              <span className="block text-[11px] text-subtle">{money(l.amount)}{l.note ? ` · ${l.note}` : ""}</span>
+              <span className="block text-[11px] text-subtle">
+                {money(l.amount)}
+                {l.type === "BUY" ? (l.fundedFrom === "SPENDING" ? " · from spending" : " · from savings") : " · to savings"}
+                {l.note && l.note !== "Paid from spending money" ? ` · ${l.note}` : ""}
+              </span>
             </span>
             {h.lots.length > 1 && (
               <button onClick={() => confirm("Delete this transaction?") && del.mutate(l.id)} className="rounded-lg p-1 text-subtle hover:bg-expense/10 hover:text-expense" aria-label="Delete transaction">
@@ -118,12 +123,20 @@ function Trade({ h, onDone, initialType = "BUY" }: { h: HoldingView; onDone: () 
   const [qty, setQty] = useState("");
   const [price, setPrice] = useState(String(h.price));
   const [date, setDate] = useState(todayISO());
+  const [fundedFrom, setFundedFrom] = useState<FundingSource>("SAVINGS");
   const unit = CLASS_META[h.assetClass].unit;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await add.mutateAsync({ type, date, quantity: Number(qty), price: Number(price), note: h.assetClass === "MUTUAL_FUND" && type === "BUY" ? "SIP" : undefined });
+      await add.mutateAsync({
+        type,
+        date,
+        quantity: Number(qty),
+        price: Number(price),
+        note: h.assetClass === "MUTUAL_FUND" && type === "BUY" ? "SIP" : undefined,
+        fundedFrom: type === "BUY" ? fundedFrom : undefined,
+      });
       onDone();
     } catch {
       /* shown below */
@@ -147,10 +160,11 @@ function Trade({ h, onDone, initialType = "BUY" }: { h: HoldingView; onDone: () 
       </div>
       {Number(qty) > 0 && Number(price) > 0 && (
         <p className="flex justify-between rounded-xl bg-fg/[0.03] px-4 py-3 text-sm">
-          <span className="text-muted">{type === "BUY" ? "Total cost" : "Proceeds"}</span>
+          <span className="text-muted">{type === "BUY" ? "Total cost" : "Proceeds · back to your savings account"}</span>
           <span className="tabular font-semibold">{money(Number(qty) * Number(price))}</span>
         </p>
       )}
+      {type === "BUY" && <FundingPicker value={fundedFrom} onChange={setFundedFrom} amount={Number(qty) * Number(price) || 0} date={date} />}
       <ErrorNote message={add.error?.message} />
       <div className="flex justify-end">
         <Button type="submit" loading={add.isPending}>{type === "BUY" ? "Add purchase" : "Record sale"}</Button>

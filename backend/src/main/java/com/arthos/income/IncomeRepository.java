@@ -9,5 +9,7 @@ public interface IncomeRepository extends MongoRepository<Income, String> {
 
     List<Income> findByUserIdAndMonthKeyOrderByDateDescCreatedAtDesc(String userId, String monthKey);
 
+    List<Income> findByUserId(String userId);
+
     Optional<Income> findByIdAndUserId(String id, String userId);
 }

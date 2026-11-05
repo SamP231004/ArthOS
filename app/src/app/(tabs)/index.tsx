@@ -14,7 +14,7 @@ import { dayLabel, label, money } from '@/lib/format';
 import { CLASS_META, signedPct, toneColor } from '@/lib/invest-meta';
 import { useBudget, usePortfolio, useSummary } from '@/lib/queries';
 import { ruleLabel } from '@/lib/savings';
-import type { MonthSummary } from '@/lib/types';
+import type { MonthSummary, SavingsAccount } from '@/lib/types';
 import { useMonth } from '@/lib/ui-store';
 import { alpha, F, R, S, useStyles, useTheme, type Palette } from '@/theme';
 
@@ -80,7 +80,10 @@ function Summary({ s }: { s: MonthSummary }) {
           {whole}
           {paise ? <Text style={st.paise}>.{paise}</Text> : null}
         </Text>
-        <T variant="small">After saving first · {fmt(s.totalIncome)} in − {fmt(s.savedFirst)} saved − {fmt(s.totalExpense)} spent</T>
+        <T variant="small">
+          After saving first · {fmt(s.totalIncome)} in − {fmt(s.savedFirst)} saved − {fmt(s.totalExpense)} spent
+          {s.savings?.investedFromSpending > 0 ? ` − ${fmt(s.savings.investedFromSpending)} invested` : ''}
+        </T>
         <FlowBar s={s} fmt={fmt} />
         <T style={{ color: c.fg2, fontSize: 14 }}>✦ {insight(s, fmt)}</T>
         <Meter label="Spendable used" value={spentPct} color={spentPct >= 90 ? c.expense : spentPct >= 70 ? c.warn : c.income} />
@@ -93,6 +96,7 @@ function Summary({ s }: { s: MonthSummary }) {
       </View>
 
       <BudgetMini month={s.month} cur={cur} />
+      {s.savings && <SavingsMini a={s.savings} fmt={fmt} />}
       <PortfolioMini />
 
       <View style={st.grid}>
@@ -186,6 +190,46 @@ function BudgetMini({ month, cur }: { month: string; cur: string }) {
   );
 }
 
+/** Savings account: carried in + saved first − invested + sales, carried into next month. */
+function SavingsMini({ a, fmt }: { a: SavingsAccount; fmt: (n: number) => string }) {
+  const { c } = useTheme();
+  const overdrawn = a.closing < 0;
+  const max = Math.max(...a.history.map((h) => Math.abs(h.closing)), 1);
+  const line = (k: string, v: string, color?: string) => (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+      <T variant="small">{k}</T>
+      <T variant="small" style={{ color: color ?? c.fg2, fontVariant: ['tabular-nums'] }}>{v}</T>
+    </View>
+  );
+  return (
+    <Pressable onPress={() => router.push('/invest')}>
+      <Card style={{ gap: S.sm }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <View style={{ gap: 2 }}>
+            <T variant="small">{overdrawn ? 'Savings account · overdrawn' : 'Savings account · available to invest'}</T>
+            <T variant="num" style={{ fontSize: 26, color: overdrawn ? c.expense : c.fg }}>{fmt(Math.abs(a.closing))}</T>
+          </View>
+          {a.history.length > 1 && (
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 34 }}>
+              {a.history.map((h) => (
+                <View
+                  key={h.month}
+                  style={{ width: 7, borderRadius: 2, height: Math.max(4, (Math.abs(h.closing) / max) * 34), backgroundColor: h.closing < 0 ? c.expense : alpha(c.income, h.month === a.month ? 1 : 0.4) }}
+                />
+              ))}
+            </View>
+          )}
+        </View>
+        {line('Carried from last month', fmt(a.opening))}
+        {line('Saved first this month', `+${fmt(a.savedFirst)}`, c.income)}
+        {line('Invested from savings', `−${fmt(a.investedFromSavings)}`)}
+        {a.saleProceeds > 0 && line('Sales returned', `+${fmt(a.saleProceeds)}`, c.income)}
+        {a.investedFromSpending > 0 && line('Invested from spending money', fmt(a.investedFromSpending), c.subtle)}
+      </Card>
+    </Pressable>
+  );
+}
+
 function PortfolioMini() {
   const { c } = useTheme();
   const { data: p } = usePortfolio('1M');
@@ -245,8 +289,12 @@ function insight(s: MonthSummary, fmt: (n: number) => string): string {
   if (s.totalIncome === 0) return 'No income yet. When it lands, your savings are set aside first and the rest is yours to spend.';
   if (s.net < 0) return "You've spent more than you've earned — your savings are gone and then some.";
   if (s.leftToSpend < 0) return `You've dipped ${fmt(-s.leftToSpend)} into the ${fmt(s.savedFirst)} you set aside.`;
-  if (s.savedFirst > 0 && s.investedThisMonth >= s.savedFirst) return `Your ${fmt(s.savedFirst)} of savings is fully invested this month.`;
-  if (s.savedFirst > 0 && s.investedThisMonth > 0) return `${fmt(s.investedThisMonth)} of your ${fmt(s.savedFirst)} savings is invested — ${fmt(s.savedFirst - s.investedThisMonth)} still to put to work.`;
+  if (s.savings && s.savings.closing < 0) return `Your savings account is overdrawn by ${fmt(-s.savings.closing)}.`;
+  const fromSavings = s.savings?.investedFromSavings ?? 0;
+  const balance = s.savings?.closing ?? 0;
+  if (s.savedFirst > 0 && fromSavings >= s.savedFirst) return `This month's ${fmt(s.savedFirst)} of savings is fully invested.`;
+  if (fromSavings > 0) return `${fmt(fromSavings)} invested from savings — ${fmt(Math.max(balance, 0))} still in your savings account.`;
+  if (balance > 0 && s.savedFirst > 0) return `${fmt(s.savedFirst)} saved first — your savings account holds ${fmt(balance)}, ready to invest.`;
   const top = s.expenseByCategory[0];
   if (top && top.share >= 40) return `Savings are safe. ${label(top.category)} is ${top.share}% of your spending.`;
   return `Savings are safe — ${fmt(s.leftToSpend)} is yours to spend, guilt-free.`;
@@ -262,6 +310,7 @@ function FlowBar({ s, fmt }: { s: MonthSummary; fmt: (n: number) => string }) {
     { key: 'saved', label: 'Saved first', v: s.savedFirst - dip, color: c.income },
     { key: 'dip', label: 'From savings', v: dip, color: c.expense },
     { key: 'spent', label: 'Spent', v: Math.min(s.totalExpense, s.spendable), color: alpha(c.expense, 0.7) },
+    { key: 'invested', label: 'Invested', v: Math.min(s.savings?.investedFromSpending ?? 0, Math.max(0, s.spendable - s.totalExpense)), color: c.info },
     { key: 'left', label: 'Left', v: Math.max(0, s.leftToSpend), color: alpha(c.fg, 0.14) },
   ].filter((p) => p.v > 0);
   return (
