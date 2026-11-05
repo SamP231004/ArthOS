@@ -337,7 +337,7 @@ export default function Home() {
           </div>
           <div className="md:text-right">
             <p className="mb-3 text-xs text-subtle">
-              Designed &amp; built by <span className="text-fg-2">Samarth Patel</span>
+              Forged by <span className="text-fg-2">Samarth Patel</span>
             </p>
             <SocialLinks />
           </div>
