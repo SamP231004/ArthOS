@@ -8,6 +8,8 @@ spring:
   data:
     mongodb:
       uri: ${MONGODB_URI:mongodb://localhost:27017/arthos}
+      # Explicit DB name so Atlas URIs without a path (".../?retryWrites=true") still work.
+      database: ${MONGODB_DATABASE:arthos}
       auto-index-creation: true
   jackson:
     default-property-inclusion: non_null
