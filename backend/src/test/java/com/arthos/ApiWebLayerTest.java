@@ -174,6 +174,27 @@ class ApiWebLayerTest {
     }
 
     @Test
+    void googleAccessTokenFlowUsesTokenVerification() throws Exception {
+        when(google.enabled()).thenReturn(true);
+        when(google.verifyAccessToken("ya29.ok")).thenReturn(Optional.of(new GoogleIdentity("g-9", "pop@up.com", true, "Pop Up", null)));
+        when(users.findByGoogleId("g-9")).thenReturn(Optional.empty());
+        when(users.findByEmail("pop@up.com")).thenReturn(Optional.empty());
+        when(users.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            if (u.getId() == null) u.setId("u-pop");
+            return u;
+        });
+        mvc.perform(post("/api/auth/google").contentType(MediaType.APPLICATION_JSON).content("{\"accessToken\":\"ya29.ok\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.email").value("pop@up.com"));
+        when(google.verifyAccessToken("ya29.foreign")).thenReturn(Optional.empty());
+        mvc.perform(post("/api/auth/google").contentType(MediaType.APPLICATION_JSON).content("{\"accessToken\":\"ya29.foreign\"}"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/auth/google").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void providersExposeGoogleClientIdOnlyWhenConfigured() throws Exception {
         when(google.webClientId()).thenReturn(Optional.empty());
         mvc.perform(get("/api/auth/providers")).andExpect(status().isOk()).andExpect(jsonPath("$.google").doesNotExist());

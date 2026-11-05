@@ -79,7 +79,8 @@ public class AuthController {
     @PostMapping("/google")
     AuthResponse google(@Valid @RequestBody GoogleLoginRequest req) {
         if (!google.enabled()) throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "Google sign-in isn't configured yet");
-        GoogleTokenVerifier.GoogleIdentity id = google.verify(req.credential())
+        if (isBlank(req.credential()) && isBlank(req.accessToken())) throw ApiException.badRequest("Missing Google credential");
+        GoogleTokenVerifier.GoogleIdentity id = (!isBlank(req.credential()) ? google.verify(req.credential()) : google.verifyAccessToken(req.accessToken()))
                 .orElseThrow(() -> ApiException.unauthorized("Google sign-in failed. Please try again."));
         if (id.email() == null || !id.emailVerified()) throw ApiException.unauthorized("Your Google email address isn't verified");
 
@@ -116,6 +117,10 @@ public class AuthController {
 
     private AuthResponse respond(User u) {
         return new AuthResponse(jwt.issue(u.getId()), jwt.expiryFromNow(), UserResponse.from(u));
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 
     private static String normalize(String email) {

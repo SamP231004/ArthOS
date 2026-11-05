@@ -12,6 +12,10 @@ import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+
+import java.util.Map;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,8 +34,12 @@ public class GoogleTokenVerifier {
     private static final String JWKS = "https://www.googleapis.com/oauth2/v3/certs";
     private static final Set<String> ISSUERS = Set.of("accounts.google.com", "https://accounts.google.com");
 
+    private static final String TOKENINFO = "https://oauth2.googleapis.com/tokeninfo?access_token={t}";
+    private static final String USERINFO = "https://openidconnect.googleapis.com/v1/userinfo";
+
     private final List<String> audiences;
     private final JwtDecoder decoder;
+    private final RestClient http = RestClient.create();
 
     public GoogleTokenVerifier(ArthosProperties props) {
         this.audiences = props.google() == null ? List.of() : props.google().audiences();
@@ -73,6 +81,38 @@ public class GoogleTokenVerifier {
                     jwt.getClaimAsString("picture")));
         } catch (JwtException e) {
             log.info("Rejected Google ID token: {}", e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Verifies an OAuth access token from the Google popup flow (used by our custom-styled button). Google's
+     * tokeninfo endpoint confirms the token is live and was issued to one of our client IDs (so a token minted for
+     * another app can't be replayed here); the profile then comes from the OpenID userinfo endpoint.
+     */
+    @SuppressWarnings("unchecked")
+    public Optional<GoogleIdentity> verifyAccessToken(String accessToken) {
+        if (decoder == null || accessToken == null || accessToken.isBlank()) return Optional.empty();
+        try {
+            Map<String, Object> info = http.get().uri(TOKENINFO, accessToken).retrieve().body(Map.class);
+            if (info == null) return Optional.empty();
+            Object aud = info.containsKey("aud") ? info.get("aud") : info.get("azp");
+            if (aud == null || !audiences.contains(String.valueOf(aud))) {
+                log.info("Rejected Google access token: unexpected audience");
+                return Optional.empty();
+            }
+            Map<String, Object> profile = http.get().uri(USERINFO).header("Authorization", "Bearer " + accessToken)
+                    .retrieve().body(Map.class);
+            if (profile == null || profile.get("sub") == null || !profile.get("sub").equals(info.get("sub"))) return Optional.empty();
+            Object verified = profile.get("email_verified");
+            return Optional.of(new GoogleIdentity(
+                    String.valueOf(profile.get("sub")),
+                    profile.get("email") == null ? null : String.valueOf(profile.get("email")),
+                    Boolean.TRUE.equals(verified) || "true".equals(String.valueOf(verified)),
+                    profile.get("name") == null ? null : String.valueOf(profile.get("name")),
+                    profile.get("picture") == null ? null : String.valueOf(profile.get("picture"))));
+        } catch (RestClientException e) {
+            log.info("Rejected Google access token: {}", e.getMessage());
             return Optional.empty();
         }
     }

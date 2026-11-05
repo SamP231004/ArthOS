@@ -37,8 +37,11 @@ public final class AuthDtos {
 
     public record AuthResponse(String token, Instant expiresAt, UserResponse user) {}
 
-    /** The ID token ("credential") returned by Google Identity Services. */
-    public record GoogleLoginRequest(@NotBlank String credential) {}
+    /**
+     * Either an ID token ("credential", from Google's own button / native SDKs) or an OAuth access token
+     * (from the popup token flow behind our custom-styled web button).
+     */
+    public record GoogleLoginRequest(String credential, String accessToken) {}
 
     /** Which sign-in methods the clients should offer. */
     public record ProvidersResponse(GoogleProvider google) {
