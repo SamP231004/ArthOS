@@ -15,6 +15,7 @@ import type { AuthResponse } from "@/lib/types";
 
 const perks = [
   "Income, expenses and savings rate in one dashboard",
+  "Stocks, mutual funds, gold and bonds priced live",
   "Same account on the web and the Android app",
   "Adaptive daily budgets that tell you what's safe to spend today",
 ];

@@ -114,3 +114,80 @@ export type BudgetStatus = {
 };
 
 export type BudgetInput = { limit: number; mode: BudgetMode; excludedCategories: ExpenseCategory[] };
+
+// ---- Investments (Phase 3) — mirrors backend/src/main/java/com/arthos/portfolio/PortfolioView.java ----
+export const ASSET_CLASSES = ["STOCK", "MUTUAL_FUND", "GOLD", "BOND"] as const;
+export type AssetClass = (typeof ASSET_CLASSES)[number];
+export const HORIZONS = ["SHORT", "MEDIUM", "LONG"] as const;
+export type Horizon = (typeof HORIZONS)[number];
+export type GoldForm = "DIGITAL" | "PHYSICAL" | "SGB";
+export type GoldPurity = "K24" | "K22";
+export type BondType = "GOVERNMENT" | "CORPORATE";
+export type LotType = "BUY" | "SELL";
+export type PriceSource = "LIVE" | "MANUAL" | "FACE_VALUE" | "COST";
+export type PortfolioRange = "1M" | "3M" | "6M" | "1Y" | "ALL";
+
+export type HoldingView = {
+  id: string;
+  assetClass: AssetClass;
+  name: string;
+  symbol?: string;
+  exchange?: string;
+  quantity: number;
+  avgCost: number;
+  invested: number;
+  price: number;
+  priceSource: PriceSource;
+  priceAsOf?: string;
+  previousClose?: number;
+  currentValue: number;
+  gain: number;
+  gainPct?: number;
+  dayChange: number;
+  dayChangePct?: number;
+  realizedGain: number;
+  xirr?: number;
+  share?: number;
+  goal?: string;
+  horizon?: Horizon;
+  manualPrice?: number;
+  notes?: string;
+  firstBought?: string;
+  gold?: { form: GoldForm; purity: GoldPurity; grams: number; pricePerGram24k: number };
+  bond?: { faceValue: number; couponRate: number; maturityDate: string; bondType: BondType; annualCoupon: number; nextCouponDate?: string; yearsToMaturity?: number; currentYield?: number };
+  spark: number[];
+  lots: { id: string; type: LotType; date: string; quantity: number; price: number; amount: number; note?: string }[];
+};
+
+export type Portfolio = {
+  totals: { value: number; invested: number; gain: number; gainPct?: number; dayChange: number; dayChangePct?: number; realizedGain: number; xirr?: number; holdingsCount: number };
+  allocation: { assetClass: AssetClass; value: number; invested: number; gain: number; gainPct?: number; share?: number; count: number }[];
+  byHorizon: { horizon?: Horizon; value: number; share?: number; count: number }[];
+  holdings: HoldingView[];
+  history: { date: string; value: number; invested: number }[];
+  range: PortfolioRange;
+  pricesAsOf?: string;
+  priceNotes: string[];
+};
+
+export type SymbolMatch = { symbol: string; name: string; exchange: string; assetClass: AssetClass };
+export type Quote = { price: number; previousClose?: number; asOf: string; source: string };
+
+export type LotInput = { type: LotType; date: string; quantity: number; price: number; note?: string };
+export type HoldingInput = {
+  assetClass: AssetClass;
+  name: string;
+  symbol?: string;
+  exchange?: string;
+  goal?: string;
+  horizon?: Horizon;
+  goldForm?: GoldForm;
+  purity?: GoldPurity;
+  faceValue?: number;
+  couponRate?: number;
+  maturityDate?: string;
+  bondType?: BondType;
+  manualPrice?: number;
+  notes?: string;
+  firstLot?: LotInput;
+};

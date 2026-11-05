@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { useAuth } from "./auth-store";
-import type { BudgetInput, BudgetStatus, Expense, ExpenseInput, Income, IncomeInput, MonthSummary, User } from "./types";
+import type { AssetClass, BudgetInput, BudgetStatus, HoldingInput, HoldingView, LotInput, Portfolio, PortfolioRange, Quote, SymbolMatch, Expense, ExpenseInput, Income, IncomeInput, MonthSummary, User } from "./types";
 
 export const keys = {
   me: ["me"] as const,
@@ -99,5 +99,69 @@ export function useDeleteBudget(month: string) {
   return useMutation({
     mutationFn: () => api<BudgetStatus>(`/api/budget?month=${month}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["budget"] }),
+  });
+}
+
+// ---- Investments ----
+function useInvalidatePortfolio() {
+  const qc = useQueryClient();
+  return () => qc.invalidateQueries({ queryKey: ["portfolio"] });
+}
+
+export function usePortfolio(range: PortfolioRange) {
+  return useQuery({
+    queryKey: ["portfolio", range],
+    queryFn: () => api<Portfolio>(`/api/portfolio?range=${range}`),
+    placeholderData: (prev) => prev, // keep the chart while switching ranges
+    refetchInterval: 5 * 60_000,
+  });
+}
+
+export function useMarketSearch(assetClass: AssetClass, q: string) {
+  return useQuery({
+    queryKey: ["market-search", assetClass, q],
+    queryFn: () => api<SymbolMatch[]>(`/api/market/search?assetClass=${assetClass}&q=${encodeURIComponent(q)}`),
+    enabled: q.trim().length >= 2 && (assetClass === "STOCK" || assetClass === "MUTUAL_FUND"),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useQuote(assetClass: AssetClass, symbol?: string) {
+  return useQuery({
+    queryKey: ["quote", assetClass, symbol],
+    queryFn: () => api<Quote>(`/api/market/quote?assetClass=${assetClass}${symbol ? `&symbol=${encodeURIComponent(symbol)}` : ""}`),
+    enabled: assetClass === "GOLD" || ((assetClass === "STOCK" || assetClass === "MUTUAL_FUND") && !!symbol),
+    staleTime: 60_000,
+    retry: false,
+  });
+}
+
+export function useSaveHolding() {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: ({ id, input }: { id?: string; input: HoldingInput }) =>
+      api<HoldingView>(id ? `/api/holdings/${id}` : "/api/holdings", { method: id ? "PUT" : "POST", body: input }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteHolding() {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({ mutationFn: (id: string) => api<void>(`/api/holdings/${id}`, { method: "DELETE" }), onSuccess: invalidate });
+}
+
+export function useAddLot(holdingId: string) {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: (lot: LotInput) => api<HoldingView>(`/api/holdings/${holdingId}/lots`, { method: "POST", body: lot }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteLot(holdingId: string) {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: (lotId: string) => api<HoldingView>(`/api/holdings/${holdingId}/lots/${lotId}`, { method: "DELETE" }),
+    onSuccess: invalidate,
   });
 }

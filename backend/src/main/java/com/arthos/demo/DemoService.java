@@ -5,6 +5,10 @@ import com.arthos.budget.BudgetController;
 import com.arthos.budget.BudgetMode;
 import com.arthos.budget.BudgetRepository;
 import com.arthos.expense.ExpenseRepository;
+import com.arthos.market.MarketDataService;
+import com.arthos.portfolio.HoldingRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.arthos.income.IncomeRepository;
 import com.arthos.user.User;
 import com.arthos.user.UserRepository;
@@ -30,15 +34,20 @@ public class DemoService {
     private final ExpenseRepository expenses;
     private final PasswordEncoder encoder;
     private final BudgetRepository budgets;
+    private final HoldingRepository holdings;
+    private final MarketDataService market;
+    private static final Logger log = LoggerFactory.getLogger(DemoService.class);
     private final SecureRandom random = new SecureRandom();
 
     public DemoService(UserRepository users, IncomeRepository incomes, ExpenseRepository expenses, PasswordEncoder encoder,
-                       BudgetRepository budgets) {
+                       BudgetRepository budgets, HoldingRepository holdings, MarketDataService market) {
         this.users = users;
         this.incomes = incomes;
         this.expenses = expenses;
         this.encoder = encoder;
         this.budgets = budgets;
+        this.holdings = holdings;
+        this.market = market;
     }
 
     public User createDemoUser() {
@@ -69,6 +78,13 @@ public class DemoService {
         b.setExcludedCategories(BudgetController.DEFAULT_EXCLUDED);
         b.setExpiresAt(expiresAt);
         budgets.save(b);
+
+        // Investments priced from real history on each purchase date (falls back to fixed prices if sources are down).
+        try {
+            holdings.saveAll(DemoPortfolio.build(u.getId(), today, expiresAt, market.histories(DemoPortfolio.marketKeys())));
+        } catch (Exception e) {
+            log.warn("Demo portfolio skipped: {}", e.getMessage());
+        }
         return u;
     }
 }

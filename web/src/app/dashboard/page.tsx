@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Avatar } from "@/components/avatar";
 import { BudgetCard } from "@/components/budget/budget-card";
+import { PortfolioCard } from "@/components/invest/portfolio-card";
 import { CATEGORY_COLORS, DailyBars, Donut, Sparkline, SpendCurve } from "@/components/charts";
 import { MonthPicker } from "@/components/month-picker";
 import { ExpenseModal, IncomeModal } from "@/components/transaction-forms";
@@ -132,7 +133,10 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
         </div>
       </section>
 
-      <BudgetCard month={s.month} currency={cur} />
+      <section className="grid gap-6 lg:grid-cols-2">
+        <BudgetCard month={s.month} currency={cur} />
+        <PortfolioCard />
+      </section>
 
       {/* KPIs */}
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">

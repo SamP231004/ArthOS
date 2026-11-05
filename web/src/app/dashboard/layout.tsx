@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowDownLeft, ArrowUpRight, Gauge, LayoutDashboard, LogOut, Settings, Sparkles } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ChartPie, Gauge, LayoutDashboard, LogOut, Settings, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -16,10 +16,11 @@ const nav = [
   { href: "/dashboard/income", label: "Income", icon: ArrowDownLeft },
   { href: "/dashboard/expenses", label: "Expenses", icon: ArrowUpRight },
   { href: "/dashboard/budget", label: "Budget", icon: Gauge },
+  { href: "/dashboard/investments", label: "Investments", icon: ChartPie },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
-const soon = ["Investments", "Insights", "Widgets"];
+const soon = ["Automation", "Insights", "Widgets"];
 
 function initials(name?: string) {
   return (name ?? "?").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
@@ -144,7 +145,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-2xl border border-line bg-surface/90 p-1 shadow-2xl backdrop-blur-xl md:hidden">
+      <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-6 rounded-2xl border border-line bg-surface/90 p-1 shadow-2xl backdrop-blur-xl md:hidden">
         {nav.map((n) => {
           const active = isActive(n.href);
           return (

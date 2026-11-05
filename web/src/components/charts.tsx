@@ -114,7 +114,7 @@ export function SpendCurve({
 
 export const CATEGORY_COLORS = ["var(--c1)", "var(--c4)", "var(--c2)", "var(--c6)", "var(--c5)", "var(--c3)", "var(--c7)", "var(--c8)"];
 
-export function Donut({ data, size = 168, center }: { data: { label: string; value: number }[]; size?: number; center?: React.ReactNode }) {
+export function Donut({ data, size = 168, center, colors }: { data: { label: string; value: number }[]; size?: number; center?: React.ReactNode; colors?: string[] }) {
   const total = data.reduce((a, d) => a + d.value, 0) || 1;
   const r = 42;
   const C = 2 * Math.PI * r;
@@ -133,7 +133,7 @@ export function Donut({ data, size = 168, center }: { data: { label: string; val
               cy="50"
               r={r}
               fill="none"
-              stroke={CATEGORY_COLORS[i % CATEGORY_COLORS.length]}
+              stroke={colors?.[i] ?? CATEGORY_COLORS[i % CATEGORY_COLORS.length]}
               strokeWidth="11"
               strokeDasharray={`${Math.max(len - gap, 0.1)} ${C}`}
               strokeDashoffset={-offsets[i]}

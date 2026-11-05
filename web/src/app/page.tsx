@@ -35,8 +35,8 @@ const pillars = [
 const roadmap = [
   ["01", "Foundation", "Accounts, income & expense tracking, monthly summary", "live"],
   ["02", "Budget engine", "Fixed, adaptive and weekly budget modes", "live"],
-  ["03", "Investments", "Stocks, MF, gold, bonds with live pricing", "next"],
-  ["04", "Automation", "Screenshot-to-transaction OCR, smart categories", "planned"],
+  ["03", "Investments", "Stocks, MF, gold, bonds with live pricing", "live"],
+  ["04", "Automation", "Screenshot-to-transaction OCR, smart categories", "next"],
   ["05", "Insights", "Trends, anomalies, financial health score", "planned"],
   ["06", "Widgets", "Android home-screen budget & net worth", "planned"],
   ["07", "AI assistant", "Ask anything about your money, in plain language", "planned"],
@@ -65,7 +65,7 @@ export default function Home() {
           <div className="relative mx-auto max-w-7xl px-4 text-center sm:px-6">
             <a href="#roadmap" className="mx-auto inline-flex animate-fade-up items-center gap-2 rounded-full border border-line bg-fg/[0.03] py-1 pl-1 pr-3 text-xs text-muted backdrop-blur transition hover:border-line-strong">
               <span className="rounded-full bg-income/15 px-2 py-0.5 font-medium text-income">Live</span>
-              Phase 2 · The budget engine is here
+              Phase 3 · Live investment tracking is here
               <ArrowRight size={12} />
             </a>
 
