@@ -10,4 +10,6 @@ public interface ExpenseRepository extends MongoRepository<Expense, String> {
     List<Expense> findByUserIdAndMonthKeyOrderByDateDescCreatedAtDesc(String userId, String monthKey);
 
     Optional<Expense> findByIdAndUserId(String id, String userId);
+
+    List<Expense> findByUserIdAndMonthKeyIn(String userId, java.util.Collection<String> monthKeys);
 }

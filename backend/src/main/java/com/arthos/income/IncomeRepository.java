@@ -11,5 +11,7 @@ public interface IncomeRepository extends MongoRepository<Income, String> {
 
     List<Income> findByUserId(String userId);
 
+    List<Income> findByUserIdAndMonthKeyIn(String userId, java.util.Collection<String> monthKeys);
+
     Optional<Income> findByIdAndUserId(String id, String userId);
 }

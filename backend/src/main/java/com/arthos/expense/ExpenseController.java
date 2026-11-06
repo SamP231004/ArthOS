@@ -1,6 +1,7 @@
 package com.arthos.expense;
 
 import com.arthos.auth.CurrentUser;
+import com.arthos.automation.CategoryLearner;
 import com.arthos.common.ApiException;
 import com.arthos.common.MonthKey;
 import com.arthos.expense.ExpenseDtos.ExpenseRequest;
@@ -25,11 +26,13 @@ public class ExpenseController {
     private final ExpenseRepository expenses;
     private final MongoTemplate mongo;
     private final UserContext userCtx;
+    private final CategoryLearner learner;
 
-    public ExpenseController(ExpenseRepository expenses, MongoTemplate mongo, UserContext userCtx) {
+    public ExpenseController(ExpenseRepository expenses, MongoTemplate mongo, UserContext userCtx, CategoryLearner learner) {
         this.expenses = expenses;
         this.mongo = mongo;
         this.userCtx = userCtx;
+        this.learner = learner;
     }
 
     /**
@@ -72,20 +75,28 @@ public class ExpenseController {
         e.setUserId(CurrentUser.id());
         e.setExpiresAt(userCtx.demoExpiry(e.getUserId()));
         apply(e, req);
-        return ExpenseResponse.from(expenses.save(e));
+        Expense saved = expenses.save(e);
+        learn(saved);
+        return ExpenseResponse.from(saved);
     }
 
     @PutMapping("/{id}")
     ExpenseResponse update(@PathVariable String id, @Valid @RequestBody ExpenseRequest req) {
         Expense e = load(id);
         apply(e, req);
-        return ExpenseResponse.from(expenses.save(e));
+        Expense saved = expenses.save(e);
+        learn(saved); // a changed category is a correction: remembered for this merchant from now on
+        return ExpenseResponse.from(saved);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void delete(@PathVariable String id) {
         expenses.delete(load(id));
+    }
+
+    private void learn(Expense e) {
+        if (e.getMerchant() != null) learner.learn(e.getUserId(), e.getMerchant(), e.getCategory(), userCtx.demoExpiry(e.getUserId()));
     }
 
     private Expense load(String id) {

@@ -43,6 +43,7 @@ class ApiWebLayerTest {
     @MockitoBean MongoTemplate mongo;
     @MockitoBean DemoService demoService;
     @MockitoBean GoogleTokenVerifier google;
+    @MockitoBean com.arthos.automation.CategoryLearner learner;
 
     @Test
     void registerIssuesTokenAndNormalizesEmail() throws Exception {
