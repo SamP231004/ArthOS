@@ -53,7 +53,8 @@
           ],
           "disableIOS": true
         }
-      ]
+      ],
+      "./plugins/with-mlkit-ocr"
     ],
     "experiments": {
       "typedRoutes": true,

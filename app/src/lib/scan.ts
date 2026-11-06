@@ -11,13 +11,48 @@ export const scanAvailable = Constants.executionEnvironment !== ExecutionEnviron
 
 type Extractor = { isSupported: boolean; extractTextFromImage: (uri: string) => Promise<string[]> };
 
-/** OCR via expo-text-extractor (an Expo module wrapping ML Kit on Android, so it runs on the New Architecture). */
-export async function readText(uri: string): Promise<string> {
+/**
+ * The extractor takes a content:// URI or a plain filesystem path — not a file:// URI (it would look for a file
+ * literally named "file:///…" and fail with "File not found"). Image-picker and share URIs are normalised here.
+ */
+export function toExtractorPath(uri: string): string {
+  if (uri.startsWith('content://')) return uri;
+  if (uri.startsWith('file://')) return decodeURIComponent(uri.replace(/^file:\/\//, ''));
+  return uri;
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * OCR via expo-text-extractor (an Expo module wrapping Google ML Kit on Android). ML Kit's model comes from Google
+ * Play services; until it has downloaded, reads fail with a "waiting / download" error — so those are retried for a
+ * little while (`onWaiting` lets the screen say so). The model is also requested at install (plugins/with-mlkit-ocr).
+ */
+export async function readText(uri: string, onWaiting?: () => void): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const mod = require('expo-text-extractor') as Extractor;
   if (!mod.isSupported) throw new Error('Text recognition is not supported on this device');
-  const lines = await mod.extractTextFromImage(uri);
-  return lines.join('\n');
+  const path = toExtractorPath(uri);
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const lines = await mod.extractTextFromImage(path);
+      return lines.join('\n');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (attempt < 6 && /download|waiting|optional module|unavailable/i.test(msg)) {
+        onWaiting?.();
+        await sleep(2500);
+        continue;
+      }
+      throw e;
+    }
+  }
+}
+
+/** Short, user-facing reason for a failed read (shown under the friendly message so problems can be reported). */
+export function readError(e: unknown): string {
+  const msg = e instanceof Error ? e.message : String(e);
+  return msg.length > 140 ? `${msg.slice(0, 140)}…` : msg;
 }
 
 /** What the form screens receive (as a JSON route param) to open pre-filled for confirmation. */

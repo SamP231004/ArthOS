@@ -59,6 +59,8 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.workers.max=2
+          # arm64 only: what virtually every Android phone from the last ~8 years runs; halves the APK and build time
+          ORG_GRADLE_PROJECT_reactNativeArchitectures: arm64-v8a
         run: npx --yes eas-cli@latest build --platform android --profile preview --local --non-interactive --output "$GITHUB_WORKSPACE/ArthOS.apk"
 
       - name: Publish "Android app (latest)" release
