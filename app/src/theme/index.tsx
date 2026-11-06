@@ -154,26 +154,40 @@ type Reveal = { from: string; to?: string; x: number; y: number; r: number };
 
 const frame = () => new Promise<void>((res) => requestAnimationFrame(() => res()));
 type HostView = React.ComponentRef<typeof View>;
-const shot = (ref: React.RefObject<HostView | null>) => captureRef(ref, { format: 'jpg', quality: 0.92, result: 'tmpfile' });
+// lighter snapshots capture faster; they're only on screen for half a second
+const shot = (ref: React.RefObject<HostView | null>) => captureRef(ref, { format: 'jpg', quality: 0.8, result: 'tmpfile' });
+const START = 0.002; // starting scale of the circle (a dot at the control)
 
 /**
  * Theme state plus the circular reveal (the app's version of the website's View Transition):
  * 1. snapshot the screen and freeze it on top, so the old theme stays on screen;
  * 2. switch the theme underneath and snapshot the new screen;
  * 3. grow a circle from the tapped control that shows the new screen, until it covers everything.
- * The screen is never blank. If a snapshot fails (or there's no origin) the theme simply switches.
+ * The growth runs on the native UI thread: the circle is drawn full-size and only *scaled*, while an inner layer is
+ * scaled by the inverse so the new screen inside it stays perfectly still — smooth even while JS re-renders.
+ * Each snapshot is shown only once it has decoded. If anything fails (or there's no origin) the theme just switches.
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<Mode>('dark'); // dark is the default (blueprint §11)
   const [ready, setReady] = useState(false);
   const [reveal, setReveal] = useState<Reveal | null>(null);
-  const [radius] = useState(() => new Animated.Value(0));
+  const [scale] = useState(() => new Animated.Value(START));
+  const [inverse] = useState(() => Animated.divide(1, scale));
   const root = useRef<HostView>(null);
   // the app area's real size (not Dimensions "window", which on edge-to-edge Android excludes the system bars and
   // made the frozen snapshot render shorter — the screen appeared to jump up before the reveal)
   const size = useRef({ width: 0, height: 0 });
   const [frame0, setFrame0] = useState({ width: 0, height: 0 });
   const busy = useRef(false);
+  // resolved by each snapshot Image's onLoad, so nothing is revealed before it has actually decoded
+  const loaded = useRef<{ from?: () => void; to?: () => void }>({});
+  const waitLoad = (k: 'from' | 'to') => new Promise<void>((res) => {
+    const t = setTimeout(res, 600); // never hang on a missed onLoad
+    loaded.current[k] = () => {
+      clearTimeout(t);
+      res();
+    };
+  });
 
   useEffect(() => {
     store
@@ -200,26 +214,24 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           if (node?.measureInWindow) node.measureInWindow((x, y) => res({ x, y }));
           else res({ x: 0, y: 0 });
         });
-        origin = { x: origin.x - off.x, y: origin.y - off.y };
+        const o = { x: origin.x - off.x, y: origin.y - off.y };
         const { width, height } = size.current.width ? size.current : Dimensions.get('window');
         setFrame0({ width, height });
-        const r = Math.hypot(Math.max(origin.x, width - origin.x), Math.max(origin.y, height - origin.y));
+        const r = Math.ceil(Math.hypot(Math.max(o.x, width - o.x), Math.max(o.y, height - o.y))) + 2;
+
         const from = await shot(root);
-        radius.setValue(0);
-        setReveal({ from, x: origin.x, y: origin.y, r });
-        await frame(); // frozen old screen is up
+        scale.setValue(START);
+        const fromShown = waitLoad('from');
+        setReveal({ from, x: o.x, y: o.y, r });
+        await fromShown; // the frozen old screen is really on top now
         commit(next);
         await frame();
         await frame(); // new theme has painted underneath
         const to = await shot(root);
-        setReveal({ from, to, x: origin.x, y: origin.y, r });
-        await frame();
-        Animated.timing(radius, {
-          toValue: r,
-          duration: 560,
-          easing: Easing.bezier(0.65, 0, 0.35, 1),
-          useNativeDriver: false,
-        }).start(() => {
+        const toShown = waitLoad('to');
+        setReveal({ from, to, x: o.x, y: o.y, r });
+        await toShown;
+        Animated.timing(scale, { toValue: 1, duration: 620, easing: Easing.bezier(0.65, 0, 0.35, 1), useNativeDriver: true }).start(() => {
           setReveal(null);
           busy.current = false;
         });
@@ -229,7 +241,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         busy.current = false;
       }
     },
-    [commit, radius],
+    [commit, scale],
   );
 
   const toggle = useCallback((origin?: Origin) => setMode(mode === 'dark' ? 'light' : 'dark', origin), [mode, setMode]);
@@ -246,6 +258,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     [mode, setMode, toggle, ready],
   );
   const { width, height } = frame0;
+  const d = reveal ? reveal.r * 2 : 0;
   return (
     <ThemeContext.Provider value={value}>
       <View style={{ flex: 1 }}>
@@ -254,41 +267,43 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           collapsable={false}
           style={{ flex: 1 }}
           onLayout={(e) => {
-            size.current = {
-              width: e.nativeEvent.layout.width,
-              height: e.nativeEvent.layout.height,
-            };
+            size.current = { width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height };
           }}>
           {children}
         </View>
         {reveal && (
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]}>
             {/* both snapshots drawn at exactly the captured area's size, so nothing shifts or rescales */}
-            <Image source={{ uri: reveal.from }} fadeDuration={0} resizeMode="stretch" style={{ position: 'absolute', left: 0, top: 0, width, height }} />
+            <Image
+              source={{ uri: reveal.from }}
+              fadeDuration={0}
+              resizeMode="stretch"
+              onLoad={() => loaded.current.from?.()}
+              style={{ position: 'absolute', left: 0, top: 0, width, height }}
+            />
             {reveal.to && (
-              // the circle grows from the control; the new snapshot inside it is counter-offset so it stays put
+              // full-size circle centred on the control, scaled up natively; the inner layer is scaled by the inverse
+              // (around the same centre) so the new screen inside stays put while the circle grows
               <Animated.View
                 style={{
                   position: 'absolute',
+                  left: reveal.x - reveal.r,
+                  top: reveal.y - reveal.r,
+                  width: d,
+                  height: d,
+                  borderRadius: reveal.r,
                   overflow: 'hidden',
-                  left: Animated.subtract(reveal.x, radius),
-                  top: Animated.subtract(reveal.y, radius),
-                  width: Animated.multiply(radius, 2),
-                  height: Animated.multiply(radius, 2),
-                  borderRadius: radius,
+                  transform: [{ scale }],
                 }}>
-                <Animated.Image
-                  source={{ uri: reveal.to }}
-                  fadeDuration={0}
-                  resizeMode="stretch"
-                  style={{
-                    position: 'absolute',
-                    width,
-                    height,
-                    left: Animated.subtract(radius, reveal.x),
-                    top: Animated.subtract(radius, reveal.y),
-                  }}
-                />
+                <Animated.View style={{ width: d, height: d, transform: [{ scale: inverse }] }}>
+                  <Image
+                    source={{ uri: reveal.to }}
+                    fadeDuration={0}
+                    resizeMode="stretch"
+                    onLoad={() => loaded.current.to?.()}
+                    style={{ position: 'absolute', left: reveal.r - reveal.x, top: reveal.r - reveal.y, width, height }}
+                  />
+                </Animated.View>
               </Animated.View>
             )}
           </View>
