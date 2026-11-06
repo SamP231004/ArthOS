@@ -15,7 +15,11 @@ export function ThemeToggle() {
 
   return (
     <Pressable
-      onPress={toggle}
+      // reveal from the icon's centre, measured in window coordinates
+      onPress={(e) => {
+        const t = e.currentTarget as unknown as { measureInWindow: (cb: (x: number, y: number, w: number, h: number) => void) => void };
+        t.measureInWindow((x, y, w, h) => toggle({ x: x + w / 2, y: y + h / 2 }));
+      }}
       hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel={`Switch to ${mode === 'dark' ? 'light' : 'dark'} theme`}

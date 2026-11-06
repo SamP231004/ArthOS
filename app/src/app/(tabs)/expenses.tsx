@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useDeferredValue, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
-import { BreakdownBar, RecurringSuggestions, SummaryGrid } from '@/components/ledger-ui';
+import { BreakdownBar, RecurringSuggestions, SummaryGrid, TopEntries } from '@/components/ledger-ui';
 import { MonthPicker } from '@/components/month-picker';
 import { AppHeader } from '@/components/app-header';
 import { Screen } from '@/components/screen';
@@ -105,6 +105,14 @@ export default function ExpensesTab() {
       <ErrorNote message={save.error?.message} />
 
       <BreakdownBar parts={parts} total={total} active={category} onPick={setCategory} fmt={fmt} />
+
+      <TopEntries
+        title="Top 3 expenses"
+        items={[...all]
+          .sort((x, y) => y.amount - x.amount)
+          .slice(0, 3)
+          .map((e) => ({ id: e.id, name: name(e), meta: `${label(e.category)} · ${dayLabel(e.date)}`, amount: `−${fmt(e.amount)}`, color: tagColor(c, 'EXPENSE', e.category), onPress: () => router.push(`/expense-form?id=${e.id}`) }))}
+      />
 
       <TextInput
         placeholder="⌕  Search merchant or note…"

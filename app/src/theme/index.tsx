@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Platform } from 'react-native';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Dimensions, Easing, Image, Platform, StyleSheet, View } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
 
 /**
  * ArthOS design tokens — the same values as web/src/app/globals.css, so the app and the website look identical.
@@ -126,15 +127,34 @@ type Ctx = {
   mode: Mode;
   scheme: 'dark' | 'light';
   c: Palette;
-  setMode: (m: Mode) => void;
-  toggle: () => void;
+  /** Switch theme; with an origin (screen point of the tapped control) it plays the circular reveal. */
+  setMode: (m: Mode, origin?: { x: number; y: number }) => void;
+  toggle: (origin?: { x: number; y: number }) => void;
   ready: boolean;
 };
 const ThemeContext = createContext<Ctx>({ mode: 'dark', scheme: 'dark', c: palettes.dark, setMode: () => {}, toggle: () => {}, ready: false });
 
+type Origin = { x: number; y: number };
+type Reveal = { from: string; to?: string; x: number; y: number; r: number };
+
+const frame = () => new Promise<void>((res) => requestAnimationFrame(() => res()));
+type HostView = React.ComponentRef<typeof View>;
+const shot = (ref: React.RefObject<HostView | null>) => captureRef(ref, { format: 'jpg', quality: 0.92, result: 'tmpfile' });
+
+/**
+ * Theme state plus the circular reveal (the app's version of the website's View Transition):
+ * 1. snapshot the screen and freeze it on top, so the old theme stays on screen;
+ * 2. switch the theme underneath and snapshot the new screen;
+ * 3. grow a circle from the tapped control that shows the new screen, until it covers everything.
+ * The screen is never blank. If a snapshot fails (or there's no origin) the theme simply switches.
+ */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<Mode>('dark'); // dark is the default (blueprint §11)
   const [ready, setReady] = useState(false);
+  const [reveal, setReveal] = useState<Reveal | null>(null);
+  const [radius] = useState(() => new Animated.Value(0));
+  const root = useRef<HostView>(null);
+  const busy = useRef(false);
 
   useEffect(() => {
     store
@@ -144,24 +164,80 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setReady(true));
   }, []);
 
-  const setMode = useCallback((next: Mode) => {
+  const commit = useCallback((next: Mode) => {
     setModeState(next);
     store.set(next).catch(() => {});
   }, []);
 
-  const toggle = useCallback(() => {
-    setModeState((m) => {
-      const next = m === 'dark' ? 'light' : 'dark';
-      store.set(next).catch(() => {});
-      return next;
-    });
-  }, []);
+  const setMode = useCallback(
+    async (next: Mode, origin?: Origin) => {
+      if (busy.current) return;
+      if (!origin || Platform.OS === 'web') return commit(next);
+      busy.current = true;
+      try {
+        const { width, height } = Dimensions.get('window');
+        const r = Math.hypot(Math.max(origin.x, width - origin.x), Math.max(origin.y, height - origin.y));
+        const from = await shot(root);
+        radius.setValue(0);
+        setReveal({ from, x: origin.x, y: origin.y, r });
+        await frame(); // frozen old screen is up
+        commit(next);
+        await frame();
+        await frame(); // new theme has painted underneath
+        const to = await shot(root);
+        setReveal({ from, to, x: origin.x, y: origin.y, r });
+        await frame();
+        Animated.timing(radius, { toValue: r, duration: 560, easing: Easing.bezier(0.65, 0, 0.35, 1), useNativeDriver: false }).start(() => {
+          setReveal(null);
+          busy.current = false;
+        });
+      } catch {
+        commit(next);
+        setReveal(null);
+        busy.current = false;
+      }
+    },
+    [commit, radius],
+  );
+
+  const toggle = useCallback((origin?: Origin) => setMode(mode === 'dark' ? 'light' : 'dark', origin), [mode, setMode]);
 
   const value = useMemo(
     () => ({ mode, scheme: THEMES.find((t) => t.id === mode)?.scheme ?? 'dark', c: palettes[mode], setMode, toggle, ready }),
     [mode, setMode, toggle, ready],
   );
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  const { width, height } = Dimensions.get('window');
+  return (
+    <ThemeContext.Provider value={value}>
+      <View ref={root} collapsable={false} style={{ flex: 1 }}>
+        {children}
+      </View>
+      {reveal && (
+        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <Image source={{ uri: reveal.from }} fadeDuration={0} style={{ width, height }} />
+          {reveal.to && (
+            // the circle grows from the control; the new snapshot inside it is counter-offset so it stays put
+            <Animated.View
+              style={{
+                position: 'absolute',
+                overflow: 'hidden',
+                left: Animated.subtract(reveal.x, radius),
+                top: Animated.subtract(reveal.y, radius),
+                width: Animated.multiply(radius, 2),
+                height: Animated.multiply(radius, 2),
+                borderRadius: radius,
+              }}>
+              <Animated.Image
+                source={{ uri: reveal.to }}
+                fadeDuration={0}
+                style={{ position: 'absolute', width, height, left: Animated.subtract(radius, reveal.x), top: Animated.subtract(radius, reveal.y) }}
+              />
+            </Animated.View>
+          )}
+        </View>
+      )}
+    </ThemeContext.Provider>
+  );
 }
 
 export function useTheme() {

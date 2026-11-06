@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { BreakdownBar, RecurringSuggestions, SummaryGrid } from '@/components/ledger-ui';
+import { BreakdownBar, RecurringSuggestions, SummaryGrid, TopEntries } from '@/components/ledger-ui';
 import { MonthPicker } from '@/components/month-picker';
 import { AppHeader } from '@/components/app-header';
 import { Screen } from '@/components/screen';
@@ -78,6 +78,16 @@ export default function IncomeTab() {
       <ErrorNote message={save.error?.message} />
 
       <BreakdownBar parts={parts} total={total} active={type} onPick={setType} fmt={fmt} />
+
+      {all.length > 3 && (
+        <TopEntries
+          title="Top 3 income"
+          items={[...all]
+            .sort((x, y) => y.amount - x.amount)
+            .slice(0, 3)
+            .map((i) => ({ id: i.id, name: i.source, meta: `${label(i.type)} · ${dayLabel(i.date)}`, amount: `+${fmt(i.amount)}`, color: tagColor(c, 'INCOME', i.type), onPress: () => router.push(`/income-form?id=${i.id}`) }))}
+        />
+      )}
 
       {isLoading ? (
         <Loading />
