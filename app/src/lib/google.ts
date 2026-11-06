@@ -1,14 +1,29 @@
-import { GoogleSignin, isErrorWithCode, statusCodes } from '@react-native-google-signin/google-signin';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 import { api, ApiError } from './api';
 import type { AuthResponse } from './types';
 
 type Providers = { google?: { clientId: string } | null };
 
+/**
+ * Expo Go only ships the native modules bundled with it, and Google sign-in isn't one of them — importing it there
+ * crashes the screen. So the library is loaded lazily, and only in real (EAS/dev-client) builds.
+ */
+export const googleAvailable = Constants.executionEnvironment !== ExecutionEnvironment.StoreClient;
+
+type GoogleModule = typeof import('@react-native-google-signin/google-signin');
+let mod: GoogleModule | null = null;
+function lib(): GoogleModule {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  if (!mod) mod = require('@react-native-google-signin/google-signin') as GoogleModule;
+  return mod;
+}
+
 let configuredFor: string | null = null;
 
-/** The web OAuth client ID the backend accepts (null when Google sign-in isn't set up there). */
+/** The web OAuth client ID the backend accepts (null when Google sign-in isn't available here or on the backend). */
 export async function googleClientId(): Promise<string | null> {
+  if (!googleAvailable) return null;
   try {
     const p = await api<Providers>('/api/auth/providers', { auth: false });
     return p.google?.clientId ?? null;
@@ -23,6 +38,7 @@ export async function googleClientId(): Promise<string | null> {
  * backs out of the picker.
  */
 export async function signInWithGoogle(webClientId: string): Promise<AuthResponse | null> {
+  const { GoogleSignin, isErrorWithCode, statusCodes } = lib();
   if (configuredFor !== webClientId) {
     GoogleSignin.configure({ webClientId });
     configuredFor = webClientId;
