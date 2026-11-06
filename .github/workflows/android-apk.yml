@@ -1,0 +1,75 @@
+# Builds the Android APK on GitHub's runners and publishes it as the "Android app (latest)" release, so the newest
+# build can be downloaded straight to a phone from:
+#   https://github.com/SamP231004/ArthOS/releases/tag/android-latest
+#
+# It runs EAS Build *locally on the runner* (`eas build --local`): the app is signed with the same keystore EAS
+# manages (the one whose SHA-1 is registered for Google sign-in), but no EAS cloud build minutes are used.
+# Needs one repository secret: EXPO_TOKEN (expo.dev → Account settings → Access tokens).
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+    paths: ["app/**", ".github/workflows/android-apk.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
+permissions:
+  contents: write # to create/update the release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build APK (EAS, on this runner)
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.workers.max=2
+        run: npx --yes eas-cli@latest build --platform android --profile preview --local --non-interactive --output "$GITHUB_WORKSPACE/ArthOS.apk"
+
+      - name: Publish "Android app (latest)" release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: Android app (latest)
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          body: |
+            Latest ArthOS Android build from `${{ github.sha }}`.
+
+            Open this page on your phone and tap **ArthOS.apk** to download and install it
+            (allow "Install unknown apps" for your browser the first time).
+          files: ArthOS.apk
+          fail_on_unmatched_files: true
+
+      - name: Keep the APK as a workflow artifact too
+        uses: actions/upload-artifact@v4
+        with:
+          name: ArthOS-apk
+          path: ${{ github.workspace }}/ArthOS.apk
+          retention-days: 14
