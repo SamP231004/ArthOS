@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ARTH_OFFSET, ARTH_PATH } from "@/lib/brand";
 
 /**
- * ArthOS mark: "अर्थ" in ivory on a crimson tile. The tile is a CSS gradient (not an SVG <linearGradient>): a gradient
+ * ArthOS mark: "अर्थ" on a tile in the theme's logo colours (crimson in Forest/Ivory, cobalt in Cobalt, gold in Noir). The tile is a CSS gradient (not an SVG <linearGradient>): a gradient
  * id shared by several marks resolves to the first one in the document, and when that copy sits in a hidden sidebar
  * the browser paints no tile at all, leaving the ivory glyph invisible on the light theme.
  */
@@ -16,12 +16,12 @@ export function LogoMark({ size = 32, className = "" }: { size?: number; classNa
         width: size,
         height: size,
         borderRadius: (size * 9) / 32,
-        background: "linear-gradient(135deg, #c43a35 0%, #a31c1b 55%, #6e1110 100%)",
+        background: "linear-gradient(135deg, var(--logo-1) 0%, var(--logo-2) 55%, var(--logo-3) 100%)",
         boxShadow: "inset 0 0 0 0.6px rgb(255 255 255 / 0.16)",
       }}
     >
       <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-        <path transform={`translate(${ARTH_OFFSET.x} ${ARTH_OFFSET.y})`} fill="#fff7f3" d={ARTH_PATH} />
+        <path transform={`translate(${ARTH_OFFSET.x} ${ARTH_OFFSET.y})`} fill="var(--logo-fg)" d={ARTH_PATH} />
       </svg>
     </span>
   );

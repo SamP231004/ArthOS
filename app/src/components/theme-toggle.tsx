@@ -1,37 +1,32 @@
-import { useEffect, useState } from 'react';
-import { Animated, Pressable } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import { Pressable, View } from 'react-native';
 
-import { alpha, useTheme } from '@/theme';
+import { alpha, palettes, THEMES, useTheme } from '@/theme';
 
-/** Sun/moon toggle with a spin, like the website's. */
+/** Three-part swatch of a theme: background, accent, highlight. */
+export function ThemeSwatch({ id, size = 20 }: { id: keyof typeof palettes; size?: number }) {
+  const p = palettes[id];
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', flexDirection: 'row', borderWidth: 1, borderColor: alpha(p.fg, 0.2), backgroundColor: p.bg }}>
+      <View style={{ flex: 1, backgroundColor: p.bg }} />
+      <View style={{ flex: 0.6, backgroundColor: p.accent3 }} />
+      <View style={{ flex: 0.4, backgroundColor: p.brand }} />
+    </View>
+  );
+}
+
+/** Shows the current theme's swatch; tapping steps to the next theme (Settings has the full picker). */
 export function ThemeToggle() {
   const { mode, toggle, c } = useTheme();
-  const [spin] = useState(() => new Animated.Value(mode === 'dark' ? 0 : 1));
-  useEffect(() => {
-    Animated.spring(spin, { toValue: mode === 'dark' ? 0 : 1, useNativeDriver: true, friction: 6 }).start();
-  }, [mode, spin]);
-  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
-
+  const i = THEMES.findIndex((t) => t.id === mode);
+  const next = THEMES[(i + 1) % THEMES.length];
   return (
     <Pressable
       onPress={toggle}
       hitSlop={8}
       accessibilityRole="button"
-      accessibilityLabel={`Switch to ${mode === 'dark' ? 'light' : 'dark'} theme`}
+      accessibilityLabel={`Theme: ${THEMES[i]?.name}. Switch to ${next.name}`}
       style={({ pressed }) => ({ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? alpha(c.fg, 0.08) : 'transparent' })}>
-      <Animated.View style={{ transform: [{ rotate }] }}>
-        <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={c.muted} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-          {mode === 'dark' ? (
-            <Path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-          ) : (
-            <>
-              <Circle cx={12} cy={12} r={4} />
-              <Path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-            </>
-          )}
-        </Svg>
-      </Animated.View>
+      <ThemeSwatch id={mode} />
     </Pressable>
   );
 }

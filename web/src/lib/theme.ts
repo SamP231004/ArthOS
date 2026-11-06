@@ -1,13 +1,23 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { THEME_IDS, THEME_KEY as KEY } from "./theme-script";
 
-export type Theme = "dark" | "light";
-import { THEME_KEY as KEY } from "./theme-script";
+export type Theme = (typeof THEME_IDS)[number];
+
+/** Every theme, with the three colours its swatch shows: background, accent, highlight/type. */
+export const THEMES: { id: Theme; name: string; scheme: "dark" | "light"; swatch: [string, string, string] }[] = [
+  { id: "dark", name: "Forest", scheme: "dark", swatch: ["#06110c", "#a31c1b", "#f2efe8"] },
+  { id: "light", name: "Ivory", scheme: "light", swatch: ["#f6f4ef", "#1d4d3b", "#171717"] },
+  { id: "cobalt", name: "Cobalt", scheme: "dark", swatch: ["#030407", "#1558c9", "#d4ff24"] },
+  { id: "noir", name: "Noir Gold", scheme: "dark", swatch: ["#08090b", "#ffc900", "#f5f3ef"] },
+];
+
 const EVENT = "arthos-theme-change";
 
 function read(): Theme {
-  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+  const t = document.documentElement.dataset.theme as Theme | undefined;
+  return t && (THEME_IDS as readonly string[]).includes(t) ? t : "dark";
 }
 
 export function useTheme(): Theme {
@@ -32,7 +42,7 @@ function apply(theme: Theme) {
 }
 
 /**
- * Switches theme with a circular reveal that grows from (x, y), the centre of the toggle,
+ * Switches theme with a circular reveal that grows from (x, y), the centre of the control,
  * using the View Transitions API. Falls back to an instant switch where unsupported or when the
  * user prefers reduced motion.
  */

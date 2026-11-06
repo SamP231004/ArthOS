@@ -1,20 +1,20 @@
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 
 import { Logo } from '@/components/logo';
 import { SavingsRuleField } from '@/components/savings-rule';
 import { Screen } from '@/components/screen';
-import { Button, Card, Chip, ErrorNote, Input, Segmented, T } from '@/components/ui';
+import { Button, Card, Chip, ErrorNote, Input, T } from '@/components/ui';
 import { API_URL } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 import { useUpdateProfile } from '@/lib/queries';
 import type { SavingsMode } from '@/lib/savings';
-import { alpha, S, useTheme, type Mode } from '@/theme';
+import { alpha, F, palettes, R, S, THEMES, useTheme } from '@/theme';
 
 const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD'];
 
 export default function SettingsScreen() {
-  const { c, mode, toggle } = useTheme();
+  const { c, mode, setMode } = useTheme();
   const { user, signOut } = useAuth();
   const update = useUpdateProfile();
   const [name, setName] = useState(user?.name ?? '');
@@ -35,15 +35,40 @@ export default function SettingsScreen() {
       )}
 
       <Card style={{ gap: S.md }}>
-        <T variant="label">Appearance</T>
-        <Segmented<Mode>
-          value={mode}
-          onChange={(m) => m !== mode && toggle()}
-          options={[
-            { value: 'dark', label: 'Forest (dark)' },
-            { value: 'light', label: 'Ivory (light)' },
-          ]}
-        />
+        <T variant="label">Theme</T>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.sm }} accessibilityRole="radiogroup">
+          {THEMES.map((t) => {
+            const p = palettes[t.id];
+            const on = mode === t.id;
+            return (
+              <Pressable
+                key={t.id}
+                onPress={() => setMode(t.id)}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: on }}
+                style={{ width: '48%', flexGrow: 1, borderRadius: R.md, borderWidth: on ? 2 : 1, borderColor: on ? c.brand : c.lineStrong, overflow: 'hidden' }}>
+                {/* mini preview: page, panel, accent button, highlight */}
+                <View style={{ backgroundColor: p.bg, padding: S.sm }}>
+                  <View style={{ backgroundColor: p.surface, borderColor: p.line, borderWidth: 1, borderRadius: 8, padding: 8, gap: 5 }}>
+                    <View style={{ width: 34, height: 5, borderRadius: 3, backgroundColor: alpha(p.fg, 0.5) }} />
+                    <View style={{ width: 56, height: 8, borderRadius: 4, backgroundColor: p.fg }} />
+                    <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center', marginTop: 2 }}>
+                      <View style={{ width: 40, height: 14, borderRadius: 5, backgroundColor: p.accent2 }} />
+                      <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: p.brand }} />
+                    </View>
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: S.sm, paddingVertical: 8, backgroundColor: c.surface }}>
+                  <View>
+                    <T style={{ fontSize: 14, fontFamily: F.uiSemibold }}>{t.name}</T>
+                    <T variant="small">{t.scheme === 'light' ? 'Light' : 'Dark'}</T>
+                  </View>
+                  {on && <T style={{ color: c.brand, fontFamily: F.uiBold }}>✓</T>}
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
       </Card>
 
       <Card style={{ gap: S.md }}>

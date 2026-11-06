@@ -279,7 +279,7 @@ function ModeSwitch({ b, fmt, month }: { b: BudgetStatus; fmt: (n: number) => st
             >
               <div className="flex items-center justify-between gap-2">
                 <span className={`text-sm font-medium ${active ? "text-fg" : "text-fg-2"}`}>{MODE_META[m].name}</span>
-                <span className={`grid h-5 w-5 place-items-center rounded-full border transition ${active ? "border-brand bg-brand text-white" : "border-line-strong text-transparent group-hover:border-fg/30"}`}>
+                <span className={`grid h-5 w-5 place-items-center rounded-full border transition ${active ? "border-brand bg-brand text-brand-fg" : "border-line-strong text-transparent group-hover:border-fg/30"}`}>
                   {pending === m ? <Loader2 size={12} className="animate-spin text-fg-2" /> : <Check size={12} strokeWidth={3} />}
                 </span>
               </div>

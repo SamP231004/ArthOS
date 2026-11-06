@@ -54,7 +54,7 @@ export default function RootLayout() {
 function AppStack({ fontsLoaded, queryClient }: { fontsLoaded: boolean; queryClient: QueryClient }) {
   const { token, user } = useAuth();
   const hydrated = useHydrated();
-  const { c, mode, ready } = useTheme();
+  const { c, scheme, ready } = useTheme();
   const isReady = hydrated && fontsLoaded && ready;
 
   useEffect(() => {
@@ -67,9 +67,9 @@ function AppStack({ fontsLoaded, queryClient }: { fontsLoaded: boolean; queryCli
   }, [token, queryClient]);
 
   const navTheme = useMemo(() => {
-    const base = mode === 'dark' ? DarkTheme : DefaultTheme;
+    const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
     return { ...base, colors: { ...base.colors, background: c.bg, card: c.surface, text: c.fg, border: c.line, primary: c.brand } };
-  }, [mode, c]);
+  }, [scheme, c]);
 
   if (!isReady) return null; // splash stays visible while the session, fonts and theme load
 
@@ -86,7 +86,7 @@ function AppStack({ fontsLoaded, queryClient }: { fontsLoaded: boolean; queryCli
 
   return (
     <NavThemeProvider value={navTheme}>
-      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="login" />
