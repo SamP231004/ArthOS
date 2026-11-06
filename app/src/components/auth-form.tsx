@@ -1,11 +1,12 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, KeyboardAvoidingView, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
-import { Logo } from './logo';
-import { Screen } from './screen';
+import { LogoMark } from './logo';
 import { ThemeToggle } from './theme-toggle';
 import { Button, ErrorNote, Input, T } from './ui';
 import { api, ApiError } from '@/lib/api';
@@ -14,14 +15,21 @@ import { googleClientId, signInWithGoogle } from '@/lib/google';
 import type { AuthResponse } from '@/lib/types';
 import { alpha, F, R, S, useTheme } from '@/theme';
 
-const POINTS = ['Save first, then spend what’s left', 'One daily number that keeps you on budget', 'Stocks, funds, gold & bonds — priced live'];
+const POINTS = [
+  { title: 'Save first, then spend', body: 'Savings are set aside the moment income lands.' },
+  { title: 'One number for today', body: 'Know exactly how much is safe to spend — every day.' },
+  { title: 'Your whole portfolio', body: 'Stocks, mutual funds, gold and bonds, priced live.' },
+];
 
 /**
- * Sign in / create account. A deep-forest hero (same in both themes, like the website's auth panel) sells the app in
- * three lines; below it a Sign in / Create account switch, the form, Google, and the demo.
+ * Sign in / create account, laid out like modern fintech apps: a deep-forest brand hero runs under the status bar
+ * (rotating value lines), and the form sits on a sheet that slides up over it — Google first, then email, then the
+ * mode switch and the demo.
  */
 export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const { c } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
   const setSession = useAuth((s) => s.setSession);
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [show, setShow] = useState(false);
@@ -29,15 +37,31 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const [fields, setFields] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<'form' | 'google' | 'demo' | null>(null);
   const [googleId, setGoogleId] = useState<string | null | undefined>(undefined);
+  const [point, setPoint] = useState(0);
+  const [enter] = useState(() => new Animated.Value(0));
+  const [fade] = useState(() => new Animated.Value(1));
   const login = mode === 'login';
+  const heroH = Math.round(Math.min(380, Math.max(300, height * 0.42))) + insets.top;
 
   useEffect(() => {
     let live = true;
     googleClientId().then((id) => live && setGoogleId(id));
+    Animated.timing(enter, { toValue: 1, duration: 520, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
     return () => {
       live = false;
     };
-  }, []);
+  }, [enter]);
+
+  // rotate the value lines with a soft cross-fade
+  useEffect(() => {
+    const t = setInterval(() => {
+      Animated.timing(fade, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => {
+        setPoint((p) => (p + 1) % POINTS.length);
+        Animated.timing(fade, { toValue: 1, duration: 260, useNativeDriver: true }).start();
+      });
+    }, 3200);
+    return () => clearInterval(t);
+  }, [fade]);
 
   async function run(kind: 'form' | 'google' | 'demo', fn: () => Promise<AuthResponse | null>) {
     setBusy(kind);
@@ -61,111 +85,157 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const google = () => googleId && run('google', () => signInWithGoogle(googleId));
   const demo = () => run('demo', () => api<AuthResponse>('/api/auth/demo', { method: 'POST', auth: false }));
   const valid = form.email.includes('@') && form.password.length >= (login ? 1 : 8) && (login || form.name.trim() !== '');
+  const other = busy !== null;
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-      <Screen edges={['top', 'bottom']}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Logo size={32} />
-          <ThemeToggle />
-        </View>
+    <View style={{ flex: 1, backgroundColor: '#06110c' }}>
+      {/* light status-bar icons over the dark hero, whatever the theme */}
+      <StatusBar style="light" />
+      {/* brand hero — the same deep forest in both themes, like the website's auth panel */}
+      <LinearGradient colors={['#12301f', '#0a1d14', '#06110c']} style={{ position: 'absolute', left: 0, right: 0, top: 0, height: heroH + 40 }}>
+        <View style={{ position: 'absolute', width: 340, height: 340, borderRadius: 170, top: insets.top + 30, alignSelf: 'center', backgroundColor: 'rgba(196,58,53,0.16)' }} />
+        <Text style={{ position: 'absolute', right: -18, bottom: 34, fontFamily: F.deva, fontSize: 150, color: 'rgba(242,239,232,0.04)' }}>अर्थ</Text>
+      </LinearGradient>
 
-        {/* hero */}
-        <LinearGradient colors={['#0f2419', '#06110c']} style={{ borderRadius: R.xxl, padding: S.xl, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(214,232,222,0.1)' }}>
-          <View style={{ position: 'absolute', right: -60, bottom: -80, width: 220, height: 220, borderRadius: 110, backgroundColor: 'rgba(196,58,53,0.28)' }} />
-          <Text style={{ position: 'absolute', right: 14, top: 4, fontFamily: F.deva, fontSize: 96, color: 'rgba(242,239,232,0.06)' }}>अर्थ</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 2.2, color: '#ec7a74' }}>PERSONAL FINANCIAL OS</Text>
-          <Text style={{ fontFamily: F.display, fontSize: 32, lineHeight: 36, color: '#f2efe8', marginTop: S.sm, letterSpacing: -0.6 }}>
-            {login ? 'Welcome back' : 'Every rupee, '}
-            {!login && <Text style={{ fontFamily: F.displayItalic, color: '#ec7a74' }}>in motion.</Text>}
-          </Text>
-          <View style={{ gap: 7, marginTop: S.md }}>
-            {POINTS.map((p) => (
-              <View key={p} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: 'rgba(76,195,138,0.16)', alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ color: '#4cc38a', fontSize: 10, fontFamily: F.uiBold }}>✓</Text>
-                </View>
-                <Text style={{ color: '#d9d4c9', fontSize: 13, fontFamily: F.ui }}>{p}</Text>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
+          <View style={{ height: heroH, paddingTop: insets.top + S.sm, paddingHorizontal: S.lg }}>
+            <View style={{ alignItems: 'flex-end' }}>
+              <View style={{ borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                <ThemeToggle color="#d9d4c9" />
               </View>
-            ))}
+            </View>
+            <Animated.View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 36, opacity: enter }}>
+              <View style={{ borderRadius: 22, shadowColor: '#c43a35', shadowOpacity: 0.6, shadowRadius: 24, elevation: 14 }}>
+                <LogoMark size={68} />
+              </View>
+              <Text style={{ marginTop: S.md, fontFamily: F.display, fontSize: 34, color: '#f2efe8', letterSpacing: -0.6 }}>
+                Arth<Text style={{ fontFamily: F.displayMedium, color: '#ec7a74' }}>OS</Text>
+              </Text>
+              <Text style={{ fontFamily: F.ui, fontSize: 13.5, color: '#a5b0a9', marginTop: 2 }}>
+                Take control of your <Text style={{ fontFamily: F.deva, color: '#ec7a74' }}>अर्थ</Text>
+              </Text>
+              <Animated.View style={{ marginTop: S.lg, alignItems: 'center', opacity: fade, minHeight: 44 }}>
+                <Text style={{ fontFamily: F.uiSemibold, fontSize: 15, color: '#f2efe8' }}>{POINTS[point].title}</Text>
+                <Text style={{ fontFamily: F.ui, fontSize: 12.5, color: '#a5b0a9', marginTop: 3, textAlign: 'center' }}>{POINTS[point].body}</Text>
+              </Animated.View>
+              <View style={{ flexDirection: 'row', gap: 6, marginTop: S.md }}>
+                {POINTS.map((_, i) => (
+                  <View key={i} style={{ height: 6, width: i === point ? 18 : 6, borderRadius: 3, backgroundColor: i === point ? '#ec7a74' : 'rgba(242,239,232,0.25)' }} />
+                ))}
+              </View>
+            </Animated.View>
           </View>
-        </LinearGradient>
 
-        {/* sign in / create account switch */}
-        <View style={{ flexDirection: 'row', padding: 4, borderRadius: R.md, borderWidth: 1, borderColor: c.line, backgroundColor: alpha(c.fg, 0.03) }}>
-          {(['login', 'register'] as const).map((m) => {
-            const on = m === mode;
-            return (
+          {/* the sheet */}
+          <Animated.View
+            style={{
+              flexGrow: 1,
+              marginTop: -28,
+              backgroundColor: c.bg,
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              paddingHorizontal: S.lg,
+              paddingTop: S.xl,
+              paddingBottom: insets.bottom + S.xl,
+              gap: S.md,
+              opacity: enter,
+              transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [60, 0] }) }],
+            }}>
+            <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: c.lineStrong, marginTop: -S.sm, marginBottom: S.xs }} />
+            <View style={{ gap: 2 }}>
+              <T variant="title" style={{ fontSize: 28 }}>{login ? 'Welcome back' : 'Create your account'}</T>
+              <T variant="muted">{login ? 'Sign in to your money, all in one place.' : 'Free during early access · one account for app and web.'}</T>
+            </View>
+
+            {googleId !== null && (
               <Pressable
-                key={m}
-                onPress={() => !on && router.replace(m === 'login' ? '/login' : '/register')}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: on }}
-                style={{ flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: R.sm, backgroundColor: on ? c.surface : 'transparent', borderWidth: on ? 1 : 0, borderColor: c.lineStrong }}>
-                <Text style={{ color: on ? c.fg : c.muted, fontFamily: on ? F.uiSemibold : F.uiMedium, fontSize: 14 }}>{m === 'login' ? 'Sign in' : 'Create account'}</Text>
+                onPress={google}
+                disabled={!googleId || other}
+                accessibilityRole="button"
+                accessibilityLabel="Continue with Google"
+                style={({ pressed }) => ({
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  paddingVertical: 15,
+                  borderRadius: R.lg,
+                  borderWidth: 1,
+                  borderColor: c.lineStrong,
+                  backgroundColor: c.surface,
+                  marginTop: S.xs,
+                  opacity: !googleId || (other && busy !== 'google') ? 0.55 : pressed ? 0.85 : 1,
+                })}>
+                {busy === 'google' ? <ActivityIndicator color={c.fg} /> : <GoogleG />}
+                <Text style={{ color: c.fg, fontFamily: F.uiSemibold, fontSize: 15 }}>Continue with Google</Text>
               </Pressable>
-            );
-          })}
-        </View>
+            )}
 
-        <View style={{ gap: S.md }}>
-          {!login && <Input label="Full name" value={form.name} onChangeText={(name) => setForm({ ...form, name })} autoComplete="name" error={fields.name} maxLength={80} placeholder="Samarth Patel" />}
-          <Input label="Email" value={form.email} onChangeText={(email) => setForm({ ...form, email })} autoCapitalize="none" autoComplete="email" keyboardType="email-address" error={fields.email} placeholder="you@example.com" />
-          <Input
-            label="Password"
-            value={form.password}
-            onChangeText={(password) => setForm({ ...form, password })}
-            secureTextEntry={!show}
-            autoCapitalize="none"
-            autoComplete={login ? 'current-password' : 'new-password'}
-            error={fields.password}
-            hint={!login ? 'At least 8 characters' : undefined}
-            onSubmitEditing={() => valid && submit()}
-            placeholder={login ? 'Your password' : 'Create a password'}
-            accessory={
-              <Pressable onPress={() => setShow((x) => !x)} hitSlop={8} style={{ paddingHorizontal: 10, paddingVertical: 8 }} accessibilityLabel={show ? 'Hide password' : 'Show password'}>
-                <Text style={{ color: c.brand, fontFamily: F.uiSemibold, fontSize: 13 }}>{show ? 'Hide' : 'Show'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.md, marginVertical: 2 }}>
+              <View style={{ flex: 1, height: 1, backgroundColor: c.line }} />
+              <T variant="small">or use email</T>
+              <View style={{ flex: 1, height: 1, backgroundColor: c.line }} />
+            </View>
+
+            {!login && <Input label="Full name" value={form.name} onChangeText={(name) => setForm({ ...form, name })} autoComplete="name" error={fields.name} maxLength={80} placeholder="Samarth Patel" />}
+            <Input label="Email" value={form.email} onChangeText={(email) => setForm({ ...form, email })} autoCapitalize="none" autoComplete="email" keyboardType="email-address" error={fields.email} placeholder="you@example.com" />
+            <Input
+              label="Password"
+              value={form.password}
+              onChangeText={(password) => setForm({ ...form, password })}
+              secureTextEntry={!show}
+              autoCapitalize="none"
+              autoComplete={login ? 'current-password' : 'new-password'}
+              error={fields.password}
+              hint={!login ? 'At least 8 characters' : undefined}
+              onSubmitEditing={() => valid && submit()}
+              placeholder={login ? 'Your password' : 'Create a password'}
+              accessory={
+                <Pressable onPress={() => setShow((x) => !x)} hitSlop={8} style={{ paddingHorizontal: 10, paddingVertical: 8 }} accessibilityLabel={show ? 'Hide password' : 'Show password'}>
+                  <Text style={{ color: c.brand, fontFamily: F.uiSemibold, fontSize: 13 }}>{show ? 'Hide' : 'Show'}</Text>
+                </Pressable>
+              }
+            />
+            <ErrorNote message={error} />
+            <Button title={login ? 'Sign in  →' : 'Create account  →'} size="lg" onPress={submit} loading={busy === 'form'} disabled={!valid || (other && busy !== 'form')} />
+
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: S.xs }}>
+              <T variant="muted">{login ? 'New to ArthOS?' : 'Already have an account?'}</T>
+              <Pressable onPress={() => router.replace(login ? '/register' : '/login')} hitSlop={8}>
+                <Text style={{ color: c.brand, fontSize: 14, fontFamily: F.uiSemibold }}>{login ? 'Create an account' : 'Sign in'}</Text>
               </Pressable>
-            }
-          />
-          <ErrorNote message={error} />
-          <Button title={login ? 'Sign in' : 'Create account'} size="lg" onPress={submit} loading={busy === 'form'} disabled={!valid || (busy !== null && busy !== 'form')} />
-        </View>
+            </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.md }}>
-          <View style={{ flex: 1, height: 1, backgroundColor: c.line }} />
-          <T variant="label">or</T>
-          <View style={{ flex: 1, height: 1, backgroundColor: c.line }} />
-        </View>
-
-        <View style={{ gap: S.sm }}>
-          {googleId !== null && (
             <Pressable
-              onPress={google}
-              disabled={!googleId || busy !== null}
-              accessibilityRole="button"
-              accessibilityLabel="Continue with Google"
+              onPress={demo}
+              disabled={other}
               style={({ pressed }) => ({
                 flexDirection: 'row',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: 10,
-                paddingVertical: 14,
-                borderRadius: R.md,
+                gap: S.md,
+                marginTop: S.sm,
+                padding: S.md,
+                borderRadius: R.lg,
                 borderWidth: 1,
-                borderColor: c.lineStrong,
-                backgroundColor: c.surface,
-                opacity: !googleId || (busy !== null && busy !== 'google') ? 0.55 : pressed ? 0.85 : 1,
+                borderStyle: 'dashed',
+                borderColor: alpha(c.brand, 0.35),
+                backgroundColor: alpha(c.brand, pressed ? 0.1 : 0.05),
+                opacity: other && busy !== 'demo' ? 0.55 : 1,
               })}>
-              {busy === 'google' ? <ActivityIndicator color={c.fg} /> : <GoogleG />}
-              <Text style={{ color: c.fg, fontFamily: F.uiSemibold, fontSize: 15 }}>Continue with Google</Text>
+              <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: alpha(c.brand, 0.14), alignItems: 'center', justifyContent: 'center' }}>
+                {busy === 'demo' ? <ActivityIndicator color={c.brand} size="small" /> : <Text style={{ color: c.brand, fontSize: 13 }}>▶</Text>}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: c.fg, fontFamily: F.uiSemibold, fontSize: 14 }}>Just looking? Explore the demo</Text>
+                <Text style={{ color: c.subtle, fontFamily: F.ui, fontSize: 12, marginTop: 1 }}>6 months of sample data · no sign-up</Text>
+              </View>
+              <Text style={{ color: c.brand, fontSize: 18, fontFamily: F.ui }}>›</Text>
             </Pressable>
-          )}
-          <Button title="Explore with demo data" variant="ghost" onPress={demo} loading={busy === 'demo'} disabled={busy !== null && busy !== 'demo'} />
-          <T variant="small" style={{ textAlign: 'center', marginTop: -4 }}>A private sandbox with 6 months of sample data — no sign-up.</T>
-        </View>
-      </Screen>
-    </KeyboardAvoidingView>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 

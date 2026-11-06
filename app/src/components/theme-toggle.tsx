@@ -5,7 +5,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { alpha, useTheme } from '@/theme';
 
 /** Sun/moon toggle with a spin, like the website's. */
-export function ThemeToggle() {
+export function ThemeToggle({ color }: { color?: string } = {}) {
   const { mode, toggle, c } = useTheme();
   const [spin] = useState(() => new Animated.Value(mode === 'dark' ? 0 : 1));
   useEffect(() => {
@@ -25,7 +25,7 @@ export function ThemeToggle() {
       accessibilityLabel={`Switch to ${mode === 'dark' ? 'light' : 'dark'} theme`}
       style={({ pressed }) => ({ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? alpha(c.fg, 0.08) : 'transparent' })}>
       <Animated.View style={{ transform: [{ rotate }] }}>
-        <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={c.muted} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={color ?? c.muted} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           {mode === 'dark' ? (
             <Path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
           ) : (
