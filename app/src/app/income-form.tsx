@@ -5,30 +5,31 @@ import { Alert, KeyboardAvoidingView, Switch, View } from 'react-native';
 import { DateField, isISODate } from '@/components/date-field';
 import { Screen } from '@/components/screen';
 import { Button, Chip, ErrorNote, Input, Loading, T } from '@/components/ui';
-import { S, useTheme } from '@/theme';
+import { alpha, R, S, useTheme } from '@/theme';
 import { ApiError } from '@/lib/api';
 import { label, todayISO } from '@/lib/format';
 import { useDeleteIncome, useIncome, useSaveIncome } from '@/lib/queries';
+import { parseDraft, type IncomeDraft } from '@/lib/scan';
 import { INCOME_TYPES, type Income, type IncomeType } from '@/lib/types';
 
 export default function IncomeFormScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, draft } = useLocalSearchParams<{ id?: string; draft?: string }>();
   const existing = useIncome(id);
   if (id && existing.isLoading) return <Loading />;
   if (id && existing.error) return <ErrorNote message={existing.error.message} />;
-  return <IncomeForm key={id ?? 'new'} initial={existing.data} />;
+  return <IncomeForm key={id ?? draft ?? 'new'} initial={existing.data} draft={parseDraft<IncomeDraft>(draft)} />;
 }
 
-function IncomeForm({ initial }: { initial?: Income }) {
+function IncomeForm({ initial, draft }: { initial?: Income; draft?: IncomeDraft }) {
   const { c } = useTheme();
   const save = useSaveIncome();
   const del = useDeleteIncome();
   const [f, setF] = useState({
-    amount: initial?.amount?.toString() ?? '',
-    source: initial?.source ?? '',
-    type: (initial?.type ?? 'SALARY') as IncomeType,
-    date: initial?.date ?? todayISO(),
-    note: initial?.note ?? '',
+    amount: (initial?.amount ?? draft?.amount)?.toString() ?? '',
+    source: initial?.source ?? draft?.source ?? '',
+    type: (initial?.type ?? draft?.type ?? 'SALARY') as IncomeType,
+    date: initial?.date ?? draft?.date ?? todayISO(),
+    note: initial?.note ?? draft?.note ?? '',
     recurring: initial?.recurring ?? false,
   });
   const err = save.error ?? del.error;
@@ -53,6 +54,7 @@ function IncomeForm({ initial }: { initial?: Income }) {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <Screen edges={['bottom']}>
+        {draft && <DraftNote />}
         <Input
           label="Amount"
           autoFocus={!initial}
@@ -82,5 +84,15 @@ function IncomeForm({ initial }: { initial?: Income }) {
         {initial && <Button title="Delete" variant="danger" onPress={remove} loading={del.isPending} />}
       </Screen>
     </KeyboardAvoidingView>
+  );
+}
+
+/** Shown when the form opens pre-filled from a scan: nothing is saved until the user confirms. */
+function DraftNote() {
+  const { c } = useTheme();
+  return (
+    <View style={{ borderWidth: 1, borderColor: alpha(c.brand, 0.3), backgroundColor: alpha(c.brand, 0.07), borderRadius: R.md, padding: S.md }}>
+      <T variant="small" style={{ color: c.fg2, lineHeight: 18 }}>⌗ Read from your screenshot. Check the details — nothing is saved until you confirm.</T>
+    </View>
   );
 }

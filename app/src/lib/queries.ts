@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { useAuth } from "./auth-store";
-import type { AssetClass, BudgetInput, BudgetStatus, HoldingInput, HoldingView, LotInput, Portfolio, PortfolioRange, Quote, SymbolMatch, Expense, ExpenseInput, Income, IncomeInput, MonthSummary, User } from "./types";
+import type { CategorySuggestion, ParseResult, RecurringCandidate , AssetClass, BudgetInput, BudgetStatus, HoldingInput, HoldingView, LotInput, Portfolio, PortfolioRange, Quote, SymbolMatch, Expense, ExpenseInput, Income, IncomeInput, MonthSummary, User } from "./types";
+
 
 export const keys = {
   me: ["me"] as const,
@@ -31,6 +32,8 @@ export function useExpenses(month: string, filters: ExpenseFilters = {}) {
 function useInvalidateMoney() {
   const qc = useQueryClient();
   return () => {
+    qc.invalidateQueries({ queryKey: ["recurring-candidates"] });
+    qc.invalidateQueries({ queryKey: ["category-suggestion"] });
     qc.invalidateQueries({ queryKey: ["summary"] });
     qc.invalidateQueries({ queryKey: ["incomes"] });
     qc.invalidateQueries({ queryKey: ["expenses"] });
@@ -179,4 +182,36 @@ export function useHolding(id?: string) {
   // Holding details come from the portfolio payload (one source of truth for prices/metrics).
   const q = usePortfolio("1Y");
   return { ...q, data: q.data?.holdings.find((h) => h.id === id) };
+}
+
+// ---- Automation (Phase 4)
+
+export function useParseText() {
+  return useMutation({ mutationFn: (text: string) => api<ParseResult>("/api/automation/parse", { method: "POST", body: { text } }) });
+}
+
+export function useCategorySuggestion(merchant: string) {
+  const m = merchant.trim();
+  return useQuery({
+    queryKey: ["category-suggestion", m.toLowerCase()],
+    queryFn: () => api<CategorySuggestion>(`/api/automation/category?merchant=${encodeURIComponent(m)}`),
+    enabled: m.length >= 2,
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useRecurringCandidates() {
+  return useQuery({ queryKey: ["recurring-candidates"], queryFn: () => api<RecurringCandidate[]>("/api/automation/recurring"), staleTime: 60_000 });
+}
+
+export function useMarkRecurring() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (c: { kind: "INCOME" | "EXPENSE"; key: string }) => api<{ updated: number }>("/api/automation/recurring", { method: "POST", body: c }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["recurring-candidates"] });
+      qc.invalidateQueries({ queryKey: ["expenses"] });
+      qc.invalidateQueries({ queryKey: ["incomes"] });
+    },
+  });
 }

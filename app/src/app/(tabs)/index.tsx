@@ -77,6 +77,7 @@ function Summary({ s }: { s: MonthSummary }) {
       </Card>
 
       <View style={{ flexDirection: 'row', gap: S.md }}>
+        <Button title="Scan" variant="secondary" style={{ flex: 1 }} onPress={() => router.push('/scan')} />
         <Button title="+ Income" variant="secondary" style={{ flex: 1 }} onPress={() => router.push('/income-form')} />
         <Button title="+ Expense" style={{ flex: 1 }} onPress={() => router.push('/expense-form')} />
       </View>

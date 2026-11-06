@@ -4,6 +4,7 @@ import { View } from 'react-native';
 
 import { BreakdownBar, RecurringSuggestions, SummaryGrid, TopEntries } from '@/components/ledger-ui';
 import { MonthPicker } from '@/components/month-picker';
+import { RecurringSuggestions as AutoRecurring } from '@/components/recurring-suggestions';
 import { AppHeader } from '@/components/app-header';
 import { Screen } from '@/components/screen';
 import { TxRow } from '@/components/tx-row';
@@ -62,7 +63,10 @@ export default function IncomeTab() {
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <MonthPicker />
-        <Button title="+ Add" onPress={() => router.push('/income-form')} />
+        <View style={{ flexDirection: 'row', gap: S.sm }}>
+          <Button title="Scan" variant="secondary" onPress={() => router.push('/scan')} />
+          <Button title="+ Add" onPress={() => router.push('/income-form')} />
+        </View>
       </View>
 
       <SummaryGrid
@@ -74,6 +78,7 @@ export default function IncomeTab() {
         ]}
       />
 
+      <AutoRecurring kind="INCOME" currency={cur} />
       <RecurringSuggestions items={missing.map((p) => ({ id: p.id, title: p.source, amount: fmt(p.amount) }))} onAdd={addAgain} pendingId={pending} />
       <ErrorNote message={save.error?.message} />
 
