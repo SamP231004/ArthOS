@@ -9,8 +9,6 @@ export type Theme = (typeof THEME_IDS)[number];
 export const THEMES: { id: Theme; name: string; scheme: "dark" | "light"; swatch: [string, string, string] }[] = [
   { id: "dark", name: "Forest", scheme: "dark", swatch: ["#06110c", "#a31c1b", "#f2efe8"] },
   { id: "light", name: "Ivory", scheme: "light", swatch: ["#f6f4ef", "#1d4d3b", "#171717"] },
-  { id: "cobalt", name: "Cobalt", scheme: "dark", swatch: ["#030407", "#1558c9", "#d4ff24"] },
-  { id: "noir", name: "Noir Gold", scheme: "dark", swatch: ["#08090b", "#ffc900", "#f5f3ef"] },
 ];
 
 const EVENT = "arthos-theme-change";

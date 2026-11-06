@@ -5,8 +5,7 @@
    Palette: Forest Green #06110C · Charcoal #171717 · Crimson #A31C1B
    Dark  = "Forest": forest-green base, ivory type, crimson accent.
    Light = "Ivory":  warm paper base, charcoal type, crimson accent.
-   Theme is set on <html data-theme="dark|light|cobalt|noir">:
-   Forest (dark), Ivory (light), Cobalt and Noir Gold (both dark).
+   Theme is set on <html data-theme="dark|light">.
    ───────────────────────────────────────────────────────────── */
 :root,
 [data-theme="dark"] {
@@ -119,113 +118,6 @@
   color-scheme: light;
 }
 
-/* Cobalt: midnight black base, electric-cobalt actions, acid-lime highlights. */
-[data-theme="cobalt"] {
-  --bg: #030407;
-  --bg-2: #05070c;
-  --surface: #0a0e17;
-  --surface-2: #0f1420;
-  --surface-3: #161d2d;
-  --line: rgb(196 212 255 / 0.08);
-  --line-strong: rgb(196 212 255 / 0.15);
-  --fg: #eef1f7;
-  --fg-2: #d3d9e6;
-  --muted: #9aa4b8;
-  --subtle: #677189;
-
-  --accent-1: #3d7bf0;
-  --accent-2: #1f63d8;
-  --accent-3: #1558c9;
-  --accent-fg: #ffffff;
-  --brand: #d4ff24; /* acid lime: highlights, active states (≈17:1 on midnight) */
-  --brand-fg: #030407;
-  --glow: 21 88 201;
-  --hl: 255 255 255;
-
-  --income: #3ddc97;
-  --income-2: #1f9a66;
-  --expense: #ff6b6b;
-  --expense-2: #c2403f;
-  --warn: #ffb547;
-  --info: #7aa7ff;
-  --violet: #b9a5ff;
-
-  --c1: #3d7bf0;
-  --c2: #d4ff24;
-  --c3: #3ddc97;
-  --c4: #8fb3ff;
-  --c5: #b9a5ff;
-  --c6: #ff8a5c;
-  --c7: #4fd1d9;
-  --c8: #7f889c;
-
-  --field: rgb(0 0 0 / 0.4);
-  --panel-shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 14px 40px -14px rgb(0 0 0 / 0.7);
-  --silver-1: #ffffff;
-  --silver-2: #a9b6d3;
-
-  --logo-1: #3d7bf0;
-  --logo-2: #1558c9;
-  --logo-3: #0b3a8c;
-  --logo-fg: #d4ff24;
-  --deep-1: #0a1733;
-  --deep-2: #030407;
-  color-scheme: dark;
-}
-
-/* Noir Gold: midnight black base, pure-white type, vibrant golden-yellow accent. */
-[data-theme="noir"] {
-  --bg: #08090b;
-  --bg-2: #0b0c0f;
-  --surface: #111216;
-  --surface-2: #17181d;
-  --surface-3: #1f2026;
-  --line: rgb(245 243 239 / 0.08);
-  --line-strong: rgb(245 243 239 / 0.15);
-  --fg: #f5f3ef;
-  --fg-2: #dcd9d2;
-  --muted: #a3a09a;
-  --subtle: #75736e;
-
-  --accent-1: #ffdc4d;
-  --accent-2: #ffc900;
-  --accent-3: #e0a800;
-  --accent-fg: #08090b; /* dark type on gold buttons */
-  --brand: #ffc900;
-  --brand-fg: #08090b;
-  --glow: 255 201 0;
-  --hl: 255 255 255;
-
-  --income: #5fd39a;
-  --income-2: #2f9a68;
-  --expense: #ff6b5e;
-  --expense-2: #c4463c;
-  --warn: #ff9f43; /* orange, so warnings don't blend into the gold accent */
-  --info: #8ab4f8;
-  --violet: #c3a6ff;
-
-  --c1: #ffc900;
-  --c2: #5fd39a;
-  --c3: #8ab4f8;
-  --c4: #ff8a5c;
-  --c5: #c3a6ff;
-  --c6: #4fd1d9;
-  --c7: #e0a800;
-  --c8: #8a8780;
-
-  --field: rgb(0 0 0 / 0.4);
-  --panel-shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 14px 40px -14px rgb(0 0 0 / 0.7);
-  --silver-1: #ffffff;
-  --silver-2: #c9c5bc;
-
-  --logo-1: #ffdc4d;
-  --logo-2: #ffc900;
-  --logo-3: #c99400;
-  --logo-fg: #08090b;
-  --deep-1: #1a1608;
-  --deep-2: #08090b;
-  color-scheme: dark;
-}
 
 
 @theme inline {
@@ -467,7 +359,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-:is([data-theme="dark"], [data-theme="cobalt"], [data-theme="noir"]) input[type="date"]::-webkit-calendar-picker-indicator {
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(0.75);
 }
 input[type="date"]::-webkit-calendar-picker-indicator {

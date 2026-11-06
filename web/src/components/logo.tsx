@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ARTH_OFFSET, ARTH_PATH } from "@/lib/brand";
 
 /**
- * ArthOS mark: "अर्थ" on a tile in the theme's logo colours (crimson in Forest/Ivory, cobalt in Cobalt, gold in Noir). The tile is a CSS gradient (not an SVG <linearGradient>): a gradient
+ * ArthOS mark: "अर्थ" in ivory on a crimson tile. The tile is a CSS gradient (not an SVG <linearGradient>): a gradient
  * id shared by several marks resolves to the first one in the document, and when that copy sits in a hidden sidebar
  * the browser paints no tile at all, leaving the ivory glyph invisible on the light theme.
  */

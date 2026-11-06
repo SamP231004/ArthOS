@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Dimensions, Easing, Platform, View } from 'react-native';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { Platform } from 'react-native';
 
 /**
  * ArthOS design tokens — the same values as web/src/app/globals.css, so the app and the website look identical.
@@ -82,88 +82,12 @@ export const palettes = {
     logo3: '#6e1110',
     logoFg: '#fff7f3',
   },
-  cobalt: {
-    bg: '#030407',
-    bg2: '#05070c',
-    surface: '#0a0e17',
-    surface2: '#0f1420',
-    surface3: '#161d2d',
-    line: 'rgba(196,212,255,0.08)',
-    lineStrong: 'rgba(196,212,255,0.15)',
-    fg: '#eef1f7',
-    fg2: '#d3d9e6',
-    muted: '#9aa4b8',
-    subtle: '#677189',
-    accent1: '#3d7bf0',
-    accent2: '#1f63d8',
-    accent3: '#1558c9',
-    accentFg: '#ffffff',
-    brand: '#d4ff24',
-    brandFg: '#030407',
-    glow: 'rgba(21,88,201,',
-    income: '#3ddc97',
-    expense: '#ff6b6b',
-    warn: '#ffb547',
-    info: '#7aa7ff',
-    field: 'rgba(0,0,0,0.4)',
-    c1: '#3d7bf0',
-    c2: '#d4ff24',
-    c3: '#3ddc97',
-    c4: '#8fb3ff',
-    c5: '#b9a5ff',
-    c6: '#ff8a5c',
-    c7: '#4fd1d9',
-    c8: '#7f889c',
-    logo1: '#3d7bf0',
-    logo2: '#1558c9',
-    logo3: '#0b3a8c',
-    logoFg: '#d4ff24',
-  },
-  noir: {
-    bg: '#08090b',
-    bg2: '#0b0c0f',
-    surface: '#111216',
-    surface2: '#17181d',
-    surface3: '#1f2026',
-    line: 'rgba(245,243,239,0.08)',
-    lineStrong: 'rgba(245,243,239,0.15)',
-    fg: '#f5f3ef',
-    fg2: '#dcd9d2',
-    muted: '#a3a09a',
-    subtle: '#75736e',
-    accent1: '#ffdc4d',
-    accent2: '#ffc900',
-    accent3: '#e0a800',
-    accentFg: '#08090b',
-    brand: '#ffc900',
-    brandFg: '#08090b',
-    glow: 'rgba(255,201,0,',
-    income: '#5fd39a',
-    expense: '#ff6b5e',
-    warn: '#ff9f43',
-    info: '#8ab4f8',
-    field: 'rgba(0,0,0,0.4)',
-    c1: '#ffc900',
-    c2: '#5fd39a',
-    c3: '#8ab4f8',
-    c4: '#ff8a5c',
-    c5: '#c3a6ff',
-    c6: '#4fd1d9',
-    c7: '#e0a800',
-    c8: '#8a8780',
-    logo1: '#ffdc4d',
-    logo2: '#ffc900',
-    logo3: '#c99400',
-    logoFg: '#08090b',
-  },
 } as const;
 
 /** Every theme in picker order, with its display name and whether it's dark or light (for system UI). */
 export const THEMES: { id: Mode; name: string; scheme: 'dark' | 'light' }[] = [
   { id: 'dark', name: 'Forest', scheme: 'dark' },
   { id: 'light', name: 'Ivory', scheme: 'light' },
-  { id: 'cobalt', name: 'Cobalt', scheme: 'dark' },
-  { id: 'noir', name: 'Noir Gold', scheme: 'dark' },
 ];
 
 export type Mode = keyof typeof palettes;
@@ -202,28 +126,15 @@ type Ctx = {
   mode: Mode;
   scheme: 'dark' | 'light';
   c: Palette;
-  /** Switch to a theme; with an origin (screen point of the tapped control) it plays the circular reveal. */
-  setMode: (m: Mode, origin?: { x: number; y: number }) => void;
-  toggle: (origin?: { x: number; y: number }) => void;
+  setMode: (m: Mode) => void;
+  toggle: () => void;
   ready: boolean;
 };
 const ThemeContext = createContext<Ctx>({ mode: 'dark', scheme: 'dark', c: palettes.dark, setMode: () => {}, toggle: () => {}, ready: false });
 
-type Origin = { x: number; y: number };
-type Reveal = { id: number; x: number; y: number; d: number; color: string; next: Mode };
-
-/**
- * Theme state plus the switch animation. The theme switches at once and a ripple in the new theme's accent spreads
- * from the tapped control while fading out. (An earlier version covered the screen with the new background until the
- * app repainted, which read as the screen going black on the dark themes.)
- */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<Mode>('dark'); // dark is the default (blueprint §11)
   const [ready, setReady] = useState(false);
-  const [reveal, setReveal] = useState<Reveal | null>(null);
-  const [grow] = useState(() => new Animated.Value(0));
-  const [fade] = useState(() => new Animated.Value(1));
-  const busy = useRef(false);
 
   useEffect(() => {
     store
@@ -233,73 +144,24 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setReady(true));
   }, []);
 
-  const commit = useCallback((next: Mode) => {
+  const setMode = useCallback((next: Mode) => {
     setModeState(next);
     store.set(next).catch(() => {});
   }, []);
 
-  const choose = useCallback(
-    (next: Mode, origin?: Origin) => {
-      if (next === mode || busy.current) return;
-      if (!origin) return commit(next);
-      const { width, height } = Dimensions.get('window');
-      // diameter that reaches the farthest corner from the origin
-      const d = 2 * Math.hypot(Math.max(origin.x, width - origin.x), Math.max(origin.y, height - origin.y));
-      busy.current = true;
-      grow.setValue(0);
-      fade.setValue(1);
-      commit(next); // switch immediately — the ripple plays over the new theme, never hiding the screen
-      setReveal({ id: Date.now(), x: origin.x, y: origin.y, d, color: palettes[next].accent2, next });
-    },
-    [mode, commit, grow, fade],
-  );
-
-  useEffect(() => {
-    if (!reveal) return;
-    // grow and fade together: a soft wave that starts as a tint at the control and is gone by the screen's edge
-    fade.setValue(0.32);
-    Animated.parallel([
-      Animated.timing(grow, { toValue: 1, duration: 620, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      Animated.timing(fade, { toValue: 0, duration: 620, easing: Easing.in(Easing.quad), useNativeDriver: true }),
-    ]).start(() => {
-      setReveal(null);
-      busy.current = false;
+  const toggle = useCallback(() => {
+    setModeState((m) => {
+      const next = m === 'dark' ? 'light' : 'dark';
+      store.set(next).catch(() => {});
+      return next;
     });
-  }, [reveal, grow, fade]);
-
-  /** Steps to the next theme in picker order, revealing from `origin` when given. */
-  const toggle = useCallback(
-    (origin?: Origin) => choose(THEMES[(THEMES.findIndex((t) => t.id === mode) + 1) % THEMES.length].id, origin),
-    [mode, choose],
-  );
+  }, []);
 
   const value = useMemo(
-    () => ({ mode, scheme: THEMES.find((t) => t.id === mode)?.scheme ?? 'dark', c: palettes[mode], setMode: choose, toggle, ready }),
-    [mode, choose, toggle, ready],
+    () => ({ mode, scheme: THEMES.find((t) => t.id === mode)?.scheme ?? 'dark', c: palettes[mode], setMode, toggle, ready }),
+    [mode, setMode, toggle, ready],
   );
-  return (
-    <ThemeContext.Provider value={value}>
-      <View style={{ flex: 1 }}>
-        {children}
-        {reveal && (
-          <Animated.View
-            pointerEvents="none"
-            style={{
-              position: 'absolute',
-              left: reveal.x - reveal.d / 2,
-              top: reveal.y - reveal.d / 2,
-              width: reveal.d,
-              height: reveal.d,
-              borderRadius: reveal.d / 2,
-              backgroundColor: reveal.color,
-              opacity: fade,
-              transform: [{ scale: grow.interpolate({ inputRange: [0, 1], outputRange: [0.001, 1] }) }],
-            }}
-          />
-        )}
-      </View>
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {

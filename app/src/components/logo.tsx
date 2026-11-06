@@ -5,7 +5,7 @@ import Svg, { G, Path } from 'react-native-svg';
 import { ARTH_OFFSET, ARTH_PATH } from '@/lib/brand';
 import { F, useTheme } from '@/theme';
 
-/** The अर्थ tile in the theme's logo colours (crimson, cobalt or gold), drawn like the website's. */
+/** The अर्थ tile: ivory glyph on the crimson gradient, drawn like the website's. */
 export function LogoMark({ size = 32 }: { size?: number }) {
   const { c } = useTheme();
   return (
