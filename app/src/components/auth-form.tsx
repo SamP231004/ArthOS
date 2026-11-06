@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, KeyboardAvoidingView, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import { LogoMark } from './logo';
 import { ThemeToggle } from './theme-toggle';
@@ -41,7 +41,10 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const [enter] = useState(() => new Animated.Value(0));
   const [fade] = useState(() => new Animated.Value(1));
   const login = mode === 'login';
-  const heroH = Math.round(Math.min(380, Math.max(300, height * 0.42))) + insets.top;
+  // sized so the whole screen fits without scrolling; create account has one more field, so its hero is shorter
+  const heroBody = login ? Math.round(Math.min(270, Math.max(220, height * 0.3))) : Math.round(Math.min(200, Math.max(165, height * 0.22)));
+  const heroH = heroBody + insets.top;
+  const centreY = insets.top + 38 + (heroBody - 38 - 24) / 2; // middle of the logo block (below the toggle row)
 
   useEffect(() => {
     let live = true;
@@ -93,8 +96,11 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
       <StatusBar style="light" />
       {/* brand hero — the same deep forest in both themes, like the website's auth panel */}
       <LinearGradient colors={['#12301f', '#0a1d14', '#06110c']} style={{ position: 'absolute', left: 0, right: 0, top: 0, height: heroH + 40 }}>
-        <View style={{ position: 'absolute', width: 340, height: 340, borderRadius: 170, top: insets.top + 30, alignSelf: 'center', backgroundColor: 'rgba(196,58,53,0.16)' }} />
-        <Text style={{ position: 'absolute', right: -18, bottom: 34, fontFamily: F.deva, fontSize: 150, color: 'rgba(242,239,232,0.04)' }}>अर्थ</Text>
+        <View style={{ position: 'absolute', width: 300, height: 300, borderRadius: 150, top: centreY - 150, alignSelf: 'center', backgroundColor: 'rgba(196,58,53,0.11)' }} />
+        <Text
+          style={{ position: 'absolute', left: 0, right: 0, top: centreY - 100, height: 200, lineHeight: 200, textAlign: 'center', fontFamily: F.deva, fontSize: 160, color: 'rgba(242,239,232,0.045)' }}>
+          अर्थ
+        </Text>
       </LinearGradient>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
@@ -105,25 +111,29 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
                 <ThemeToggle color="#d9d4c9" />
               </View>
             </View>
-            <Animated.View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 36, opacity: enter }}>
-              <View style={{ borderRadius: 22, shadowColor: '#c43a35', shadowOpacity: 0.6, shadowRadius: 24, elevation: 14 }}>
-                <LogoMark size={68} />
+            <Animated.View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 24, opacity: enter }}>
+              <View style={{ borderRadius: 18, shadowColor: '#c43a35', shadowOpacity: 0.6, shadowRadius: 22, elevation: 12 }}>
+                <LogoMark size={login ? 58 : 50} />
               </View>
-              <Text style={{ marginTop: S.md, fontFamily: F.display, fontSize: 34, color: '#f2efe8', letterSpacing: -0.6 }}>
+              <Text style={{ marginTop: S.sm, fontFamily: F.display, fontSize: login ? 30 : 27, color: '#f2efe8', letterSpacing: -0.6 }}>
                 Arth<Text style={{ fontFamily: F.displayMedium, color: '#ec7a74' }}>OS</Text>
               </Text>
               <Text style={{ fontFamily: F.ui, fontSize: 13.5, color: '#a5b0a9', marginTop: 2 }}>
                 Take control of your <Text style={{ fontFamily: F.deva, color: '#ec7a74' }}>अर्थ</Text>
               </Text>
-              <Animated.View style={{ marginTop: S.lg, alignItems: 'center', opacity: fade, minHeight: 44 }}>
-                <Text style={{ fontFamily: F.uiSemibold, fontSize: 15, color: '#f2efe8' }}>{POINTS[point].title}</Text>
-                <Text style={{ fontFamily: F.ui, fontSize: 12.5, color: '#a5b0a9', marginTop: 3, textAlign: 'center' }}>{POINTS[point].body}</Text>
-              </Animated.View>
-              <View style={{ flexDirection: 'row', gap: 6, marginTop: S.md }}>
-                {POINTS.map((_, i) => (
-                  <View key={i} style={{ height: 6, width: i === point ? 18 : 6, borderRadius: 3, backgroundColor: i === point ? '#ec7a74' : 'rgba(242,239,232,0.25)' }} />
-                ))}
-              </View>
+              {login && (
+                <>
+                  <Animated.View style={{ marginTop: S.md, alignItems: 'center', opacity: fade, minHeight: 40 }}>
+                    <Text style={{ fontFamily: F.uiSemibold, fontSize: 14.5, color: '#f2efe8' }}>{POINTS[point].title}</Text>
+                    <Text style={{ fontFamily: F.ui, fontSize: 12.5, color: '#a5b0a9', marginTop: 2, textAlign: 'center' }}>{POINTS[point].body}</Text>
+                  </Animated.View>
+                  <View style={{ flexDirection: 'row', gap: 6, marginTop: S.sm }}>
+                    {POINTS.map((_, i) => (
+                      <View key={i} style={{ height: 5, width: i === point ? 16 : 5, borderRadius: 3, backgroundColor: i === point ? '#ec7a74' : 'rgba(242,239,232,0.25)' }} />
+                    ))}
+                  </View>
+                </>
+              )}
             </Animated.View>
           </View>
 
@@ -136,15 +146,15 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
               borderTopLeftRadius: 28,
               borderTopRightRadius: 28,
               paddingHorizontal: S.lg,
-              paddingTop: S.xl,
-              paddingBottom: insets.bottom + S.xl,
-              gap: S.md,
+              paddingTop: S.lg,
+              paddingBottom: insets.bottom + S.md,
+              gap: 10,
               opacity: enter,
               transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [60, 0] }) }],
             }}>
-            <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: c.lineStrong, marginTop: -S.sm, marginBottom: S.xs }} />
+            <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: c.lineStrong, marginTop: -6 }} />
             <View style={{ gap: 2 }}>
-              <T variant="title" style={{ fontSize: 28 }}>{login ? 'Welcome back' : 'Create your account'}</T>
+              <T variant="title" style={{ fontSize: 26 }}>{login ? 'Welcome back' : 'Create your account'}</T>
               <T variant="muted">{login ? 'Sign in to your money, all in one place.' : 'Free during early access · one account for app and web.'}</T>
             </View>
 
@@ -159,12 +169,11 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 10,
-                  paddingVertical: 15,
+                  paddingVertical: 12,
                   borderRadius: R.lg,
                   borderWidth: 1,
                   borderColor: c.lineStrong,
                   backgroundColor: c.surface,
-                  marginTop: S.xs,
                   opacity: !googleId || (other && busy !== 'google') ? 0.55 : pressed ? 0.85 : 1,
                 })}>
                 {busy === 'google' ? <ActivityIndicator color={c.fg} /> : <GoogleG />}
@@ -178,8 +187,8 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
               <View style={{ flex: 1, height: 1, backgroundColor: c.line }} />
             </View>
 
-            {!login && <Input label="Full name" value={form.name} onChangeText={(name) => setForm({ ...form, name })} autoComplete="name" error={fields.name} maxLength={80} placeholder="Samarth Patel" />}
-            <Input label="Email" value={form.email} onChangeText={(email) => setForm({ ...form, email })} autoCapitalize="none" autoComplete="email" keyboardType="email-address" error={fields.email} placeholder="you@example.com" />
+            {!login && <Input label="Full name" value={form.name} onChangeText={(name) => setForm({ ...form, name })} autoComplete="name" error={fields.name} maxLength={80} />}
+            <Input label="Email" value={form.email} onChangeText={(email) => setForm({ ...form, email })} autoCapitalize="none" autoComplete="email" keyboardType="email-address" error={fields.email} />
             <Input
               label="Password"
               value={form.password}
@@ -190,17 +199,16 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
               error={fields.password}
               hint={!login ? 'At least 8 characters' : undefined}
               onSubmitEditing={() => valid && submit()}
-              placeholder={login ? 'Your password' : 'Create a password'}
               accessory={
-                <Pressable onPress={() => setShow((x) => !x)} hitSlop={8} style={{ paddingHorizontal: 10, paddingVertical: 8 }} accessibilityLabel={show ? 'Hide password' : 'Show password'}>
-                  <Text style={{ color: c.brand, fontFamily: F.uiSemibold, fontSize: 13 }}>{show ? 'Hide' : 'Show'}</Text>
+                <Pressable onPress={() => setShow((x) => !x)} hitSlop={10} style={{ padding: 10 }} accessibilityRole="button" accessibilityLabel={show ? 'Hide password' : 'Show password'}>
+                  <Eye open={show} color={c.muted} />
                 </Pressable>
               }
             />
             <ErrorNote message={error} />
             <Button title={login ? 'Sign in  →' : 'Create account  →'} size="lg" onPress={submit} loading={busy === 'form'} disabled={!valid || (other && busy !== 'form')} />
 
-            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: S.xs }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6 }}>
               <T variant="muted">{login ? 'New to ArthOS?' : 'Already have an account?'}</T>
               <Pressable onPress={() => router.replace(login ? '/register' : '/login')} hitSlop={8}>
                 <Text style={{ color: c.brand, fontSize: 14, fontFamily: F.uiSemibold }}>{login ? 'Create an account' : 'Sign in'}</Text>
@@ -214,8 +222,8 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
                 flexDirection: 'row',
                 alignItems: 'center',
                 gap: S.md,
-                marginTop: S.sm,
-                padding: S.md,
+                paddingVertical: 10,
+                paddingHorizontal: S.md,
                 borderRadius: R.lg,
                 borderWidth: 1,
                 borderStyle: 'dashed',
@@ -223,7 +231,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
                 backgroundColor: alpha(c.brand, pressed ? 0.1 : 0.05),
                 opacity: other && busy !== 'demo' ? 0.55 : 1,
               })}>
-              <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: alpha(c.brand, 0.14), alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: alpha(c.brand, 0.14), alignItems: 'center', justifyContent: 'center' }}>
                 {busy === 'demo' ? <ActivityIndicator color={c.brand} size="small" /> : <Text style={{ color: c.brand, fontSize: 13 }}>▶</Text>}
               </View>
               <View style={{ flex: 1 }}>
@@ -236,6 +244,27 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
+  );
+}
+
+/** Eye / eye-off (lucide outlines) for the password field. */
+function Eye({ open, color }: { open: boolean; color: string }) {
+  return (
+    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+      {open ? (
+        <>
+          <Path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
+          <Path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+          <Path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
+          <Path d="m2 2 20 20" />
+        </>
+      ) : (
+        <>
+          <Path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+          <Circle cx={12} cy={12} r={3} />
+        </>
+      )}
+    </Svg>
   );
 }
 

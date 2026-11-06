@@ -41,7 +41,16 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: android-actions/setup-android@v3
+      # ubuntu-latest already ships the Android SDK (ANDROID_HOME); the setup-android action fails on its retired
+      # "tools" package, so it isn't used.
+      - name: Check EXPO_TOKEN
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Add the EXPO_TOKEN repository secret (expo.dev → Account settings → Access tokens), then re-run this workflow."
+            exit 1
+          fi
 
       - name: Install dependencies
         run: npm ci
