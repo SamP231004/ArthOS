@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Donut } from "@/components/charts";
 import { AddHoldingModal } from "@/components/invest/add-holding";
 import { ContributionChart } from "@/components/invest/contribution-chart";
+import { GoalHorizon } from "@/components/invest/goal-horizon";
 import { HoldingModal, type DetailTab } from "@/components/invest/holding-detail";
 import { CLASS_META, fmtQty, signedPct, tone } from "@/components/invest/meta";
 import { ValueChart } from "@/components/invest/value-chart";
@@ -408,6 +409,8 @@ function AnalysisView({ p, range, setRange }: { p: Portfolio; range: PortfolioRa
           </ul>
         </section>
       </div>
+
+      <GoalHorizon holdings={p.holdings} />
 
       <section className="panel p-6">
         <div className="flex flex-wrap items-end justify-between gap-3">

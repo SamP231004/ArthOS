@@ -7,10 +7,10 @@ import { AppHeader } from '@/components/app-header';
 import { Screen } from '@/components/screen';
 import { Button, Card, Chip, ErrorNote, Loading, Segmented, T } from '@/components/ui';
 import { money } from '@/lib/format';
-import { CLASS_META, fmtQty, signedPct, toneColor } from '@/lib/invest-meta';
+import { CLASS_META, fmtQty, HORIZON_META, signedPct, toneColor } from '@/lib/invest-meta';
 import { indianMarketStatus } from '@/lib/market';
 import { usePortfolio, useSummary } from '@/lib/queries';
-import type { AssetClass, HoldingView, Portfolio, PortfolioRange } from '@/lib/types';
+import type { AssetClass, HoldingView, Horizon, Portfolio, PortfolioRange } from '@/lib/types';
 import { useMonth } from '@/lib/ui-store';
 import { alpha, F, R, S, useStyles, useTheme, type Palette } from '@/theme';
 
@@ -300,7 +300,71 @@ function Analysis({ p, range, setRange }: { p: Portfolio; range: PortfolioRange;
         <Segmented value={range} onChange={setRange} options={(['1M', '3M', '6M', '1Y', 'ALL'] as PortfolioRange[]).map((r) => ({ value: r, label: r }))} />
         <ValueChart data={p.history} format={(n) => money(n, 'INR', true)} width={width - S.lg * 2 - S.lg * 2 - 2} />
       </Card>
+
+      <GroupCard
+        title="By time horizon"
+        rows={groupBy(p.holdings, (h) => h.horizon ?? 'NONE', (k) => HORIZON_META[k as Horizon | 'NONE'].label).sort(
+          (x, y) => HORIZON_ORDER.indexOf(x.key as Horizon | 'NONE') - HORIZON_ORDER.indexOf(y.key as Horizon | 'NONE'),
+        )}
+        colorOf={(g) => ({ SHORT: c.c6, MEDIUM: c.c3, LONG: c.c1, NONE: c.c8 })[g.key as Horizon | 'NONE']}
+      />
+      <GroupCard
+        title="By goal"
+        rows={groupBy(p.holdings, (h) => h.goal?.trim() || '', (k) => k || 'No goal set')}
+        colorOf={(g, i) => (g.key ? [c.c1, c.c4, c.c2, c.c5, c.c6, c.c3, c.c7][i % 7] : c.c8)}
+      />
     </>
+  );
+}
+
+type Group = { key: string; label: string; value: number; invested: number; count: number };
+const HORIZON_ORDER: (Horizon | 'NONE')[] = ['SHORT', 'MEDIUM', 'LONG', 'NONE'];
+
+function groupBy(hs: HoldingView[], keyOf: (h: HoldingView) => string, labelOf: (k: string) => string): Group[] {
+  const by = new Map<string, Group>();
+  for (const h of hs) {
+    const k = keyOf(h);
+    const g = by.get(k) ?? { key: k, label: labelOf(k), value: 0, invested: 0, count: 0 };
+    g.value += h.currentValue;
+    g.invested += h.invested;
+    g.count += 1;
+    by.set(k, g);
+  }
+  return [...by.values()].sort((x, y) => y.value - x.value);
+}
+
+/** Portfolio grouped by horizon or goal (blueprint §9.3): value, share bar, P&L, holdings count. */
+function GroupCard({ title, rows, colorOf }: { title: string; rows: Group[]; colorOf: (g: Group, i: number) => string }) {
+  const { c } = useTheme();
+  const total = rows.reduce((x, g) => x + g.value, 0) || 1;
+  return (
+    <Card style={{ gap: S.md }}>
+      <T variant="h2">{title}</T>
+      {rows.map((g, i) => {
+        const pl = g.value - g.invested;
+        const share = (g.value / total) * 100;
+        return (
+          <View key={g.key || '_none'} style={{ gap: 6 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: S.sm }}>
+              <Text style={{ flex: 1, color: c.fg, fontFamily: F.uiMedium, fontSize: 14 }} numberOfLines={1}>
+                {g.label}
+                <Text style={{ color: c.subtle, fontFamily: F.ui, fontSize: 12 }}>{`  ·  ${g.count} ${g.count === 1 ? 'holding' : 'holdings'}`}</Text>
+              </Text>
+              <Text style={{ color: c.fg, fontFamily: F.uiSemibold, fontSize: 14, fontVariant: ['tabular-nums'] }}>{money(g.value)}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.sm }}>
+              <View style={{ flex: 1, height: 5, borderRadius: R.pill, backgroundColor: alpha(c.fg, 0.07), overflow: 'hidden' }}>
+                <View style={{ width: `${share}%`, height: '100%', borderRadius: R.pill, backgroundColor: colorOf(g, i) }} />
+              </View>
+              <Text style={{ color: c.subtle, fontFamily: F.ui, fontSize: 11.5, width: 42, textAlign: 'right', fontVariant: ['tabular-nums'] }}>{share.toFixed(1)}%</Text>
+              <Text style={{ color: toneColor(c, pl), fontFamily: F.uiSemibold, fontSize: 11.5, width: 64, textAlign: 'right', fontVariant: ['tabular-nums'] }}>
+                {signedPct(g.invested ? (pl / g.invested) * 100 : 0)}
+              </Text>
+            </View>
+          </View>
+        );
+      })}
+    </Card>
   );
 }
 
