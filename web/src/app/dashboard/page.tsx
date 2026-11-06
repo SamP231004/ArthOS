@@ -1,12 +1,12 @@
 "use client";
 
-import { ArrowDownLeft, ArrowRight, ArrowUpRight, PiggyBank, Plus, Receipt, Sparkles, Wallet } from "lucide-react";
+import { ArrowDownLeft, ArrowRight, ArrowUpRight, Plus, Sparkles, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { BudgetCard } from "@/components/budget/budget-card";
 import { PortfolioCard } from "@/components/invest/portfolio-card";
 import { SavingsAccountCard } from "@/components/savings-account-card";
-import { CATEGORY_COLORS, DailyBars, Donut, Sparkline, SpendCurve } from "@/components/charts";
+import { CATEGORY_COLORS, DailyBars, Donut, SpendCurve } from "@/components/charts";
 import { MonthPicker } from "@/components/month-picker";
 import { ExpenseModal, IncomeModal } from "@/components/transaction-forms";
 import { Button, ErrorNote, Skeleton } from "@/components/ui";
@@ -144,25 +144,6 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
       </section>
 
       {s.savings && <SavingsAccountCard a={s.savings} currency={cur} />}
-
-      {/* KPIs */}
-      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Kpi icon={ArrowDownLeft} tone="text-income" label="Income" value={fmt(s.totalIncome)}>
-          <span className="text-subtle">{s.incomeCount} {s.incomeCount === 1 ? "entry" : "entries"}</span>
-        </Kpi>
-        <Kpi icon={Receipt} tone="text-expense" label="Spent" value={fmt(s.totalExpense)} aside={<Sparkline values={s.dailyExpense.map((d) => d.amount)} color="var(--expense)" className="h-8 w-20" />}>
-          <span className="text-subtle">{s.expenseCount} transactions</span>
-        </Kpi>
-        <Kpi icon={ArrowUpRight} tone="text-info" label="Spent today" value={fmt(s.todayExpense)}>
-          <span className="text-subtle">Avg {fmt(s.averageDailyExpense)}/day</span>
-        </Kpi>
-        <Kpi icon={PiggyBank} tone="text-brand" label="Saved first" value={fmt(s.savedFirst)}>
-          <span className="text-subtle">
-            {ruleLabel(s.savingsRule, fmt)}
-            {s.investedThisMonth > 0 && <> · <span className="text-income">{fmt(s.investedThisMonth)} invested</span></>}
-          </span>
-        </Kpi>
-      </section>
 
       {/* Breakdown */}
       <section className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
@@ -357,36 +338,6 @@ function Meter({ label, value, tone }: { label: string; value: number; tone: "in
   );
 }
 
-function Kpi({
-  icon: Icon,
-  tone,
-  label,
-  value,
-  aside,
-  children,
-}: {
-  icon: typeof Wallet;
-  tone: string;
-  label: string;
-  value: string;
-  aside?: React.ReactNode;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className="panel p-5">
-      <div className="flex items-start justify-between">
-        <span className={`grid h-9 w-9 place-items-center rounded-xl bg-fg/[0.04] ring-1 ring-inset ring-fg/[0.06] ${tone}`}>
-          <Icon size={16} />
-        </span>
-        {aside}
-      </div>
-      <p className="mt-4 text-xs text-subtle">{label}</p>
-      <p className="tabular mt-0.5 text-xl font-semibold tracking-tight sm:text-2xl">{value}</p>
-      <p className="mt-1 text-xs">{children}</p>
-    </div>
-  );
-}
-
 function insight(s: MonthSummary, fmt: (n: number) => string): string {
   const lever = label(s.expenseByCategory[0]?.category ?? "OTHER").toLowerCase();
   if (s.totalIncome === 0) return "No income yet this month. When it lands, your savings are set aside first and the rest becomes your spending money.";
@@ -464,7 +415,7 @@ function MoneyStatement({ s, fmt, colors }: { s: MonthSummary; fmt: (n: number) 
       <StatementRow fmt={fmt} sign="−" label="Saved first" hint={rule} v={s.savedFirst} dot={colors.saved} />
       <div className="my-1 border-t border-dashed border-line" />
       <StatementRow fmt={fmt} sign="=" label="Yours to spend" v={s.spendable} />
-      <StatementRow fmt={fmt} sign="−" label="Spent" hint={`${s.expenseCount} expenses`} v={s.totalExpense} dot={colors.spent} />
+      <StatementRow fmt={fmt} sign="−" label="Spent" hint={`${s.expenseCount} expenses${s.todayExpense > 0 ? ` · ${fmt(s.todayExpense)} today` : ""}`} v={s.totalExpense} dot={colors.spent} />
       {fromSpending > 0 && <StatementRow fmt={fmt} sign="−" label="Invested" hint="paid from spending money" v={fromSpending} dot={colors.invested} />}
       <div className="my-1 border-t border-line-strong" />
       <StatementRow fmt={fmt} sign="=" label={over ? "Overspent — taken from savings" : "Left to spend"} v={Math.abs(s.leftToSpend)} dot={over ? "var(--expense)" : colors.left} strong tone={over ? "text-expense" : undefined} />

@@ -85,18 +85,6 @@ function Summary({ s }: { s: MonthSummary }) {
       {s.savings && <SavingsMini a={s.savings} fmt={fmt} />}
       <PortfolioMini />
 
-      <View style={st.grid}>
-        <Stat label="Income" value={money(s.totalIncome, cur)} color={c.income} sub={`${s.incomeCount} ${s.incomeCount === 1 ? 'entry' : 'entries'}`} />
-        <Stat label="Spent" value={money(s.totalExpense, cur)} color={c.expense} sub={`${s.expenseCount} transactions`} />
-        <Stat label="Spent today" value={money(s.todayExpense, cur)} sub={`Avg ${money(s.averageDailyExpense, cur)}/day`} />
-        <Stat
-          label="Saved first"
-          value={fmt(s.savedFirst)}
-          color={c.brand}
-          sub={s.investedThisMonth > 0 ? `${fmt(s.investedThisMonth)} invested` : ruleLabel(s.savingsRule, fmt)}
-        />
-      </View>
-
       {empty ? (
         <Card style={{ alignItems: 'center', gap: S.sm, paddingVertical: S.xxl }}>
           <T variant="title" style={{ fontSize: 24 }}>A blank page for your month</T>
@@ -261,17 +249,6 @@ function Meter({ label: l, value, color }: { label: string; value: number; color
   );
 }
 
-function Stat({ label: l, value, sub, color }: { label: string; value: string; sub: string; color?: string }) {
-  const st = useStyles(make);
-  return (
-    <Card style={st.stat}>
-      <T variant="small">{l}</T>
-      <T variant="num" style={color ? { color } : null}>{value}</T>
-      <T variant="small">{sub}</T>
-    </Card>
-  );
-}
-
 function insight(s: MonthSummary, fmt: (n: number) => string): string {
   if (s.incomeCount === 0 && s.expenseCount === 0) return 'Start logging to see where your month stands.';
   if (s.totalIncome === 0) return 'No income yet. When it lands, your savings are set aside first and the rest is yours to spend.';
@@ -343,7 +320,7 @@ function MoneyStatement({ s, fmt, colors }: { s: MonthSummary; fmt: (n: number) 
       <StatementRow fmt={fmt} sign="−" label="Saved first" hint={ruleLabel(s.savingsRule, fmt)} v={s.savedFirst} dot={colors.saved} />
       <View style={{ borderTopWidth: 1, borderStyle: 'dashed', borderColor: c.line, marginVertical: 2 }} />
       <StatementRow fmt={fmt} sign="=" label="Yours to spend" v={s.spendable} />
-      <StatementRow fmt={fmt} sign="−" label="Spent" hint={`${s.expenseCount} expenses`} v={s.totalExpense} dot={colors.spent} />
+      <StatementRow fmt={fmt} sign="−" label="Spent" hint={`${s.expenseCount} expenses${s.todayExpense > 0 ? ` · ${fmt(s.todayExpense)} today` : ''}`} v={s.totalExpense} dot={colors.spent} />
       {fromSpending > 0 && <StatementRow fmt={fmt} sign="−" label="Invested" hint="from spending money" v={fromSpending} dot={colors.invested} />}
       <View style={{ borderTopWidth: 1, borderColor: c.lineStrong, marginVertical: 2 }} />
       <StatementRow fmt={fmt} sign="=" label={over ? 'Overspent — from savings' : 'Left to spend'} v={Math.abs(s.leftToSpend)} dot={over ? c.expense : colors.left} strong color={over ? c.expense : undefined} />
@@ -357,6 +334,4 @@ const make = (c: Palette) =>
     paise: { color: c.subtle, fontSize: 20 },
     track: { height: 6, borderRadius: R.pill, backgroundColor: alpha(c.fg, 0.06), overflow: 'hidden' },
     fill: { height: 6, borderRadius: R.pill },
-    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: S.md },
-    stat: { flexBasis: '47%', flexGrow: 1, gap: 4, padding: S.md },
   });
