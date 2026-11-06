@@ -132,14 +132,19 @@ function Holdings({ p }: { p: Portfolio }) {
 }
 
 /**
- * Holding row in the style of Indian broker apps: name and current value on top, quantity/average and total returns
- * beneath, then today's price move — no avatars or charts competing with the numbers.
+ * Holding row: name + current value, then the symbol and total returns (as a coloured pill), then a labelled
+ * QTY · AVG PRICE · LTP strip so the three figures are never confused, and finally the holding's share of its class
+ * as a bar in the class colour.
  */
 function Row({ h, last, share }: { h: HoldingView; last: boolean; share: number }) {
   const { c } = useTheme();
   const s = useStyles(make);
-  const unit = h.assetClass === 'GOLD' ? ' g' : h.assetClass === 'MUTUAL_FUND' ? ' units' : h.assetClass === 'BOND' ? ' bonds' : ' shares';
-  const priceNote = h.priceSource === 'LIVE' ? signedPct(h.dayChangePct) : h.priceSource === 'MANUAL' ? 'manual price' : h.priceSource === 'FACE_VALUE' ? 'face value' : 'last trade';
+  const col = CLASS_META[h.assetClass].color(c);
+  const gainTone = toneColor(c, h.gain);
+  const live = h.priceSource === 'LIVE' && h.dayChangePct != null;
+  const dayTone = toneColor(c, h.dayChangePct);
+  const sub = [h.symbol, h.exchange].filter(Boolean).join(' · ') || CLASS_META[h.assetClass].label;
+  const qtyUnit = h.assetClass === 'GOLD' ? ' g' : '';
   return (
     <Pressable onPress={() => router.push(`/holding?id=${h.id}`)} style={({ pressed }) => [s.row, !last && s.rowBorder, pressed && { backgroundColor: alpha(c.fg, 0.03) }]}>
       <View style={s.line}>
@@ -147,21 +152,50 @@ function Row({ h, last, share }: { h: HoldingView; last: boolean; share: number 
         <Text style={s.value}>{money(h.currentValue)}</Text>
       </View>
       <View style={s.line}>
-        <Text style={[s.sub, { flex: 1 }]} numberOfLines={1}>
-          {fmtQty(h.quantity)}{unit} · Avg {money(h.avgCost)}
-        </Text>
-        <Text style={[s.sub, { color: toneColor(c, h.gain), fontFamily: F.uiSemibold }]}>
-          {h.gain >= 0 ? '+' : '−'}{money(Math.abs(h.gain))} ({signedPct(h.gainPct)})
-        </Text>
+        <Text style={[s.sub, { flex: 1 }]} numberOfLines={1}>{sub}</Text>
+        <View style={[s.pill, { backgroundColor: alpha(gainTone, 0.12) }]}>
+          <Text style={[s.pillText, { color: gainTone }]}>
+            {h.gain >= 0 ? '+' : '−'}{money(Math.abs(h.gain))}  {(h.gainPct ?? 0) >= 0 ? '▲' : '▼'} {Math.abs(h.gainPct ?? 0).toFixed(2)}%
+          </Text>
+        </View>
       </View>
-      <View style={s.line}>
-        <Text style={[s.sub, { flex: 1 }]} numberOfLines={1}>
-          {h.assetClass === 'MUTUAL_FUND' ? 'NAV' : 'LTP'} {money(h.price)}{' '}
-          <Text style={{ color: h.priceSource === 'LIVE' ? toneColor(c, h.dayChangePct) : c.subtle }}>{priceNote}</Text>
+
+      <View style={s.facts}>
+        <Fact k={h.assetClass === 'GOLD' ? 'Grams' : 'Qty'} v={`${fmtQty(h.quantity)}${qtyUnit}`} />
+        <View style={s.factDivider} />
+        <Fact k="Avg price" v={money(h.avgCost)} />
+        <View style={s.factDivider} />
+        <Fact
+          k={h.assetClass === 'MUTUAL_FUND' ? 'NAV' : h.priceSource === 'LIVE' ? 'LTP' : 'Price'}
+          v={money(h.price)}
+          extra={live ? `${(h.dayChangePct ?? 0) >= 0 ? '▲' : '▼'}${Math.abs(h.dayChangePct ?? 0).toFixed(2)}%` : h.priceSource === 'MANUAL' ? 'manual' : h.priceSource === 'FACE_VALUE' ? 'face value' : 'last trade'}
+          extraColor={live ? dayTone : c.subtle}
+        />
+      </View>
+
+      <View style={[s.line, { marginTop: 2 }]}>
+        <View style={s.track}>
+          <View style={{ width: `${Math.min(100, share)}%`, height: '100%', borderRadius: R.pill, backgroundColor: col }} />
+        </View>
+        <Text style={[s.sub, { minWidth: 92, textAlign: 'right' }]}>
+          <Text style={{ color: c.fg2, fontFamily: F.uiSemibold }}>{share.toFixed(1)}%</Text> of {CLASS_META[h.assetClass].plural.toLowerCase()}
         </Text>
-        <Text style={s.sub}>{share.toFixed(1)}% of {CLASS_META[h.assetClass].plural.toLowerCase()}</Text>
       </View>
     </Pressable>
+  );
+}
+
+/** One labelled figure in the QTY · AVG · LTP strip: tiny caps label above the value. */
+function Fact({ k, v, extra, extraColor }: { k: string; v: string; extra?: string; extraColor?: string }) {
+  const { c } = useTheme();
+  return (
+    <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+      <Text style={{ color: c.subtle, fontFamily: F.uiMedium, fontSize: 9.5, letterSpacing: 0.8, textTransform: 'uppercase' }}>{k}</Text>
+      <Text style={{ color: c.fg, fontFamily: F.uiSemibold, fontSize: 13, fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit>
+        {v}
+      </Text>
+      {extra ? <Text style={{ color: extraColor ?? c.subtle, fontFamily: F.uiMedium, fontSize: 10.5, fontVariant: ['tabular-nums'] }}>{extra}</Text> : null}
+    </View>
   );
 }
 
@@ -272,8 +306,13 @@ function Analysis({ p, range, setRange }: { p: Portfolio; range: PortfolioRange;
 
 const make = (c: Palette) =>
   StyleSheet.create({
-    row: { gap: 3, paddingHorizontal: S.lg, paddingVertical: 14 },
+    row: { gap: 6, paddingHorizontal: S.lg, paddingVertical: 14 },
     line: { flexDirection: 'row', alignItems: 'center', gap: S.md },
+    pill: { borderRadius: R.pill, paddingHorizontal: 8, paddingVertical: 2 },
+    pillText: { fontFamily: F.uiSemibold, fontSize: 11.5, fontVariant: ['tabular-nums'] },
+    facts: { flexDirection: 'row', alignItems: 'flex-start', gap: S.sm, marginTop: 2, paddingVertical: 8, paddingHorizontal: S.sm, borderRadius: R.sm, backgroundColor: alpha(c.fg, 0.035) },
+    factDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: c.line },
+    track: { flex: 1, height: 5, borderRadius: R.pill, backgroundColor: alpha(c.fg, 0.07), overflow: 'hidden' },
     rowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.line },
     name: { color: c.fg, fontFamily: F.uiSemibold, fontSize: 15 },
     sub: { color: c.subtle, fontFamily: F.ui, fontSize: 12, fontVariant: ['tabular-nums'] },

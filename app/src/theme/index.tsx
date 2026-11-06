@@ -213,9 +213,9 @@ type Origin = { x: number; y: number };
 type Reveal = { id: number; x: number; y: number; d: number; color: string; next: Mode };
 
 /**
- * Theme state plus the switch animation. React Native can't snapshot the old screen the way the website's View
- * Transitions do, so the reveal is staged: a circle of the new theme's background grows from the tapped control until
- * it covers the screen, the theme flips underneath, then the circle fades to show the new theme.
+ * Theme state plus the switch animation. The theme switches at once and a ripple in the new theme's accent spreads
+ * from the tapped control while fading out. (An earlier version covered the screen with the new background until the
+ * app repainted, which read as the screen going black on the dark themes.)
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<Mode>('dark'); // dark is the default (blueprint §11)
@@ -248,24 +248,24 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       busy.current = true;
       grow.setValue(0);
       fade.setValue(1);
-      setReveal({ id: Date.now(), x: origin.x, y: origin.y, d, color: palettes[next].bg, next });
+      commit(next); // switch immediately — the ripple plays over the new theme, never hiding the screen
+      setReveal({ id: Date.now(), x: origin.x, y: origin.y, d, color: palettes[next].accent2, next });
     },
     [mode, commit, grow, fade],
   );
 
   useEffect(() => {
     if (!reveal) return;
-    Animated.timing(grow, { toValue: 1, duration: 460, easing: Easing.bezier(0.65, 0, 0.35, 1), useNativeDriver: true }).start(() => {
-      commit(reveal.next);
-      // let the new theme paint under the cover, then fade the cover away
-      requestAnimationFrame(() =>
-        Animated.timing(fade, { toValue: 0, duration: 260, easing: Easing.out(Easing.quad), useNativeDriver: true }).start(() => {
-          setReveal(null);
-          busy.current = false;
-        }),
-      );
+    // grow and fade together: a soft wave that starts as a tint at the control and is gone by the screen's edge
+    fade.setValue(0.32);
+    Animated.parallel([
+      Animated.timing(grow, { toValue: 1, duration: 620, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(fade, { toValue: 0, duration: 620, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+    ]).start(() => {
+      setReveal(null);
+      busy.current = false;
     });
-  }, [reveal, grow, fade, commit]);
+  }, [reveal, grow, fade]);
 
   /** Steps to the next theme in picker order, revealing from `origin` when given. */
   const toggle = useCallback(
