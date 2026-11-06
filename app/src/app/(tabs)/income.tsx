@@ -4,6 +4,7 @@ import { View } from 'react-native';
 
 import { BreakdownBar, RecurringSuggestions, SummaryGrid } from '@/components/ledger-ui';
 import { MonthPicker } from '@/components/month-picker';
+import { AppHeader } from '@/components/app-header';
 import { Screen } from '@/components/screen';
 import { TxRow } from '@/components/tx-row';
 import { Button, Card, ErrorNote, Loading, T } from '@/components/ui';
@@ -54,6 +55,7 @@ export default function IncomeTab() {
 
   return (
     <Screen refreshing={isRefetching} onRefresh={refetch}>
+      <AppHeader />
       <View>
         <T variant="title">Income</T>
         <T variant="muted">Everything coming in this month.</T>
@@ -85,9 +87,10 @@ export default function IncomeTab() {
         <T variant="muted" style={{ textAlign: 'center', marginTop: S.xl }}>{type ? `No ${label(type).toLowerCase()} income this month.` : 'No income logged for this month.'}</T>
       ) : (
         <Card style={{ padding: 0 }}>
-          {rows.map((i) => (
+          {rows.map((i, n) => (
             <TxRow
               key={i.id}
+              last={n === rows.length - 1}
               kind="INCOME"
               title={i.source}
               subtitle={`${label(i.type)} · ${dayLabel(i.date)}${i.note ? ` · ${i.note}` : ''}`}

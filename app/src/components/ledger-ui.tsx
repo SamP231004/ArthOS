@@ -1,35 +1,37 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Card, T } from '@/components/ui';
 import { alpha, F, R, S, useTheme } from '@/theme';
 
-/** Two-by-two summary figures at the top of a ledger (mirrors the website's summary strip). */
+/**
+ * Ledger summary in the style of Indian finance apps: the first figure is the headline, the rest are plain
+ * label-and-value lines (with an optional pill, e.g. the change vs last month).
+ */
 export function SummaryGrid({ cells }: { cells: { k: string; v: string; sub?: string; color?: string; pill?: { text: string; color: string } }[] }) {
   const { c } = useTheme();
+  const [head, ...rest] = cells;
   return (
-    <Card glow style={{ padding: 0, flexDirection: 'row', flexWrap: 'wrap' }}>
-      {cells.map((x, i) => (
-        <View
-          key={x.k}
-          style={{
-            width: '50%',
-            padding: S.md,
-            gap: 3,
-            borderColor: c.line,
-            borderRightWidth: i % 2 === 0 ? 1 : 0,
-            borderBottomWidth: i < cells.length - 2 ? 1 : 0,
-          }}>
-          <T variant="small">{x.k}</T>
-          <Text style={{ color: x.color ?? c.fg, fontFamily: F.uiSemibold, fontSize: 18, fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit>
-            {x.v}
-          </Text>
-          {x.pill ? (
-            <Text style={{ alignSelf: 'flex-start', color: x.pill.color, backgroundColor: alpha(x.pill.color, 0.1), fontSize: 10, fontFamily: F.uiMedium, paddingHorizontal: 6, paddingVertical: 1, borderRadius: R.pill, overflow: 'hidden' }}>
-              {x.pill.text}
-            </Text>
-          ) : x.sub ? (
-            <T variant="small" numberOfLines={1}>{x.sub}</T>
-          ) : null}
+    <Card glow style={{ gap: 0 }}>
+      <T variant="small">{head.k}</T>
+      <Text style={{ color: head.color ?? c.fg, fontFamily: F.uiSemibold, fontSize: 30, letterSpacing: -0.8, marginTop: 2, fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit>
+        {head.v}
+      </Text>
+      {head.sub ? <T variant="small">{head.sub}</T> : null}
+      <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.lineStrong, marginVertical: S.md }} />
+      {rest.map((x) => (
+        <View key={x.k} style={{ flexDirection: 'row', alignItems: 'center', gap: S.sm, paddingVertical: 5 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <T variant="muted" style={{ fontSize: 13 }}>{x.k}</T>
+            {x.sub && !x.pill ? <T variant="small" numberOfLines={1}>{x.sub}</T> : null}
+          </View>
+          <View style={{ alignItems: 'flex-end', gap: 2 }}>
+            <Text style={{ color: x.color ?? c.fg, fontFamily: F.uiSemibold, fontSize: 14, fontVariant: ['tabular-nums'] }}>{x.v}</Text>
+            {x.pill ? (
+              <Text style={{ color: x.pill.color, backgroundColor: alpha(x.pill.color, 0.1), fontSize: 10, fontFamily: F.uiMedium, paddingHorizontal: 6, paddingVertical: 1, borderRadius: R.pill, overflow: 'hidden' }}>
+                {x.pill.text}
+              </Text>
+            ) : null}
+          </View>
         </View>
       ))}
     </Card>

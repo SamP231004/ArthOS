@@ -1,11 +1,9 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
 
-import { Logo } from '@/components/logo';
+import { AppHeader } from '@/components/app-header';
 import { MonthPicker } from '@/components/month-picker';
 import { Screen } from '@/components/screen';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { TxRow } from '@/components/tx-row';
 import { Badge, Button, Card, ErrorNote, Loading, T } from '@/components/ui';
 import { useAuth } from '@/lib/auth-store';
@@ -32,18 +30,7 @@ export default function Home() {
 
   return (
     <Screen refreshing={isRefetching} onRefresh={refetch}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Logo size={30} />
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <ThemeToggle />
-          <Pressable onPress={() => router.push('/settings')} hitSlop={8} style={{ width: 38, height: 38, alignItems: 'center', justifyContent: 'center' }} accessibilityLabel="Settings">
-            <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={c.muted} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-              <Circle cx={12} cy={12} r={3} />
-            </Svg>
-          </Pressable>
-        </View>
-      </View>
+      <AppHeader />
 
       {user?.demo && (
         <View style={{ backgroundColor: alpha(c.brand, 0.1), borderColor: alpha(c.brand, 0.3), borderWidth: 1, borderRadius: R.md, padding: S.md }}>
@@ -81,10 +68,6 @@ function Summary({ s }: { s: MonthSummary }) {
           {whole}
           {paise ? <Text style={st.paise}>.{paise}</Text> : null}
         </Text>
-        <T variant="small">
-          After saving first · {fmt(s.totalIncome)} in − {fmt(s.savedFirst)} saved − {fmt(s.totalExpense)} spent
-          {s.savings?.investedFromSpending > 0 ? ` − ${fmt(s.savings.investedFromSpending)} invested` : ''}
-        </T>
         <FlowBar s={s} fmt={fmt} />
         <T style={{ color: c.fg2, fontSize: 14 }}>✦ {insight(s, fmt)}</T>
         <Meter label="Spendable used" value={spentPct} color={spentPct >= 90 ? c.expense : spentPct >= 70 ? c.warn : c.income} />
@@ -143,9 +126,10 @@ function Summary({ s }: { s: MonthSummary }) {
           )}
           <Card style={{ padding: 0, paddingTop: S.lg }}>
             <T variant="h2" style={{ paddingHorizontal: S.lg, marginBottom: S.xs }}>Recent activity</T>
-            {s.recent.map((r) => (
+            {s.recent.map((r, n) => (
               <TxRow
                 key={`${r.kind}-${r.id}`}
+                last={n === s.recent.length - 1}
                 kind={r.kind}
                 title={r.label}
                 subtitle={`${label(r.tag)} · ${dayLabel(r.date)}`}
@@ -322,14 +306,45 @@ function FlowBar({ s, fmt }: { s: MonthSummary; fmt: (n: number) => string }) {
           <View key={p.key} style={{ width: `${(p.v / total) * 100}%`, backgroundColor: p.color }} />
         ))}
       </View>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: S.md, rowGap: 4 }}>
-        {parts.map((p) => (
-          <View key={p.key} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-            <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: p.color }} />
-            <T variant="small">{p.label} {fmt(p.v)}</T>
-          </View>
-        ))}
-      </View>
+      <MoneyStatement s={s} fmt={fmt} colors={{ saved: c.income, spent: alpha(c.expense, 0.7), invested: c.info, left: alpha(c.fg, 0.14) }} />
+    </View>
+  );
+}
+
+/** One line in the statement: sign · colour dot (matches the bar) · label (+ hint) · amount. */
+function StatementRow({ sign, label, hint, v, dot, strong, color, fmt }: { sign?: string; label: string; hint?: string; v: number; dot?: string; strong?: boolean; color?: string; fmt: (n: number) => string }) {
+  const { c } = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 }}>
+      <Text style={{ width: 10, textAlign: 'center', color: c.subtle, fontFamily: F.ui, fontSize: 13 }}>{sign}</Text>
+      <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: dot ?? 'transparent' }} />
+      <Text style={{ flex: 1, color: strong ? c.fg : c.fg2, fontFamily: strong ? F.uiSemibold : F.ui, fontSize: 13 }} numberOfLines={1}>
+        {label}
+        {hint ? <Text style={{ color: c.subtle, fontFamily: F.ui, fontSize: 11 }}>{`  ${hint}`}</Text> : null}
+      </Text>
+      <Text style={{ color: color ?? (strong ? c.fg : c.fg2), fontFamily: strong ? F.uiSemibold : F.uiMedium, fontSize: 13, fontVariant: ['tabular-nums'] }}>{fmt(v)}</Text>
+    </View>
+  );
+}
+
+/**
+ * How "left to spend" is worked out, one step per line (the dots double as the bar's legend):
+ * income − saved first = yours to spend − spent − invested from spending = left.
+ */
+function MoneyStatement({ s, fmt, colors }: { s: MonthSummary; fmt: (n: number) => string; colors: Record<'saved' | 'spent' | 'invested' | 'left', string> }) {
+  const { c } = useTheme();
+  const fromSpending = s.savings?.investedFromSpending ?? 0;
+  const over = s.leftToSpend < 0;
+  return (
+    <View style={{ marginTop: S.sm, borderWidth: 1, borderColor: c.line, backgroundColor: alpha(c.fg, 0.02), borderRadius: R.md, paddingHorizontal: S.md, paddingVertical: S.xs }}>
+      <StatementRow fmt={fmt} label="Income this month" v={s.totalIncome} />
+      <StatementRow fmt={fmt} sign="−" label="Saved first" hint={ruleLabel(s.savingsRule, fmt)} v={s.savedFirst} dot={colors.saved} />
+      <View style={{ borderTopWidth: 1, borderStyle: 'dashed', borderColor: c.line, marginVertical: 2 }} />
+      <StatementRow fmt={fmt} sign="=" label="Yours to spend" v={s.spendable} />
+      <StatementRow fmt={fmt} sign="−" label="Spent" hint={`${s.expenseCount} expenses`} v={s.totalExpense} dot={colors.spent} />
+      {fromSpending > 0 && <StatementRow fmt={fmt} sign="−" label="Invested" hint="from spending money" v={fromSpending} dot={colors.invested} />}
+      <View style={{ borderTopWidth: 1, borderColor: c.lineStrong, marginVertical: 2 }} />
+      <StatementRow fmt={fmt} sign="=" label={over ? 'Overspent — from savings' : 'Left to spend'} v={Math.abs(s.leftToSpend)} dot={over ? c.expense : colors.left} strong color={over ? c.expense : undefined} />
     </View>
   );
 }

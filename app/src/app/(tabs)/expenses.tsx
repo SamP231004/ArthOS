@@ -4,6 +4,7 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { BreakdownBar, RecurringSuggestions, SummaryGrid } from '@/components/ledger-ui';
 import { MonthPicker } from '@/components/month-picker';
+import { AppHeader } from '@/components/app-header';
 import { Screen } from '@/components/screen';
 import { TxRow } from '@/components/tx-row';
 import { Button, Card, ErrorNote, Loading, T } from '@/components/ui';
@@ -64,9 +65,10 @@ export default function ExpensesTab() {
     );
   };
 
-  const row = (e: Expense) => (
+  const row = (e: Expense, n: number, list: Expense[]) => (
     <TxRow
       key={e.id}
+      last={n === list.length - 1}
       kind="EXPENSE"
       title={name(e)}
       subtitle={`${label(e.category)} · ${label(e.paymentSource)}${sort === 'amount' ? ` · ${dayLabel(e.date)}` : ''}${e.note ? ` · ${e.note}` : ''}`}
@@ -79,6 +81,7 @@ export default function ExpensesTab() {
 
   return (
     <Screen refreshing={isRefetching} onRefresh={refetch}>
+      <AppHeader />
       <View>
         <T variant="title">Expenses</T>
         <T variant="muted">Everything going out this month.</T>

@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Platform } from 'react-native';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Dimensions, Easing, Platform, View } from 'react-native';
 
 /**
  * ArthOS design tokens — the same values as web/src/app/globals.css, so the app and the website look identical.
@@ -198,40 +198,108 @@ const store = {
   set: async (v: string) => (Platform.OS === 'web' ? globalThis.localStorage?.setItem(KEY, v) : SecureStore.setItemAsync(KEY, v)),
 };
 
-type Ctx = { mode: Mode; scheme: 'dark' | 'light'; c: Palette; setMode: (m: Mode) => void; toggle: () => void; ready: boolean };
+type Ctx = {
+  mode: Mode;
+  scheme: 'dark' | 'light';
+  c: Palette;
+  /** Switch to a theme; with an origin (screen point of the tapped control) it plays the circular reveal. */
+  setMode: (m: Mode, origin?: { x: number; y: number }) => void;
+  toggle: (origin?: { x: number; y: number }) => void;
+  ready: boolean;
+};
 const ThemeContext = createContext<Ctx>({ mode: 'dark', scheme: 'dark', c: palettes.dark, setMode: () => {}, toggle: () => {}, ready: false });
 
+type Origin = { x: number; y: number };
+type Reveal = { id: number; x: number; y: number; d: number; color: string; next: Mode };
+
+/**
+ * Theme state plus the switch animation. React Native can't snapshot the old screen the way the website's View
+ * Transitions do, so the reveal is staged: a circle of the new theme's background grows from the tapped control until
+ * it covers the screen, the theme flips underneath, then the circle fades to show the new theme.
+ */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<Mode>('dark'); // dark is the default (blueprint §11)
+  const [mode, setModeState] = useState<Mode>('dark'); // dark is the default (blueprint §11)
   const [ready, setReady] = useState(false);
+  const [reveal, setReveal] = useState<Reveal | null>(null);
+  const [grow] = useState(() => new Animated.Value(0));
+  const [fade] = useState(() => new Animated.Value(1));
+  const busy = useRef(false);
 
   useEffect(() => {
     store
       .get()
-      .then((v) => v && v in palettes && setMode(v as Mode))
+      .then((v) => v && v in palettes && setModeState(v as Mode))
       .catch(() => {})
       .finally(() => setReady(true));
   }, []);
 
-  const choose = useCallback((next: Mode) => {
-    setMode(next);
+  const commit = useCallback((next: Mode) => {
+    setModeState(next);
     store.set(next).catch(() => {});
   }, []);
 
-  /** Steps to the next theme in picker order. */
-  const toggle = useCallback(() => {
-    setMode((m) => {
-      const next = THEMES[(THEMES.findIndex((t) => t.id === m) + 1) % THEMES.length].id;
-      store.set(next).catch(() => {});
-      return next;
+  const choose = useCallback(
+    (next: Mode, origin?: Origin) => {
+      if (next === mode || busy.current) return;
+      if (!origin) return commit(next);
+      const { width, height } = Dimensions.get('window');
+      // diameter that reaches the farthest corner from the origin
+      const d = 2 * Math.hypot(Math.max(origin.x, width - origin.x), Math.max(origin.y, height - origin.y));
+      busy.current = true;
+      grow.setValue(0);
+      fade.setValue(1);
+      setReveal({ id: Date.now(), x: origin.x, y: origin.y, d, color: palettes[next].bg, next });
+    },
+    [mode, commit, grow, fade],
+  );
+
+  useEffect(() => {
+    if (!reveal) return;
+    Animated.timing(grow, { toValue: 1, duration: 460, easing: Easing.bezier(0.65, 0, 0.35, 1), useNativeDriver: true }).start(() => {
+      commit(reveal.next);
+      // let the new theme paint under the cover, then fade the cover away
+      requestAnimationFrame(() =>
+        Animated.timing(fade, { toValue: 0, duration: 260, easing: Easing.out(Easing.quad), useNativeDriver: true }).start(() => {
+          setReveal(null);
+          busy.current = false;
+        }),
+      );
     });
-  }, []);
+  }, [reveal, grow, fade, commit]);
+
+  /** Steps to the next theme in picker order, revealing from `origin` when given. */
+  const toggle = useCallback(
+    (origin?: Origin) => choose(THEMES[(THEMES.findIndex((t) => t.id === mode) + 1) % THEMES.length].id, origin),
+    [mode, choose],
+  );
 
   const value = useMemo(
     () => ({ mode, scheme: THEMES.find((t) => t.id === mode)?.scheme ?? 'dark', c: palettes[mode], setMode: choose, toggle, ready }),
     [mode, choose, toggle, ready],
   );
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>
+      <View style={{ flex: 1 }}>
+        {children}
+        {reveal && (
+          <Animated.View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              left: reveal.x - reveal.d / 2,
+              top: reveal.y - reveal.d / 2,
+              width: reveal.d,
+              height: reveal.d,
+              borderRadius: reveal.d / 2,
+              backgroundColor: reveal.color,
+              opacity: fade,
+              transform: [{ scale: grow.interpolate({ inputRange: [0, 1], outputRange: [0.001, 1] }) }],
+            }}
+          />
+        )}
+      </View>
+    </ThemeContext.Provider>
+  );
 }
 
 export function useTheme() {

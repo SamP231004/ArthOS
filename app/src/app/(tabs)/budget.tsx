@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { MonthPicker } from '@/components/month-picker';
+import { AppHeader } from '@/components/app-header';
 import { Screen } from '@/components/screen';
 import { Badge, Button, Card, Chip, ErrorNote, Input, Loading, T } from '@/components/ui';
 import { useAuth } from '@/lib/auth-store';
@@ -21,6 +22,7 @@ export default function BudgetTab() {
 
   return (
     <Screen refreshing={isRefetching} onRefresh={refetch}>
+      <AppHeader />
       <View>
         <T variant="title">Budget</T>
         <T variant="muted">Your month, turned into one simple daily decision.</T>

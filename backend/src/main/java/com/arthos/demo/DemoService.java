@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -44,7 +43,6 @@ public class DemoService {
     private final HoldingRepository holdings;
     private final MarketDataService market;
     private static final Logger log = LoggerFactory.getLogger(DemoService.class);
-    private final SecureRandom random = new SecureRandom();
 
     public DemoService(UserRepository users, IncomeRepository incomes, ExpenseRepository expenses, PasswordEncoder encoder,
                        BudgetRepository budgets, HoldingRepository holdings, MarketDataService market) {
@@ -73,7 +71,9 @@ public class DemoService {
         u = users.save(u);
 
         LocalDate today = LocalDate.now(java.time.ZoneId.of(u.getTimezone()));
-        DemoData.Seed seed = DemoData.generate(u.getId(), today, expiresAt, new Random(random.nextLong()));
+        // Seeded by the date, not randomly: every demo started on the same day (web or app) shows the same month,
+        // so the two clients agree. The data still moves with the calendar each day.
+        DemoData.Seed seed = DemoData.generate(u.getId(), today, expiresAt, new Random(today.toEpochDay()));
         incomes.saveAll(seed.incomes());
         expenses.saveAll(seed.expenses());
 

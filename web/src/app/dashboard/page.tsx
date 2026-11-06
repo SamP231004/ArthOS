@@ -106,11 +106,6 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
               {whole}
               {paise && <span className="text-2xl text-subtle">.{paise}</span>}
             </p>
-            <p className="mt-2 text-xs text-subtle">
-              After saving first · {fmt(s.totalIncome)} in − {fmt(s.savedFirst)} saved − {fmt(s.totalExpense)} spent
-              {s.savings?.investedFromSpending > 0 && <> − {fmt(s.savings.investedFromSpending)} invested</>}
-            </p>
-
             <FlowBar s={s} fmt={fmt} />
 
             <p className="mt-5 flex items-start gap-2 text-sm leading-relaxed text-fg-2">
@@ -436,14 +431,43 @@ function FlowBar({ s, fmt }: { s: MonthSummary; fmt: (n: number) => string }) {
           />
         ))}
       </div>
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-subtle">
-        {parts.map((p) => (
-          <span key={p.key} className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-[3px]" style={{ background: p.color }} />
-            {p.label} <span className="tabular text-fg-2">{fmt(p.v)}</span>
-          </span>
-        ))}
-      </div>
+      <MoneyStatement s={s} fmt={fmt} colors={{ saved: "var(--income)", spent: "color-mix(in oklab, var(--expense) 70%, transparent)", invested: "var(--info)", left: "color-mix(in oklab, var(--fg) 12%, transparent)" }} />
+    </div>
+  );
+}
+
+/**
+ * How "left to spend" is worked out, one step per line — the dots match the bar above, so it doubles as its legend:
+ * income → minus what's saved first → what's yours to spend → minus spending (and any investing paid from it) → left.
+ */
+function StatementRow({ sign, label, hint, v, dot, strong, tone, fmt }: { sign?: string; label: string; hint?: string; v: number; dot?: string; strong?: boolean; tone?: string; fmt: (n: number) => string }) {
+  return (
+    <div className={`flex items-baseline gap-2.5 py-1.5 ${strong ? "font-semibold" : ""}`}>
+      <span className="w-3 shrink-0 text-center text-subtle">{sign}</span>
+      <span className="h-2 w-2 shrink-0 translate-y-[-1px] rounded-[3px]" style={{ background: dot ?? "transparent" }} />
+      <span className={`min-w-0 flex-1 ${strong ? "text-fg" : "text-fg-2"}`}>
+        {label}
+        {hint && <span className="ml-1.5 text-xs font-normal text-subtle">{hint}</span>}
+      </span>
+      <span className={`tabular ${tone ?? (strong ? "text-fg" : "text-fg-2")}`}>{fmt(v)}</span>
+    </div>
+  );
+}
+
+function MoneyStatement({ s, fmt, colors }: { s: MonthSummary; fmt: (n: number) => string; colors: Record<"saved" | "spent" | "invested" | "left", string> }) {
+  const fromSpending = s.savings?.investedFromSpending ?? 0;
+  const over = s.leftToSpend < 0;
+  const rule = ruleLabel(s.savingsRule, fmt);
+  return (
+    <div className="mt-4 rounded-2xl border border-line bg-fg/[0.02] px-4 py-2.5 text-sm">
+      <StatementRow fmt={fmt} label="Income this month" v={s.totalIncome} />
+      <StatementRow fmt={fmt} sign="−" label="Saved first" hint={rule} v={s.savedFirst} dot={colors.saved} />
+      <div className="my-1 border-t border-dashed border-line" />
+      <StatementRow fmt={fmt} sign="=" label="Yours to spend" v={s.spendable} />
+      <StatementRow fmt={fmt} sign="−" label="Spent" hint={`${s.expenseCount} expenses`} v={s.totalExpense} dot={colors.spent} />
+      {fromSpending > 0 && <StatementRow fmt={fmt} sign="−" label="Invested" hint="paid from spending money" v={fromSpending} dot={colors.invested} />}
+      <div className="my-1 border-t border-line-strong" />
+      <StatementRow fmt={fmt} sign="=" label={over ? "Overspent — taken from savings" : "Left to spend"} v={Math.abs(s.leftToSpend)} dot={over ? "var(--expense)" : colors.left} strong tone={over ? "text-expense" : undefined} />
     </div>
   );
 }

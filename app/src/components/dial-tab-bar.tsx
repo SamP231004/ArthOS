@@ -1,5 +1,4 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import { useEffect, useState } from 'react';
 import { Animated, BackHandler, Image, Pressable, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
@@ -7,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { alpha, F, useTheme } from '@/theme';
 
-type Item = { key: string; label: string; icon: ImageSourcePropType; route?: string; href?: '/settings' };
+type Item = { key: string; label: string; icon: ImageSourcePropType; route: string };
 
 const ITEMS: Item[] = [
   { key: 'index', label: 'Home', icon: require('@/assets/images/tabIcons/home.png'), route: 'index' },
@@ -15,7 +14,6 @@ const ITEMS: Item[] = [
   { key: 'expenses', label: 'Expenses', icon: require('@/assets/images/tabIcons/expense.png'), route: 'expenses' },
   { key: 'budget', label: 'Budget', icon: require('@/assets/images/tabIcons/budget.png'), route: 'budget' },
   { key: 'invest', label: 'Invest', icon: require('@/assets/images/tabIcons/invest.png'), route: 'invest' },
-  { key: 'settings', label: 'Settings', icon: require('@/assets/images/tabIcons/settings.png'), href: '/settings' },
 ];
 
 const R = 128; // arc radius
@@ -47,11 +45,8 @@ export function DialTabBar({ state, navigateToTab }: BottomTabBarProps) {
 
   const go = (it: Item) => {
     setOpen(false);
-    if (it.href) router.push(it.href);
-    else if (it.route) {
-      const r = state.routes.find((x) => x.name === it.route);
-      if (r) navigateToTab(r.key);
-    }
+    const r = state.routes.find((x) => x.name === it.route);
+    if (r) navigateToTab(r.key);
   };
   const bottom = Math.max(insets.bottom, 10);
   const rotate = anim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '135deg'] });

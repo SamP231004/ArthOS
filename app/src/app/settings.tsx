@@ -43,7 +43,7 @@ export default function SettingsScreen() {
             return (
               <Pressable
                 key={t.id}
-                onPress={() => setMode(t.id)}
+                onPress={(e) => setMode(t.id, { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY })}
                 accessibilityRole="radio"
                 accessibilityState={{ checked: on }}
                 style={{ width: '48%', flexGrow: 1, borderRadius: R.md, borderWidth: on ? 2 : 1, borderColor: on ? c.brand : c.lineStrong, overflow: 'hidden' }}>

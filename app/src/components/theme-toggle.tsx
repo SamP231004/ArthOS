@@ -21,7 +21,7 @@ export function ThemeToggle() {
   const next = THEMES[(i + 1) % THEMES.length];
   return (
     <Pressable
-      onPress={toggle}
+      onPress={(e) => toggle({ x: e.nativeEvent.pageX, y: e.nativeEvent.pageY })}
       hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel={`Theme: ${THEMES[i]?.name}. Switch to ${next.name}`}
