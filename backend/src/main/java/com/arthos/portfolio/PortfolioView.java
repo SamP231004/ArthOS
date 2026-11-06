@@ -37,8 +37,9 @@ public record PortfolioView(
 
     public enum PriceSource { LIVE, MANUAL, FACE_VALUE, COST }
 
+    /** One buy/sell. For buys, fromSavings + fromSpending = amount (how the purchase was paid for). */
     public record LotView(String id, LotType type, LocalDate date, BigDecimal quantity, BigDecimal price, BigDecimal amount, String note,
-                          Holding.FundingSource fundedFrom) {}
+                          Holding.FundingSource fundedFrom, BigDecimal fromSavings, BigDecimal fromSpending) {}
 
     public record GoldInfo(GoldForm form, GoldPurity purity, BigDecimal grams, BigDecimal pricePerGram24k) {}
 

@@ -69,8 +69,13 @@ public class MfApiPriceProvider implements PriceProvider {
         try {
             JsonNode body = http.get().uri(SEARCH, query).retrieve().body(JsonNode.class);
             List<SymbolMatch> out = new ArrayList<>();
+            java.util.Set<String> names = new java.util.HashSet<>();
             for (JsonNode m : body) {
-                out.add(new SymbolMatch(m.path("schemeCode").asText(), m.path("schemeName").asText(), "AMFI", "MUTUAL_FUND"));
+                String name = m.path("schemeName").asText();
+                // AMFI lists some schemes more than once (old and new codes for the same plan): show each name once
+                String key = name.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9]+", " ").trim();
+                if (!names.add(key)) continue;
+                out.add(new SymbolMatch(m.path("schemeCode").asText(), name, "AMFI", "MUTUAL_FUND"));
                 if (out.size() >= 15) break;
             }
             // Direct-growth plans first: they're what most self-directed investors hold.

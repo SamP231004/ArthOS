@@ -63,6 +63,12 @@ public class Holding {
         private String note;
         /** Buys only; null (older data) means SAVINGS. */
         private FundingSource fundedFrom;
+        /**
+         * Buys only: how much of the cost came out of the savings account (the rest from spending money). Null means
+         * "all of it" for SAVINGS and "none" for SPENDING (data from before split payments existed).
+         */
+        @Field(targetType = FieldType.DECIMAL128)
+        private BigDecimal savingsAmount;
 
         public Lot() {}
 
@@ -86,6 +92,30 @@ public class Holding {
         public void setFundedFrom(FundingSource fundedFrom) { this.fundedFrom = fundedFrom; }
         /** Effective source for a buy (null for sales). */
         public FundingSource fundedFrom() { return type == LotType.SELL ? null : fundedFrom == null ? FundingSource.SAVINGS : fundedFrom; }
+        public BigDecimal getSavingsAmount() { return savingsAmount; }
+        public void setSavingsAmount(BigDecimal savingsAmount) { this.savingsAmount = savingsAmount; }
+        public void setType(LotType type) { this.type = type; }
+        public void setDate(LocalDate date) { this.date = date; }
+        public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
+        public void setPrice(BigDecimal price) { this.price = price; }
+
+        /** Cost of a buy (0 for sales). */
+        public BigDecimal cost() {
+            return type == LotType.SELL || quantity == null || price == null ? BigDecimal.ZERO : quantity.multiply(price);
+        }
+
+        /** Part of a buy paid from the savings account. */
+        public BigDecimal fromSavings() {
+            BigDecimal cost = cost();
+            if (cost.signum() == 0) return BigDecimal.ZERO;
+            if (savingsAmount != null) return savingsAmount.max(BigDecimal.ZERO).min(cost);
+            return fundedFrom() == FundingSource.SPENDING ? BigDecimal.ZERO : cost;
+        }
+
+        /** Part of a buy paid from this month's spending money. */
+        public BigDecimal fromSpending() {
+            return cost().subtract(fromSavings());
+        }
     }
 
     @Id

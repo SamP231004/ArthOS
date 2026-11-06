@@ -58,17 +58,40 @@ public class YahooPriceProvider implements PriceProvider {
         return chart(symbol, "2y").map(YahooPriceProvider::closes).orElse(List.of());
     }
 
+    /**
+     * Yahoo lists most Indian stocks twice (NSE "X.NS" and BSE "X.BO" / a BSE code). Show each company once,
+     * preferring NSE (more liquid, the price most apps quote): drop a BSE result whose ticker or name matches an NSE one.
+     */
+    static List<SymbolMatch> onePerCompany(List<SymbolMatch> all) {
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        List<SymbolMatch> ordered = new ArrayList<>(all.stream().filter(m -> m.exchange().equals("NSE")).toList());
+        ordered.addAll(all.stream().filter(m -> !m.exchange().equals("NSE")).toList());
+        List<SymbolMatch> out = new ArrayList<>();
+        for (SymbolMatch m : ordered) {
+            String ticker = m.symbol().toUpperCase(java.util.Locale.ROOT).replaceAll("\\.(NS|BO)$", "");
+            String name = m.name() == null ? "" : m.name().toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9 ]", " ")
+                    .replaceAll("\\b(limited|ltd)\\b", " ").replaceAll("\\s+", " ").trim();
+            if (seen.contains("t:" + ticker) || (!name.isEmpty() && seen.contains("n:" + name))) continue;
+            seen.add("t:" + ticker);
+            if (!name.isEmpty()) seen.add("n:" + name);
+            out.add(m);
+        }
+        // keep Yahoo's relevance order among what's left
+        out.sort(java.util.Comparator.comparingInt(all::indexOf));
+        return out;
+    }
+
     @Override
     public List<SymbolMatch> search(String query) {
         try {
             JsonNode body = http.get().uri(SEARCH, query).retrieve().body(JsonNode.class);
-            List<SymbolMatch> out = new ArrayList<>();
+            List<SymbolMatch> all = new ArrayList<>();
             for (JsonNode q : body.path("quotes")) {
                 if (!INDIAN_EXCHANGES.contains(q.path("exchange").asText()) || !TYPES.contains(q.path("quoteType").asText())) continue;
                 String name = q.hasNonNull("longname") ? q.path("longname").asText() : q.path("shortname").asText();
-                out.add(new SymbolMatch(q.path("symbol").asText(), name, q.path("exchange").asText().equals("NSI") ? "NSE" : "BSE", "STOCK"));
+                all.add(new SymbolMatch(q.path("symbol").asText(), name, q.path("exchange").asText().equals("NSI") ? "NSE" : "BSE", "STOCK"));
             }
-            return out;
+            return onePerCompany(all);
         } catch (Exception e) {
             log.warn("Yahoo search failed for '{}': {}", query, e.getMessage());
             return List.of();

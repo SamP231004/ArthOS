@@ -48,10 +48,13 @@ public class SavingsService {
             if (h.getLots() == null) continue;
             for (Holding.Lot l : h.getLots()) {
                 if (l.getDate() == null || l.getQuantity() == null || l.getPrice() == null) continue;
-                BigDecimal amount = l.getQuantity().multiply(l.getPrice());
-                FlowKind kind = l.getType() == Holding.LotType.SELL ? FlowKind.SALE
-                        : l.fundedFrom() == Holding.FundingSource.SPENDING ? FlowKind.BUY_FROM_SPENDING : FlowKind.BUY_FROM_SAVINGS;
-                out.add(new Flow(l.getDate(), amount, kind));
+                if (l.getType() == Holding.LotType.SELL) {
+                    out.add(new Flow(l.getDate(), l.getQuantity().multiply(l.getPrice()), FlowKind.SALE));
+                    continue;
+                }
+                // a buy can be split: part from savings, the rest from spending money
+                if (l.fromSavings().signum() > 0) out.add(new Flow(l.getDate(), l.fromSavings(), FlowKind.BUY_FROM_SAVINGS));
+                if (l.fromSpending().signum() > 0) out.add(new Flow(l.getDate(), l.fromSpending(), FlowKind.BUY_FROM_SPENDING));
             }
         }
         return out;

@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -30,7 +31,12 @@ public class PortfolioController {
             @NotNull @DecimalMin(value = "0", message = "can't be negative") BigDecimal price,
             @Size(max = 200) String note,
             /** Buys only: SAVINGS (default) or SPENDING. */
-            FundingSource fundedFrom) {}
+            FundingSource fundedFrom,
+            /**
+             * Buys only: how much of the cost came from the savings account; the rest is spending money. Overrides
+             * fundedFrom when given (0 = all spending, the full cost = all savings).
+             */
+            @DecimalMin(value = "0", message = "can't be negative") BigDecimal fromSavings) {}
 
     /** Create (with the first purchase) or update a holding. Class-specific fields are validated in code. */
     public record HoldingRequest(
@@ -65,7 +71,7 @@ public class PortfolioController {
     PortfolioView portfolio(@RequestParam(defaultValue = "1Y") String range) {
         if (!RANGES.contains(range)) throw ApiException.badRequest("range must be one of " + RANGES);
         String userId = CurrentUser.id();
-        List<Holding> list = holdings.findByUserIdOrderByCreatedAtAsc(userId);
+        List<Holding> list = mergeDuplicates(holdings.findByUserIdOrderByCreatedAtAsc(userId));
         List<String> keys = list.stream().map(Holding::marketKey).filter(Objects::nonNull).distinct().toList();
         return PortfolioCalculator.calculate(list, market.quotes(keys), market.histories(keys), LocalDate.now(userCtx.zone(userId)), range);
     }
@@ -78,6 +84,15 @@ public class PortfolioController {
         Holding h = new Holding();
         h.setUserId(CurrentUser.id());
         apply(h, req);
+        // the same instrument already held (e.g. bought again, or on the other exchange): add a transaction to it
+        Optional<Holding> existing = holdings.findByUserIdOrderByCreatedAtAsc(h.getUserId()).stream().filter(x -> HoldingIdentity.same(x, h)).findFirst();
+        if (existing.isPresent()) {
+            Holding e = existing.get();
+            e.getLots().add(lot(req.firstLot()));
+            if (e.getGoal() == null) e.setGoal(h.getGoal());
+            if (e.getHorizon() == null) e.setHorizon(h.getHorizon());
+            return single(holdings.save(e));
+        }
         h.getLots().add(lot(req.firstLot()));
         h.setExpiresAt(userCtx.demoExpiry(h.getUserId()));
         return single(holdings.save(h));
@@ -106,6 +121,25 @@ public class PortfolioController {
             if (req.quantity().compareTo(held) > 0) throw ApiException.badRequest("You only held " + held.stripTrailingZeros().toPlainString() + " on that date");
         }
         h.getLots().add(lot(req));
+        checkChronology(h.getLots());
+        return single(holdings.save(h));
+    }
+
+    /** Edit a transaction: quantity, price/NAV, date, type and how it was paid for. */
+    @PutMapping("/holdings/{id}/lots/{lotId}")
+    PortfolioView.HoldingView updateLot(@PathVariable String id, @PathVariable String lotId, @Valid @RequestBody LotRequest req) {
+        Holding h = load(id);
+        Holding.Lot l = h.getLots().stream().filter(x -> lotId.equals(x.getId())).findFirst().orElseThrow(() -> ApiException.notFound("Transaction"));
+        Holding.Lot edited = lot(req);
+        l.setType(edited.getType());
+        l.setDate(edited.getDate());
+        l.setQuantity(edited.getQuantity());
+        l.setPrice(edited.getPrice());
+        l.setNote(edited.getNote());
+        l.setFundedFrom(edited.getFundedFrom());
+        l.setSavingsAmount(edited.getSavingsAmount());
+        if (h.getLots().stream().noneMatch(x -> x.getType() == LotType.BUY)) throw ApiException.badRequest("A holding needs at least one purchase");
+        checkChronology(h.getLots());
         return single(holdings.save(h));
     }
 
@@ -115,6 +149,7 @@ public class PortfolioController {
         if (h.getLots().stream().noneMatch(l -> lotId.equals(l.getId()))) throw ApiException.notFound("Transaction");
         if (h.getLots().size() == 1) throw ApiException.badRequest("A holding needs at least one transaction — delete the holding instead");
         h.getLots().removeIf(l -> lotId.equals(l.getId()));
+        checkChronology(h.getLots());
         return single(holdings.save(h));
     }
 
@@ -134,8 +169,56 @@ public class PortfolioController {
 
     private static Holding.Lot lot(LotRequest r) {
         Holding.Lot l = new Holding.Lot(UUID.randomUUID().toString(), r.type(), r.date(), r.quantity(), r.price(), blank(r.note()));
-        if (r.type() == LotType.BUY) l.setFundedFrom(r.fundedFrom() == null ? FundingSource.SAVINGS : r.fundedFrom());
+        if (r.type() != LotType.BUY) return l;
+        if (r.fromSavings() != null) {
+            // split payment: this much from savings, the rest from spending money
+            BigDecimal s = r.fromSavings().max(BigDecimal.ZERO).min(l.cost());
+            l.setSavingsAmount(s);
+            l.setFundedFrom(s.signum() == 0 ? FundingSource.SPENDING : FundingSource.SAVINGS);
+        } else {
+            l.setFundedFrom(r.fundedFrom() == null ? FundingSource.SAVINGS : r.fundedFrom());
+        }
         return l;
+    }
+
+    /** No point in time may have sold more than was held (checked after any add/edit/delete). */
+    private static void checkChronology(List<Holding.Lot> lots) {
+        List<Holding.Lot> sorted = new java.util.ArrayList<>(lots);
+        sorted.sort(java.util.Comparator.comparing(Holding.Lot::getDate).thenComparing(l -> l.getType() == LotType.SELL ? 1 : 0));
+        BigDecimal q = BigDecimal.ZERO;
+        for (Holding.Lot l : sorted) {
+            q = l.getType() == LotType.BUY ? q.add(l.getQuantity()) : q.subtract(l.getQuantity());
+            if (q.compareTo(new BigDecimal("-0.000001")) < 0) {
+                throw ApiException.badRequest("That would sell more than you held on " + l.getDate() + " — check the quantities and dates");
+            }
+        }
+    }
+
+    /**
+     * Older data could hold the same instrument twice (bought again, or once per exchange). Fold each group into its
+     * oldest holding — all transactions kept — and remove the copies, so the portfolio shows one row per instrument.
+     */
+    private List<Holding> mergeDuplicates(List<Holding> list) {
+        List<Holding> kept = new java.util.ArrayList<>();
+        List<Holding> removed = new java.util.ArrayList<>();
+        for (Holding h : list) {
+            Optional<Holding> into = kept.stream().filter(k -> HoldingIdentity.same(k, h)).findFirst();
+            if (into.isEmpty()) {
+                kept.add(h);
+                continue;
+            }
+            Holding k = into.get();
+            k.getLots().addAll(h.getLots());
+            if (k.getGoal() == null) k.setGoal(h.getGoal());
+            if (k.getHorizon() == null) k.setHorizon(h.getHorizon());
+            if (k.getNotes() == null) k.setNotes(h.getNotes());
+            removed.add(h);
+        }
+        if (!removed.isEmpty()) {
+            holdings.saveAll(kept.stream().filter(k -> removed.stream().anyMatch(r -> HoldingIdentity.same(k, r))).toList());
+            holdings.deleteAll(removed);
+        }
+        return kept;
     }
 
     private static BigDecimal held(Holding h, LocalDate asOf) {
