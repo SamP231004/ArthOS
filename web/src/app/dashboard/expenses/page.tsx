@@ -5,6 +5,8 @@ import { useMemo, useState } from "react";
 import { BreakdownBar, ExportButton, initials, pctChange, RecurringBadge, sameDayIn, SortHeader, SummaryCell, type Sort } from "@/components/ledger";
 import { MonthPicker } from "@/components/month-picker";
 import { PageHeader } from "@/components/page-header";
+import { RecurringSuggestions } from "@/components/recurring-suggestions";
+import { ScanImport } from "@/components/scan-import";
 import { ExpenseModal } from "@/components/transaction-forms";
 import { Badge, Button, ErrorNote, Select, Skeleton } from "@/components/ui";
 import { useAuth } from "@/lib/auth-store";
@@ -72,10 +74,13 @@ export default function ExpensesPage() {
           filename={`arthos-expenses-${month}.csv`}
           rows={[["Date", "Merchant", "Category", "Paid via", "Recurring", "Amount", "Note"], ...rows.map((e) => [e.date, e.merchant ?? "", label(e.category), label(e.paymentSource), e.recurring ? "Yes" : "No", e.amount, e.note ?? ""])]}
         />
+        <ScanImport />
         <Button onClick={() => setEditing(null)}>
           <Plus size={16} /> Add expense
         </Button>
       </PageHeader>
+
+      <RecurringSuggestions kind="EXPENSE" currency={cur} />
 
       <section className="panel overflow-hidden">
         <div className="grid grid-cols-2 lg:grid-cols-4">

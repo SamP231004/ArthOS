@@ -15,8 +15,8 @@ import java.util.TreeSet;
 /**
  * Automatic recurring detection (blueprint §11, §17): finds bills and income that come back every month but
  * aren't marked recurring yet. A group qualifies when it appears in at least {@value #MIN_MONTHS} of the recent
- * months, about once per month (so daily food delivery doesn't count), at a steady amount (every entry within
- * {@value #TOLERANCE_PCT}% of the typical amount).
+ * months, about once per month (so daily food delivery doesn't count), around the same date, at a steady amount
+ * (every entry within {@value #TOLERANCE_PCT}% of the typical amount; within 5% when there are only two months).
  */
 public final class RecurringDetector {
 
@@ -30,6 +30,7 @@ public final class RecurringDetector {
     static final int MIN_MONTHS = 2;
     static final int TOLERANCE_PCT = 25;
     private static final double MAX_PER_MONTH = 1.5;
+    private static final int MAX_DAY_SPREAD = 6;
 
     private RecurringDetector() {}
 
@@ -58,6 +59,15 @@ public final class RecurringDetector {
             BigDecimal tol = median.multiply(BigDecimal.valueOf(TOLERANCE_PCT)).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             boolean steady = amounts.stream().allMatch(a -> a.subtract(median).abs().compareTo(tol) <= 0);
             if (!steady) continue;
+            // only two months of history: demand near-identical amounts (a subscription, not two similar grocery runs)
+            if (months.size() == 2) {
+                BigDecimal tight = median.multiply(BigDecimal.valueOf(5)).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                if (amounts.stream().anyMatch(a -> a.subtract(median).abs().compareTo(tight) > 0)) continue;
+            }
+            // bills come around the same date each month (month-end days count as one "last day")
+            int minDay = list.stream().mapToInt(e -> Math.min(e.date().getDayOfMonth(), 28)).min().orElse(1);
+            int maxDay = list.stream().mapToInt(e -> Math.min(e.date().getDayOfMonth(), 28)).max().orElse(1);
+            if (maxDay - minDay > MAX_DAY_SPREAD) continue;
 
             Entry last = list.stream().max(Comparator.comparing(Entry::date)).orElseThrow();
             int typicalDay = (int) Math.round(list.stream().mapToInt(e -> e.date().getDayOfMonth()).average().orElse(last.date().getDayOfMonth()));

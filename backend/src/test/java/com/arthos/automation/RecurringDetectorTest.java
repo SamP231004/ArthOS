@@ -34,6 +34,13 @@ class RecurringDetectorTest {
         // shopping on the same site with wildly different amounts → not recurring
         list.add(e("Amazon", 499, 8, 3, false));
         list.add(e("Amazon", 4_800, 9, 3, false));
+        // two similar grocery runs in two months → coincidence, not a bill
+        list.add(e("DMart", 1_700, 9, 6, false));
+        list.add(e("DMart", 1_850, 10, 10, false));
+        // a client who pays on very different dates each month → not a schedule
+        list.add(e("Pixel & Co.", 15_000, 8, 14, false));
+        list.add(e("Pixel & Co.", 18_000, 9, 22, false));
+        list.add(e("Pixel & Co.", 15_500, 10, 3, false));
 
         List<Candidate> c = RecurringDetector.detect(list);
         assertEquals(1, c.size(), () -> "got " + c);

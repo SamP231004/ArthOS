@@ -6,6 +6,8 @@ import { BreakdownBar, ExportButton, initials, pctChange, RecurringBadge, sameDa
 import { MonthPicker } from "@/components/month-picker";
 import { ruleLabel, setAside } from "@/lib/savings";
 import { PageHeader } from "@/components/page-header";
+import { RecurringSuggestions } from "@/components/recurring-suggestions";
+import { ScanImport } from "@/components/scan-import";
 import { IncomeModal } from "@/components/transaction-forms";
 import { Badge, Button, ErrorNote, Skeleton } from "@/components/ui";
 import { useAuth } from "@/lib/auth-store";
@@ -69,10 +71,13 @@ export default function IncomePage() {
       <PageHeader title="Income" subtitle="Everything coming in this month — one-time or recurring.">
         <MonthPicker />
         <ExportButton filename={`arthos-income-${month}.csv`} rows={[["Date", "Source", "Type", "Recurring", "Amount", "Note"], ...rows.map((i) => [i.date, i.source, label(i.type), i.recurring ? "Yes" : "No", i.amount, i.note ?? ""])]} />
+        <ScanImport />
         <Button onClick={() => setEditing(null)}>
           <Plus size={16} /> Add income
         </Button>
       </PageHeader>
+
+      <RecurringSuggestions kind="INCOME" currency={cur} />
 
       <section className="panel overflow-hidden">
         <div className="grid grid-cols-2 lg:grid-cols-5">

@@ -23,7 +23,7 @@ const nav = [
 ];
 
 const SETTINGS = "/dashboard/settings";
-const soon = ["Automation", "Insights", "Widgets"];
+const soon = ["Insights", "Widgets"];
 
 function initials(name?: string) {
   return (name ?? "?").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();

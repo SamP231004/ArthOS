@@ -151,14 +151,23 @@ public final class TransactionTextParser {
                     .get().getKey();
         }
 
-        // 3. payment-app hero: a line that is just the amount (₹ often misread by OCR)
+        // 3. payment-app hero: a line that is just the amount. OCR often reads the ₹ in front as a digit ("₹450" →
+        //    "3450"), so when the client sends several readings and one is another with an extra leading 2/3/7,
+        //    the shorter one is the real amount.
+        List<String> loose = new ArrayList<>();
         for (String l : lines) {
             Matcher m = MONEY_LOOSE_LINE.matcher(l);
-            if (m.matches()) {
-                BigDecimal v = num(m.group(1));
-                // not a year, a 10/12-digit phone/RRN, or a time
-                if (v != null && v.signum() > 0 && !m.group(1).matches("(19|20)[0-9]{2}") && m.group(1).replace(",", "").replace(".", "").length() <= 8) return v;
-            }
+            if (!m.matches()) continue;
+            String digits = m.group(1);
+            BigDecimal v = num(digits);
+            // not a year, a 10/12-digit phone/RRN, or a time
+            if (v != null && v.signum() > 0 && !digits.matches("(19|20)[0-9]{2}") && digits.replace(",", "").replace(".", "").length() <= 8) loose.add(digits.replace(",", ""));
+        }
+        if (!loose.isEmpty()) {
+            List<String> kept = loose.stream()
+                    .filter(a -> loose.stream().noneMatch(b -> !b.equals(a) && a.length() == b.length() + 1 && "237".indexOf(a.charAt(0)) >= 0 && a.substring(1).equals(b)))
+                    .toList();
+            return num((kept.isEmpty() ? loose : kept).getFirst());
         }
 
         // 4. SMS: "debited by 1,250.00", "paid 500" — never an account/card number like "A/c XX4821"

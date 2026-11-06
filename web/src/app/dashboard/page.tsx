@@ -8,6 +8,7 @@ import { PortfolioCard } from "@/components/invest/portfolio-card";
 import { SavingsAccountCard } from "@/components/savings-account-card";
 import { CATEGORY_COLORS, DailyBars, Donut, SpendCurve } from "@/components/charts";
 import { MonthPicker } from "@/components/month-picker";
+import { ScanImport } from "@/components/scan-import";
 import { ExpenseModal, IncomeModal } from "@/components/transaction-forms";
 import { Button, ErrorNote, Skeleton } from "@/components/ui";
 import { initials, tagColor } from "@/components/ledger";
@@ -38,6 +39,7 @@ export default function Overview() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <MonthPicker />
+          <ScanImport label="Scan" />
           <Button variant="secondary" onClick={() => setModal("income")}>
             <ArrowDownLeft size={16} className="text-income" /> Income
           </Button>

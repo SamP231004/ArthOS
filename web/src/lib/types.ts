@@ -229,3 +229,21 @@ export type HoldingInput = {
   notes?: string;
   firstLot?: LotInput;
 };
+
+// ---- Automation (Phase 4) — mirrors backend/src/main/java/com/arthos/automation/AutomationController.java ----
+export type ParseResult = {
+  kind: "INCOME" | "EXPENSE";
+  amount?: number;
+  date?: string;
+  merchant?: string;
+  reference?: string;
+  paymentSource?: PaymentSource;
+  category?: ExpenseCategory;
+  incomeType?: IncomeType;
+  categorySource: "LEARNED" | "BUILT_IN" | "NONE";
+  confidence: number;
+  found: string[];
+  usable: boolean;
+};
+export type CategorySuggestion = { category?: ExpenseCategory; source: "LEARNED" | "BUILT_IN" | "NONE" };
+export type RecurringCandidate = { kind: "INCOME" | "EXPENSE"; key: string; name: string; tag?: string; typicalAmount: number; months: number; lastDate: string; dayOfMonth: number };

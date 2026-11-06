@@ -73,6 +73,14 @@ class TransactionTextParserTest {
     }
 
     @Test
+    void rupeeMisreadAsDigitIsResolvedAcrossTwoReadings() {
+        // the client OCRs at full and half size; full size read "₹450" as "3450"
+        Parsed p = parse("Paid to\nSwiggy\n3450\nCompleted\n5 Nov 2026, 9:14 pm\n\nPaid to\nSwiggy\n450\nCompleted\n");
+        amount("450", p);
+        assertEquals("Swiggy", p.merchant());
+    }
+
+    @Test
     void bankDebitSmsIgnoresAvailableBalance() {
         Parsed p = parse("Rs.649.00 debited from A/c XX4821 on 07-11-26 to VPA netflix@hdfcbank (UPI Ref No 530912345678). Avl Bal Rs.48,212.10 -HDFC Bank");
         assertEquals(Kind.EXPENSE, p.kind());
