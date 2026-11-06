@@ -50,6 +50,16 @@ lots, so the engine computes average-cost P&L, realised gains, day change, per-h
 class and horizon, and a value-vs-invested history. Price providers sit behind a swappable interface with a Mongo-backed
 cache and a 15-minute refresh job. APIs: `/api/portfolio`, `/api/holdings` (+ `/lots`), `/api/market/search|quote`.
 
+## Phase 4 — Automation (this release)
+
+Scan a payment screenshot (GPay, PhonePe, Paytm, bank apps), a bank SMS or a shop receipt: the text is read **on the
+device** — Tesseract.js in the browser, Google ML Kit on Android (`expo-text-extractor`) — so the image is never uploaded.
+The backend's `TransactionTextParser` turns that text into a draft (income/expense, amount, date, merchant, UPI/UTR
+reference, payment method), and the normal form opens pre-filled for confirmation. Smart categories combine built-in
+Indian merchant rules with per-user rules learned from every saved expense (corrections win), and the expense form
+follows them as you type. `RecurringDetector` finds monthly bills/income at a steady amount and date that aren't marked
+recurring yet. APIs: `/api/automation/parse`, `/api/automation/category`, `/api/automation/recurring`.
+
 ## Run locally
 
 **1. Backend** (needs MongoDB: local, Docker, or a free Atlas cluster)
@@ -130,5 +140,5 @@ Set `EXPO_PUBLIC_API_URL` to the production backend URL first, either in `.env` 
 
 ## Roadmap
 
-~~Phase 2 Budget engine~~ ✅ → ~~3 Investments~~ ✅ → 4 OCR automation → 5 Insights → 6 Widgets → 7 AI assistant → 8 Scale.
+~~Phase 2 Budget engine~~ ✅ → ~~3 Investments~~ ✅ → ~~4 OCR automation~~ ✅ → 5 Insights → 6 Widgets → 7 AI assistant → 8 Scale.
 See the blueprint for details.
