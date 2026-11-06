@@ -43,6 +43,16 @@
           "photosPermission": "ArthOS reads payment screenshots you choose to add transactions for you.",
           "cameraPermission": "ArthOS can read a receipt you photograph to add the transaction for you."
         }
+      ],
+      [
+        "expo-share-intent",
+        {
+          "androidIntentFilters": [
+            "image/*",
+            "text/*"
+          ],
+          "disableIOS": true
+        }
       ]
     ],
     "experiments": {

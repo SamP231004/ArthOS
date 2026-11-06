@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, TextInput, View } from 'react-native';
 
 import { Screen } from '@/components/screen';
@@ -16,9 +16,12 @@ import { alpha, F, R, S, useTheme } from '@/theme';
 export default function ScanScreen() {
   const { c } = useTheme();
   const parse = useParseText();
-  const [uri, setUri] = useState<string | null>(null);
-  const [reading, setReading] = useState(false);
-  const [text, setText] = useState('');
+  // shared from another app ("Share → ArthOS"): start with that image or text and read it straight away
+  const { sharedUri, sharedText } = useLocalSearchParams<{ sharedUri?: string; sharedText?: string }>();
+  const [uri, setUri] = useState<string | null>(sharedUri ?? null);
+  const [reading, setReading] = useState(!!sharedUri && scanAvailable);
+  const [text, setText] = useState(sharedText ?? '');
+  const started = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
   async function finish(raw: string) {
@@ -53,6 +56,26 @@ export default function ScanScreen() {
       setReading(false);
     }
   }
+
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    if (sharedUri && scanAvailable) {
+      void (async () => {
+        try {
+          await finish(await readText(sharedUri));
+        } catch {
+          setError("Couldn't read that image. Try again, or paste the text instead.");
+        } finally {
+          setReading(false);
+        }
+      })();
+    } else if (sharedText?.trim()) {
+      void Promise.resolve().then(() => finish(sharedText));
+    }
+    // run once for the shared content this screen was opened with
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const busy = reading || parse.isPending;
 
