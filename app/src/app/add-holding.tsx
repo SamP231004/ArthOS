@@ -3,14 +3,14 @@ import { useDeferredValue, useState } from 'react';
 import { KeyboardAvoidingView, Pressable, Text, TextInput, View } from 'react-native';
 
 import { DateField, isISODate } from '@/components/date-field';
-import { FundingPicker } from '@/components/funding-picker';
+import { FundingPicker, useFunding } from '@/components/funding-picker';
 import { Screen } from '@/components/screen';
 import { Button, Card, Chip, ErrorNote, Input, T } from '@/components/ui';
 import { ApiError } from '@/lib/api';
 import { money, todayISO } from '@/lib/format';
 import { CLASS_META, HORIZON_META } from '@/lib/invest-meta';
 import { useMarketSearch, useQuote, useSaveHolding } from '@/lib/queries';
-import { ASSET_CLASSES, HORIZONS, type AssetClass, type BondType, type GoldForm, type FundingSource, type GoldPurity, type Horizon, type SymbolMatch } from '@/lib/types';
+import { ASSET_CLASSES, HORIZONS, type AssetClass, type BondType, type GoldForm, type GoldPurity, type Horizon, type SymbolMatch } from '@/lib/types';
 import { alpha, F, R, S, useTheme } from '@/theme';
 
 export default function AddHolding() {
@@ -65,7 +65,6 @@ function Form({ cls, onBack }: { cls: AssetClass; onBack: () => void }) {
   const [maturity, setMaturity] = useState('');
   const [bondType, setBondType] = useState<BondType>('GOVERNMENT');
   const [manual, setManual] = useState('');
-  const [fundedFrom, setFundedFrom] = useState<FundingSource>('SAVINGS');
 
   const quote = useQuote(cls, picked?.symbol);
   const factor = cls === 'GOLD' && purity === 'K22' && goldForm !== 'SGB' ? 0.916 : 1;
@@ -73,6 +72,7 @@ function Form({ cls, onBack }: { cls: AssetClass; onBack: () => void }) {
   const effPrice = price !== '' ? price : date === todayISO() && live != null ? String(live) : '';
   const units = cls === 'MUTUAL_FUND' && amount && effPrice ? Number(amount) / Number(effPrice) : null;
   const quantity = units != null && !qty ? Math.floor(units * 1000) / 1000 : Number(qty);
+  const funding = useFunding(quantity * Number(effPrice) || 0, date);
   const needsPick = (cls === 'STOCK' || cls === 'MUTUAL_FUND') && !picked;
   const err = save.error instanceof ApiError ? save.error : null;
   const num = (t: string) => t.replace(/[^0-9.]/g, '');
@@ -94,7 +94,7 @@ function Form({ cls, onBack }: { cls: AssetClass; onBack: () => void }) {
           maturityDate: cls === 'BOND' ? maturity : undefined,
           bondType: cls === 'BOND' ? bondType : undefined,
           manualPrice: manual ? Number(manual) : undefined,
-          firstLot: { type: 'BUY', date, quantity, price: Number(effPrice), fundedFrom },
+          firstLot: { type: 'BUY', date, quantity, price: Number(effPrice), ...funding.payload },
         },
       },
       { onSuccess: () => router.back() },
@@ -216,7 +216,7 @@ function Form({ cls, onBack }: { cls: AssetClass; onBack: () => void }) {
                 <T variant="num" style={{ fontSize: 15 }}>{money(quantity * Number(effPrice))}</T>
               </View>
             )}
-            <FundingPicker value={fundedFrom} onChange={setFundedFrom} amount={quantity * Number(effPrice) || 0} date={date} />
+            <FundingPicker f={funding} />
           </View>
         )}
 

@@ -209,7 +209,7 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
                     </td>
                     <td className="py-3.5 pr-2 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="inline-flex gap-1">
-                        <button onClick={() => onOpen(h.id, "settings")} className="rounded-lg p-1.5 text-subtle transition hover:bg-fg/5 hover:text-fg" aria-label={`Edit ${h.name}`}>
+                        <button onClick={() => onOpen(h.id, "edit")} className="rounded-lg p-1.5 text-subtle transition hover:bg-fg/5 hover:text-fg" aria-label={`Edit ${h.name}`} title="Edit transactions (quantity, price/NAV, date, funding)">
                           <Pencil size={14} />
                         </button>
                         <button

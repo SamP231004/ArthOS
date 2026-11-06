@@ -169,7 +169,7 @@ export type HoldingView = {
   gold?: { form: GoldForm; purity: GoldPurity; grams: number; pricePerGram24k: number };
   bond?: { faceValue: number; couponRate: number; maturityDate: string; bondType: BondType; annualCoupon: number; nextCouponDate?: string; yearsToMaturity?: number; currentYield?: number };
   spark: number[];
-  lots: { id: string; type: LotType; date: string; quantity: number; price: number; amount: number; note?: string; fundedFrom?: FundingSource }[];
+  lots: { id: string; type: LotType; date: string; quantity: number; price: number; amount: number; note?: string; fundedFrom?: FundingSource; fromSavings?: number; fromSpending?: number }[];
 };
 
 export type Portfolio = {
@@ -187,7 +187,7 @@ export type SymbolMatch = { symbol: string; name: string; exchange: string; asse
 export type Quote = { price: number; previousClose?: number; asOf: string; source: string };
 
 export type FundingSource = 'SAVINGS' | 'SPENDING';
-export type LotInput = { type: LotType; date: string; quantity: number; price: number; note?: string; fundedFrom?: FundingSource };
+export type LotInput = { type: LotType; date: string; quantity: number; price: number; note?: string; fundedFrom?: FundingSource; fromSavings?: number };
 
 /** Savings account — mirrors backend/src/main/java/com/arthos/savings/SavingsAccount.java. */
 export type SavingsAccount = {

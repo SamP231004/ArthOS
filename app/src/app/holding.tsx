@@ -4,13 +4,13 @@ import { Alert, KeyboardAvoidingView, Pressable, Text, View } from 'react-native
 
 import { Sparkline } from '@/components/charts';
 import { DateField, isISODate } from '@/components/date-field';
-import { FundingPicker } from '@/components/funding-picker';
+import { FundingPicker, fundingOf, useFunding } from '@/components/funding-picker';
 import { Screen } from '@/components/screen';
 import { Badge, Button, Card, Chip, ErrorNote, Input, Loading, Segmented, T } from '@/components/ui';
 import { dateLabel, money, todayISO } from '@/lib/format';
 import { CLASS_META, fmtQty, holdingSubtitle, HORIZON_META, signedPct, SOURCE_LABEL, toneColor } from '@/lib/invest-meta';
-import { useAddLot, useDeleteHolding, useDeleteLot, useHolding, useSaveHolding } from '@/lib/queries';
-import { HORIZONS, type FundingSource, type HoldingView, type Horizon, type LotType } from '@/lib/types';
+import { useAddLot, useDeleteHolding, useDeleteLot, useHolding, useSaveHolding, useUpdateLot } from '@/lib/queries';
+import { HORIZONS, type HoldingView, type Horizon, type LotType } from '@/lib/types';
 import { alpha, F, R, S, useTheme } from '@/theme';
 
 type Tab = 'overview' | 'trade' | 'settings';
@@ -36,6 +36,7 @@ export default function HoldingScreen() {
 }
 
 function Overview({ h }: { h: HoldingView }) {
+  const [editing, setEditing] = useState<string | null>(null);
   const { c } = useTheme();
   const del = useDeleteLot(h.id);
   const unit = CLASS_META[h.assetClass].unit;
@@ -67,17 +68,25 @@ function Overview({ h }: { h: HoldingView }) {
           {h.goal && <Badge label={`Goal: ${h.goal}`} color={c.warn} />}
         </View>
       )}
-      <T variant="label">Transactions</T>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <T variant="label">Transactions</T>
+        <T variant="small">tap one to edit</T>
+      </View>
       <Card style={{ padding: 0 }}>
-        {[...h.lots].reverse().map((l, i) => (
-          <View key={l.id} style={{ flexDirection: 'row', alignItems: 'center', gap: S.sm, padding: S.md, paddingHorizontal: S.lg, borderTopWidth: i ? 1 : 0, borderTopColor: c.line }}>
+        {[...h.lots].reverse().map((l, i) =>
+          editing === l.id ? (
+            <View key={l.id} style={{ padding: S.lg, borderTopWidth: i ? 1 : 0, borderTopColor: c.line }}>
+              <LotEditor h={h} lot={l} onDone={() => setEditing(null)} />
+            </View>
+          ) : (
+          <Pressable key={l.id} onPress={() => setEditing(l.id)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: S.sm, padding: S.md, paddingHorizontal: S.lg, borderTopWidth: i ? 1 : 0, borderTopColor: c.line, backgroundColor: pressed ? alpha(c.fg, 0.03) : 'transparent' })}>
             <Badge label={l.type === 'BUY' ? 'Buy' : 'Sell'} color={l.type === 'BUY' ? c.income : c.expense} />
             <T variant="small" style={{ flex: 1 }}>{dateLabel(l.date)}</T>
             <View style={{ alignItems: 'flex-end' }}>
               <T style={{ fontSize: 13, fontVariant: ['tabular-nums'] }}>{fmtQty(l.quantity)} × {money(l.price)}</T>
               <T variant="small">
                 {money(l.amount)}
-                {l.type === 'BUY' ? (l.fundedFrom === 'SPENDING' ? ' · from spending' : ' · from savings') : ' · to savings'}
+                {paidWith(l)}
                 {l.note && l.note !== 'Paid from spending money' ? ` · ${l.note}` : ''}
               </T>
             </View>
@@ -88,11 +97,65 @@ function Overview({ h }: { h: HoldingView }) {
                 <Text style={{ color: c.subtle, fontSize: 16 }}>✕</Text>
               </Pressable>
             )}
-          </View>
-        ))}
+          </Pressable>
+          ),
+        )}
       </Card>
       <ErrorNote message={del.error?.message} />
     </>
+  );
+}
+
+/** How a buy was paid: "from savings", "from spending", or "₹150 savings + ₹75 spending". */
+function paidWith(l: HoldingView['lots'][number]): string {
+  if (l.type === 'SELL') return ' · to savings';
+  const sv = l.fromSavings ?? (l.fundedFrom === 'SPENDING' ? 0 : l.amount);
+  const sp = l.fromSpending ?? l.amount - sv;
+  if (sp <= 0.005) return ' · from savings';
+  if (sv <= 0.005) return ' · from spending';
+  return ` · ${money(sv)} savings + ${money(sp)} spending`;
+}
+
+/** Edit one transaction in place: buy/sell, quantity, price or NAV, date and how it was paid. */
+function LotEditor({ h, lot, onDone }: { h: HoldingView; lot: HoldingView['lots'][number]; onDone: () => void }) {
+  const { c } = useTheme();
+  const update = useUpdateLot(h.id);
+  const [type, setType] = useState<LotType>(lot.type);
+  const [qty, setQty] = useState(String(lot.quantity));
+  const [price, setPrice] = useState(String(lot.price));
+  const [date, setDate] = useState(lot.date);
+  const amount = Number(qty) * Number(price) || 0;
+  const funding = useFunding(amount, date, fundingOf(lot.fromSavings, lot.amount));
+  const num = (t: string) => t.replace(/[^0-9.]/g, '');
+  return (
+    <View style={{ gap: S.md }}>
+      <View style={{ flexDirection: 'row', gap: S.sm }}>
+        <Chip label="Buy" active={type === 'BUY'} tone={c.income} onPress={() => setType('BUY')} />
+        <Chip label="Sell" active={type === 'SELL'} tone={c.expense} onPress={() => setType('SELL')} />
+      </View>
+      <View style={{ flexDirection: 'row', gap: S.md }}>
+        <View style={{ flex: 1 }}><Input label={CLASS_META[h.assetClass].unit} keyboardType="decimal-pad" value={qty} onChangeText={(t) => setQty(num(t))} /></View>
+        <View style={{ flex: 1 }}><Input label={h.assetClass === 'MUTUAL_FUND' ? 'NAV' : 'Price / unit'} keyboardType="decimal-pad" value={price} onChangeText={(t) => setPrice(num(t))} /></View>
+      </View>
+      <DateField value={date} onChange={setDate} />
+      {type === 'BUY' && <FundingPicker f={funding} />}
+      <ErrorNote message={update.error?.message} />
+      <View style={{ flexDirection: 'row', gap: S.sm }}>
+        <Button title="Cancel" variant="ghost" style={{ flex: 1 }} onPress={onDone} />
+        <Button
+          title="Save"
+          style={{ flex: 1 }}
+          loading={update.isPending}
+          disabled={!(Number(qty) > 0) || price === '' || !isISODate(date)}
+          onPress={() =>
+            update.mutate(
+              { lotId: lot.id, lot: { type, date, quantity: Number(qty), price: Number(price), note: lot.note, ...(type === 'BUY' ? funding.payload : {}) } },
+              { onSuccess: onDone },
+            )
+          }
+        />
+      </View>
+    </View>
   );
 }
 
@@ -103,7 +166,7 @@ function Trade({ h, onDone }: { h: HoldingView; onDone: () => void }) {
   const [qty, setQty] = useState('');
   const [price, setPrice] = useState(String(h.price));
   const [date, setDate] = useState(todayISO());
-  const [fundedFrom, setFundedFrom] = useState<FundingSource>('SAVINGS');
+  const funding = useFunding(Number(qty) * Number(price) || 0, date);
   const num = (t: string) => t.replace(/[^0-9.]/g, '');
   return (
     <Card style={{ gap: S.md }}>
@@ -122,7 +185,7 @@ function Trade({ h, onDone }: { h: HoldingView; onDone: () => void }) {
           <Text style={{ color: c.fg, fontFamily: F.uiSemibold }}>{money(Number(qty) * Number(price))}</Text>
         </View>
       )}
-      {type === 'BUY' && <FundingPicker value={fundedFrom} onChange={setFundedFrom} amount={Number(qty) * Number(price) || 0} date={date} />}
+      {type === 'BUY' && <FundingPicker f={funding} />}
       <ErrorNote message={add.error?.message} />
       <Button
         title={type === 'BUY' ? 'Add purchase' : 'Record sale'}
@@ -130,7 +193,7 @@ function Trade({ h, onDone }: { h: HoldingView; onDone: () => void }) {
         disabled={!(Number(qty) > 0) || price === '' || !isISODate(date)}
         onPress={() =>
           add.mutate(
-            { type, date, quantity: Number(qty), price: Number(price), note: h.assetClass === 'MUTUAL_FUND' && type === 'BUY' ? 'SIP' : undefined, fundedFrom: type === 'BUY' ? fundedFrom : undefined },
+            { type, date, quantity: Number(qty), price: Number(price), note: h.assetClass === 'MUTUAL_FUND' && type === 'BUY' ? 'SIP' : undefined, ...(type === 'BUY' ? funding.payload : {}) },
             { onSuccess: onDone },
           )
         }

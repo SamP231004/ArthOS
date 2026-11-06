@@ -7,8 +7,8 @@ import { Button, ErrorNote, Field, Input, Modal, Select } from "../ui";
 import { ApiError } from "@/lib/api";
 import { money, todayISO } from "@/lib/format";
 import { useMarketSearch, useQuote, useSaveHolding } from "@/lib/queries";
-import { ASSET_CLASSES, HORIZONS, type AssetClass, type BondType, type GoldForm, type GoldPurity, type Horizon, type SymbolMatch, type FundingSource } from "@/lib/types";
-import { FundingPicker } from "./funding-picker";
+import { ASSET_CLASSES, HORIZONS, type AssetClass, type BondType, type GoldForm, type GoldPurity, type Horizon, type SymbolMatch } from "@/lib/types";
+import { FundingPicker, useFunding } from "./funding-picker";
 
 export function AddHoldingModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [cls, setCls] = useState<AssetClass | null>(null);
@@ -59,7 +59,6 @@ function HoldingForm({ cls, onBack, onDone }: { cls: AssetClass; onBack: () => v
   const [maturity, setMaturity] = useState("");
   const [bondType, setBondType] = useState<BondType>("GOVERNMENT");
   const [manualPrice, setManualPrice] = useState("");
-  const [fundedFrom, setFundedFrom] = useState<FundingSource>("SAVINGS");
 
   const quote = useQuote(cls, picked?.symbol);
   const live = quote.data?.price;
@@ -71,6 +70,7 @@ function HoldingForm({ cls, onBack, onDone }: { cls: AssetClass; onBack: () => v
   const units = cls === "MUTUAL_FUND" && amount && effectivePrice ? Number(amount) / Number(effectivePrice) : null;
   const quantity = units != null && !qty ? Math.floor(units * 1000) / 1000 : Number(qty);
   const total = quantity > 0 && Number(effectivePrice) > 0 ? quantity * Number(effectivePrice) : 0;
+  const funding = useFunding(total, date);
   const err = save.error instanceof ApiError ? save.error : null;
 
   async function submit(e: React.FormEvent) {
@@ -91,7 +91,7 @@ function HoldingForm({ cls, onBack, onDone }: { cls: AssetClass; onBack: () => v
           maturityDate: cls === "BOND" ? maturity : undefined,
           bondType: cls === "BOND" ? bondType : undefined,
           manualPrice: manualPrice ? Number(manualPrice) : undefined,
-          firstLot: { type: "BUY", date, quantity, price: Number(effectivePrice), fundedFrom },
+          firstLot: { type: "BUY", date, quantity, price: Number(effectivePrice), ...funding.payload },
         },
       });
       onDone();
@@ -103,7 +103,7 @@ function HoldingForm({ cls, onBack, onDone }: { cls: AssetClass; onBack: () => v
   const needsPick = (cls === "STOCK" || cls === "MUTUAL_FUND") && !picked;
   return (
     <form onSubmit={submit} className="space-y-5">
-      <button type="button" onClick={onBack} className="-mt-2 flex items-center gap-1.5 text-xs text-muted hover:text-fg">
+      <button type="button" onClick={onBack} className="flex items-center gap-1.5 text-xs text-muted hover:text-fg">
         <ArrowLeft size={13} /> Change type
       </button>
 
@@ -218,7 +218,7 @@ function HoldingForm({ cls, onBack, onDone }: { cls: AssetClass; onBack: () => v
               <span className="tabular font-semibold">{money(total)}</span>
             </p>
           )}
-          <FundingPicker value={fundedFrom} onChange={setFundedFrom} amount={total} date={date} />
+          <FundingPicker f={funding} />
         </>
       )}
 

@@ -1,16 +1,17 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Sparkline } from "../charts";
 import { CLASS_META, HORIZON_META, SOURCE_LABEL, fmtQty, holdingSubtitle, signedPct, tone } from "./meta";
 import { Badge, Button, ErrorNote, Field, Input, Modal, Select } from "../ui";
 import { dateLabel, money, todayISO } from "@/lib/format";
-import { useAddLot, useDeleteHolding, useDeleteLot, useSaveHolding } from "@/lib/queries";
-import { HORIZONS, type HoldingView, type Horizon, type LotType, type FundingSource } from "@/lib/types";
-import { FundingPicker } from "./funding-picker";
+import { useAddLot, useDeleteHolding, useDeleteLot, useSaveHolding, useUpdateLot } from "@/lib/queries";
+import { HORIZONS, type HoldingView, type Horizon, type LotType } from "@/lib/types";
+import { FundingPicker, fundingOf, useFunding } from "./funding-picker";
 
-export type DetailTab = "overview" | "trade" | "settings" | "withdraw";
+/** "edit" opens the overview with the transactions ready to edit (a single purchase opens straight into its editor). */
+export type DetailTab = "overview" | "trade" | "settings" | "withdraw" | "edit";
 
 export function HoldingModal({ holding, onClose, initialTab = "overview" }: { holding: HoldingView | null; onClose: () => void; initialTab?: DetailTab }) {
   return (
@@ -21,7 +22,8 @@ export function HoldingModal({ holding, onClose, initialTab = "overview" }: { ho
 }
 
 function Detail({ h, onClose, initialTab }: { h: HoldingView; onClose: () => void; initialTab: DetailTab }) {
-  const [tab, setTab] = useState<Exclude<DetailTab, "withdraw">>(initialTab === "withdraw" ? "trade" : initialTab);
+  const [tab, setTab] = useState<Exclude<DetailTab, "withdraw" | "edit">>(initialTab === "withdraw" ? "trade" : initialTab === "edit" ? "overview" : initialTab);
+  const autoEdit = initialTab === "edit" && h.lots.length === 1 ? h.lots[0].id : null;
   const M = CLASS_META[h.assetClass];
   return (
     <div className="space-y-5">
@@ -66,7 +68,7 @@ function Detail({ h, onClose, initialTab }: { h: HoldingView; onClose: () => voi
               {h.goal && <Badge tone="gold">Goal: {h.goal}</Badge>}
             </div>
           )}
-          <Lots h={h} />
+          <Lots h={h} autoEdit={autoEdit} />
         </>
       )}
 
@@ -86,34 +88,120 @@ function Stat({ k, v, sub, tone = "" }: { k: string; v: string; sub?: string; to
   );
 }
 
-function Lots({ h }: { h: HoldingView }) {
+/** How a buy was paid: "from savings", "from spending", or "₹150 savings + ₹75 spending". */
+function paidWith(l: HoldingView["lots"][number]): string {
+  if (l.type === "SELL") return " · to savings";
+  const s = l.fromSavings ?? (l.fundedFrom === "SPENDING" ? 0 : l.amount);
+  const p = l.fromSpending ?? l.amount - s;
+  if (p <= 0.005) return " · from savings";
+  if (s <= 0.005) return " · from spending";
+  return ` · ${money(s)} savings + ${money(p)} spending`;
+}
+
+function Lots({ h, autoEdit = null }: { h: HoldingView; autoEdit?: string | null }) {
   const del = useDeleteLot(h.id);
+  const [editing, setEditing] = useState<string | null>(autoEdit);
   return (
     <div>
-      <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.12em] text-subtle">Transactions</p>
+      <p className="mb-2 flex items-baseline justify-between text-[11px] font-medium uppercase tracking-[0.12em] text-subtle">
+        Transactions <span className="normal-case tracking-normal">{h.lots.length} · tap ✎ to edit</span>
+      </p>
       <ul className="divide-y divide-line rounded-xl border border-line">
-        {[...h.lots].reverse().map((l) => (
-          <li key={l.id} className="flex items-center gap-3 px-3.5 py-2.5 text-sm">
-            <Badge tone={l.type === "BUY" ? "income" : "expense"}>{l.type === "BUY" ? "Buy" : "Sell"}</Badge>
-            <span className="text-muted">{dateLabel(l.date)}</span>
-            <span className="tabular ml-auto text-right">
-              {fmtQty(l.quantity)} × {money(l.price)}
-              <span className="block text-[11px] text-subtle">
-                {money(l.amount)}
-                {l.type === "BUY" ? (l.fundedFrom === "SPENDING" ? " · from spending" : " · from savings") : " · to savings"}
-                {l.note && l.note !== "Paid from spending money" ? ` · ${l.note}` : ""}
+        {[...h.lots].reverse().map((l) =>
+          editing === l.id ? (
+            <li key={l.id} className="p-3.5">
+              <LotEditor h={h} lot={l} onDone={() => setEditing(null)} />
+            </li>
+          ) : (
+            <li key={l.id} className="flex items-center gap-3 px-3.5 py-2.5 text-sm">
+              <Badge tone={l.type === "BUY" ? "income" : "expense"}>{l.type === "BUY" ? "Buy" : "Sell"}</Badge>
+              <span className="text-muted">{dateLabel(l.date)}</span>
+              <span className="tabular ml-auto text-right">
+                {fmtQty(l.quantity)} × {money(l.price)}
+                <span className="block text-[11px] text-subtle">
+                  {money(l.amount)}
+                  {paidWith(l)}
+                  {l.note && l.note !== "Paid from spending money" ? ` · ${l.note}` : ""}
+                </span>
               </span>
-            </span>
-            {h.lots.length > 1 && (
-              <button onClick={() => confirm("Delete this transaction?") && del.mutate(l.id)} className="rounded-lg p-1 text-subtle hover:bg-expense/10 hover:text-expense" aria-label="Delete transaction">
-                <Trash2 size={14} />
+              <button onClick={() => setEditing(l.id)} className="rounded-lg p-1 text-subtle hover:bg-fg/5 hover:text-fg" aria-label="Edit transaction" title="Edit">
+                <Pencil size={14} />
               </button>
-            )}
-          </li>
-        ))}
+              {h.lots.length > 1 && (
+                <button onClick={() => confirm("Delete this transaction?") && del.mutate(l.id)} className="rounded-lg p-1 text-subtle hover:bg-expense/10 hover:text-expense" aria-label="Delete transaction" title="Delete">
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </li>
+          ),
+        )}
       </ul>
       <ErrorNote message={del.error?.message} />
     </div>
+  );
+}
+
+/** Edit one transaction in place: buy/sell, quantity, price or NAV, date and how it was paid for. */
+function LotEditor({ h, lot, onDone }: { h: HoldingView; lot: HoldingView["lots"][number]; onDone: () => void }) {
+  const update = useUpdateLot(h.id);
+  const [type, setType] = useState<LotType>(lot.type);
+  const [qty, setQty] = useState(String(lot.quantity));
+  const [price, setPrice] = useState(String(lot.price));
+  const [date, setDate] = useState(lot.date);
+  const [note, setNote] = useState(lot.note ?? "");
+  const amount = Number(qty) * Number(price) || 0;
+  const funding = useFunding(amount, date, fundingOf(lot.fromSavings, lot.amount));
+  const unit = CLASS_META[h.assetClass].unit;
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      await update.mutateAsync({
+        lotId: lot.id,
+        lot: { type, date, quantity: Number(qty), price: Number(price), note: note || undefined, ...(type === "BUY" ? funding.payload : {}) },
+      });
+      onDone();
+    } catch {
+      /* shown below */
+    }
+  }
+
+  return (
+    <form onSubmit={save} className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        {(["BUY", "SELL"] as LotType[]).map((t) => (
+          <button type="button" key={t} onClick={() => setType(t)} className={`rounded-lg border px-3 py-1.5 text-xs transition ${type === t ? (t === "BUY" ? "border-income bg-income/10 text-income" : "border-expense bg-expense/10 text-expense") : "border-line-strong text-muted"}`}>
+            {t === "BUY" ? "Buy" : "Sell"}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <Field label={unit === "g" ? "Grams" : unit === "units" ? "Units" : unit === "bonds" ? "Bonds" : "Shares"}>
+          <Input type="number" min="0.000001" step="any" required value={qty} onChange={(e) => setQty(e.target.value)} />
+        </Field>
+        <Field label={h.assetClass === "MUTUAL_FUND" ? "NAV" : h.assetClass === "GOLD" ? "Price / gram" : "Price"}>
+          <Input type="number" min="0" step="any" required value={price} onChange={(e) => setPrice(e.target.value)} />
+        </Field>
+        <Field label="Date">
+          <Input type="date" required max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
+        </Field>
+      </div>
+      <Field label="Note">
+        <Input maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" />
+      </Field>
+      {amount > 0 && (
+        <p className="flex justify-between rounded-xl bg-fg/[0.03] px-4 py-2.5 text-sm">
+          <span className="text-muted">{type === "BUY" ? "Total cost" : "Proceeds"}</span>
+          <span className="tabular font-semibold">{money(amount)}</span>
+        </p>
+      )}
+      {type === "BUY" && <FundingPicker f={funding} />}
+      <ErrorNote message={update.error?.message} />
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="ghost" onClick={onDone}>Cancel</Button>
+        <Button type="submit" loading={update.isPending}>Save transaction</Button>
+      </div>
+    </form>
   );
 }
 
@@ -123,7 +211,7 @@ function Trade({ h, onDone, initialType = "BUY" }: { h: HoldingView; onDone: () 
   const [qty, setQty] = useState("");
   const [price, setPrice] = useState(String(h.price));
   const [date, setDate] = useState(todayISO());
-  const [fundedFrom, setFundedFrom] = useState<FundingSource>("SAVINGS");
+  const funding = useFunding(Number(qty) * Number(price) || 0, date);
   const unit = CLASS_META[h.assetClass].unit;
 
   async function submit(e: React.FormEvent) {
@@ -135,7 +223,7 @@ function Trade({ h, onDone, initialType = "BUY" }: { h: HoldingView; onDone: () 
         quantity: Number(qty),
         price: Number(price),
         note: h.assetClass === "MUTUAL_FUND" && type === "BUY" ? "SIP" : undefined,
-        fundedFrom: type === "BUY" ? fundedFrom : undefined,
+        ...(type === "BUY" ? funding.payload : {}),
       });
       onDone();
     } catch {
@@ -164,7 +252,7 @@ function Trade({ h, onDone, initialType = "BUY" }: { h: HoldingView; onDone: () 
           <span className="tabular font-semibold">{money(Number(qty) * Number(price))}</span>
         </p>
       )}
-      {type === "BUY" && <FundingPicker value={fundedFrom} onChange={setFundedFrom} amount={Number(qty) * Number(price) || 0} date={date} />}
+      {type === "BUY" && <FundingPicker f={funding} />}
       <ErrorNote message={add.error?.message} />
       <div className="flex justify-end">
         <Button type="submit" loading={add.isPending}>{type === "BUY" ? "Add purchase" : "Record sale"}</Button>

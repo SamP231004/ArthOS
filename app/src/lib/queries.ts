@@ -170,6 +170,14 @@ export function useAddLot(holdingId: string) {
   });
 }
 
+export function useUpdateLot(holdingId: string) {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: ({ lotId, lot }: { lotId: string; lot: LotInput }) => api<HoldingView>(`/api/holdings/${holdingId}/lots/${lotId}`, { method: "PUT", body: lot }),
+    onSuccess: invalidate,
+  });
+}
+
 export function useDeleteLot(holdingId: string) {
   const invalidate = useInvalidatePortfolio();
   return useMutation({
