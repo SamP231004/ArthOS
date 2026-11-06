@@ -1,0 +1,5 @@
+{
+  "name": "arthos-ocr",
+  "platforms": ["android"],
+  "android": { "modules": ["expo.modules.arthosocr.ArthosOcrModule"] }
+}

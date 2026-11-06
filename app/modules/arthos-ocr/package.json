@@ -1,0 +1,7 @@
+{
+  "name": "arthos-ocr",
+  "version": "1.0.0",
+  "private": true,
+  "description": "On-device OCR for ArthOS: Google ML Kit text recognition (bundled model) as a local Expo module.",
+  "main": "index.ts"
+}

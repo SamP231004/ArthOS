@@ -22,7 +22,6 @@ export default function ScanScreen() {
   const [reading, setReading] = useState(!!sharedUri && scanAvailable);
   const [text, setText] = useState(sharedText ?? '');
   const started = useRef(false);
-  const [waiting, setWaiting] = useState(false); // ML Kit's model still downloading (first use)
   const [error, setError] = useState<string | null>(null);
 
   async function finish(raw: string) {
@@ -50,13 +49,12 @@ export default function ScanScreen() {
     setUri(a.uri);
     setReading(true);
     try {
-      await finish(await readText(a.uri, () => setWaiting(true)));
+      await finish(await readText(a.uri));
     } catch (e) {
       setError(`Couldn't read that image. Try again, or paste the text instead.
 (${readError(e)})`);
     } finally {
       setReading(false);
-      setWaiting(false);
     }
   }
 
@@ -66,13 +64,12 @@ export default function ScanScreen() {
     if (sharedUri && scanAvailable) {
       void (async () => {
         try {
-          await finish(await readText(sharedUri, () => setWaiting(true)));
+          await finish(await readText(sharedUri));
         } catch (e) {
           setError(`Couldn't read that image. Try again, or paste the text instead.
 (${readError(e)})`);
         } finally {
           setReading(false);
-          setWaiting(false);
         }
       })();
     } else if (sharedText?.trim()) {
@@ -105,7 +102,7 @@ export default function ScanScreen() {
             {busy && (
               <View style={{ position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: c.surface, borderRadius: R.pill, paddingHorizontal: S.md, paddingVertical: 8 }}>
                 <ActivityIndicator color={c.brand} size="small" />
-                <T variant="small" style={{ color: c.fg }}>{waiting ? 'Getting the text reader ready (first time only)…' : reading ? 'Reading text…' : 'Working out the details…'}</T>
+                <T variant="small" style={{ color: c.fg }}>{reading ? 'Reading text…' : 'Working out the details…'}</T>
               </View>
             )}
           </View>

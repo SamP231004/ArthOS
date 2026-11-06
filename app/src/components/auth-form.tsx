@@ -42,7 +42,8 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const [fade] = useState(() => new Animated.Value(1));
   const login = mode === 'login';
   // sized so the whole screen fits without scrolling; create account has one more field, so its hero is shorter
-  const heroBody = login ? Math.round(Math.min(270, Math.max(220, height * 0.3))) : Math.round(Math.min(200, Math.max(165, height * 0.22)));
+  // login: tall enough that the sheet starts below the rotating lines and their dots (~290dp on an 800dp phone)
+  const heroBody = login ? Math.round(Math.min(330, Math.max(260, height * 0.37))) : Math.round(Math.min(220, Math.max(175, height * 0.24)));
   const heroH = heroBody + insets.top;
   const centreY = insets.top + 38 + (heroBody - 38 - 24) / 2; // middle of the logo block (below the toggle row)
 
