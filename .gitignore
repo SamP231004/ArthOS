@@ -15,3 +15,8 @@ node_modules/
 
 # Java (backend/)
 backend/target/
+
+# Gradle caches (e.g. created when an IDE opens a native module)
+.gradle/
+# Tesseract language data downloaded by local OCR runs
+*.traineddata
