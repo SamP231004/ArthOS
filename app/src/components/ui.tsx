@@ -67,13 +67,16 @@ export function Button({
   );
 }
 
-export function Input({ label, error, hint, style, ...rest }: TextInputProps & { label: string; error?: string; hint?: string }) {
+export function Input({ label, error, hint, style, accessory, ...rest }: TextInputProps & { label: string; error?: string; hint?: string; accessory?: React.ReactNode }) {
   const { c } = useTheme();
   const s = useStyles(makeField);
   return (
     <View style={{ gap: 6 }}>
       <T variant="label">{label}</T>
-      <TextInput placeholderTextColor={c.subtle} style={[s.input, error ? { borderColor: c.expense } : null, style]} {...rest} />
+      <View style={{ justifyContent: 'center' }}>
+        <TextInput placeholderTextColor={c.subtle} style={[s.input, error ? { borderColor: c.expense } : null, accessory ? { paddingRight: 64 } : null, style]} {...rest} />
+        {accessory ? <View style={{ position: 'absolute', right: 6 }}>{accessory}</View> : null}
+      </View>
       {error ? <T variant="small" style={{ color: c.expense }}>{error}</T> : hint ? <T variant="small">{hint}</T> : null}
     </View>
   );
