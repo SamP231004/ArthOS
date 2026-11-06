@@ -33,8 +33,10 @@ export default function Home() {
       <AppHeader />
 
       {user?.demo && (
-        <View style={{ backgroundColor: alpha(c.brand, 0.1), borderColor: alpha(c.brand, 0.3), borderWidth: 1, borderRadius: R.md, padding: S.md }}>
-          <T variant="small" style={{ color: c.fg2 }}>✦ You&apos;re exploring a private demo with sample data. It resets in ~24h.</T>
+        <View style={{ backgroundColor: alpha(c.brand, 0.1), borderColor: alpha(c.brand, 0.3), borderWidth: 1, borderRadius: R.pill, paddingHorizontal: S.md, paddingVertical: 7 }}>
+          <T variant="small" style={{ color: c.fg2 }} numberOfLines={1} adjustsFontSizeToFit>
+            ✦ Private demo with sample data · resets in ~24h
+          </T>
         </View>
       )}
 

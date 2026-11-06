@@ -113,13 +113,21 @@ export const R = { sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, pill: 999 } as const;
 /** Translucent version of a hex colour, e.g. alpha(c.brand, 0.12). */
 export function alpha(hex: string, a: number): string {
   const h = hex.replace('#', '');
-  const n = parseInt(h.length === 3 ? h.split('').map((x) => x + x).join('') : h, 16);
+  const n = parseInt(
+    h.length === 3
+      ? h
+          .split('')
+          .map((x) => x + x)
+          .join('')
+      : h,
+    16,
+  );
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 }
 
 const KEY = 'arthos-theme';
 const store = {
-  get: async () => (Platform.OS === 'web' ? globalThis.localStorage?.getItem(KEY) ?? null : SecureStore.getItemAsync(KEY)),
+  get: async () => (Platform.OS === 'web' ? (globalThis.localStorage?.getItem(KEY) ?? null) : SecureStore.getItemAsync(KEY)),
   set: async (v: string) => (Platform.OS === 'web' ? globalThis.localStorage?.setItem(KEY, v) : SecureStore.setItemAsync(KEY, v)),
 };
 
@@ -132,7 +140,14 @@ type Ctx = {
   toggle: (origin?: { x: number; y: number }) => void;
   ready: boolean;
 };
-const ThemeContext = createContext<Ctx>({ mode: 'dark', scheme: 'dark', c: palettes.dark, setMode: () => {}, toggle: () => {}, ready: false });
+const ThemeContext = createContext<Ctx>({
+  mode: 'dark',
+  scheme: 'dark',
+  c: palettes.dark,
+  setMode: () => {},
+  toggle: () => {},
+  ready: false,
+});
 
 type Origin = { x: number; y: number };
 type Reveal = { from: string; to?: string; x: number; y: number; r: number };
@@ -154,6 +169,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [reveal, setReveal] = useState<Reveal | null>(null);
   const [radius] = useState(() => new Animated.Value(0));
   const root = useRef<HostView>(null);
+  // the app area's real size (not Dimensions "window", which on edge-to-edge Android excludes the system bars and
+  // made the frozen snapshot render shorter — the screen appeared to jump up before the reveal)
+  const size = useRef({ width: 0, height: 0 });
+  const [frame0, setFrame0] = useState({ width: 0, height: 0 });
   const busy = useRef(false);
 
   useEffect(() => {
@@ -175,7 +194,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       if (!origin || Platform.OS === 'web') return commit(next);
       busy.current = true;
       try {
-        const { width, height } = Dimensions.get('window');
+        // origin comes in window coordinates; make it relative to the app area the snapshots cover
+        const off = await new Promise<{ x: number; y: number }>((res) => {
+          const node = root.current as unknown as { measureInWindow?: (cb: (x: number, y: number) => void) => void } | null;
+          if (node?.measureInWindow) node.measureInWindow((x, y) => res({ x, y }));
+          else res({ x: 0, y: 0 });
+        });
+        origin = { x: origin.x - off.x, y: origin.y - off.y };
+        const { width, height } = size.current.width ? size.current : Dimensions.get('window');
+        setFrame0({ width, height });
         const r = Math.hypot(Math.max(origin.x, width - origin.x), Math.max(origin.y, height - origin.y));
         const from = await shot(root);
         radius.setValue(0);
@@ -187,7 +214,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         const to = await shot(root);
         setReveal({ from, to, x: origin.x, y: origin.y, r });
         await frame();
-        Animated.timing(radius, { toValue: r, duration: 560, easing: Easing.bezier(0.65, 0, 0.35, 1), useNativeDriver: false }).start(() => {
+        Animated.timing(radius, {
+          toValue: r,
+          duration: 560,
+          easing: Easing.bezier(0.65, 0, 0.35, 1),
+          useNativeDriver: false,
+        }).start(() => {
           setReveal(null);
           busy.current = false;
         });
@@ -203,39 +235,65 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const toggle = useCallback((origin?: Origin) => setMode(mode === 'dark' ? 'light' : 'dark', origin), [mode, setMode]);
 
   const value = useMemo(
-    () => ({ mode, scheme: THEMES.find((t) => t.id === mode)?.scheme ?? 'dark', c: palettes[mode], setMode, toggle, ready }),
+    () => ({
+      mode,
+      scheme: THEMES.find((t) => t.id === mode)?.scheme ?? 'dark',
+      c: palettes[mode],
+      setMode,
+      toggle,
+      ready,
+    }),
     [mode, setMode, toggle, ready],
   );
-  const { width, height } = Dimensions.get('window');
+  const { width, height } = frame0;
   return (
     <ThemeContext.Provider value={value}>
-      <View ref={root} collapsable={false} style={{ flex: 1 }}>
-        {children}
-      </View>
-      {reveal && (
-        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-          <Image source={{ uri: reveal.from }} fadeDuration={0} style={{ width, height }} />
-          {reveal.to && (
-            // the circle grows from the control; the new snapshot inside it is counter-offset so it stays put
-            <Animated.View
-              style={{
-                position: 'absolute',
-                overflow: 'hidden',
-                left: Animated.subtract(reveal.x, radius),
-                top: Animated.subtract(reveal.y, radius),
-                width: Animated.multiply(radius, 2),
-                height: Animated.multiply(radius, 2),
-                borderRadius: radius,
-              }}>
-              <Animated.Image
-                source={{ uri: reveal.to }}
-                fadeDuration={0}
-                style={{ position: 'absolute', width, height, left: Animated.subtract(radius, reveal.x), top: Animated.subtract(radius, reveal.y) }}
-              />
-            </Animated.View>
-          )}
+      <View style={{ flex: 1 }}>
+        <View
+          ref={root}
+          collapsable={false}
+          style={{ flex: 1 }}
+          onLayout={(e) => {
+            size.current = {
+              width: e.nativeEvent.layout.width,
+              height: e.nativeEvent.layout.height,
+            };
+          }}>
+          {children}
         </View>
-      )}
+        {reveal && (
+          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]}>
+            {/* both snapshots drawn at exactly the captured area's size, so nothing shifts or rescales */}
+            <Image source={{ uri: reveal.from }} fadeDuration={0} resizeMode="stretch" style={{ position: 'absolute', left: 0, top: 0, width, height }} />
+            {reveal.to && (
+              // the circle grows from the control; the new snapshot inside it is counter-offset so it stays put
+              <Animated.View
+                style={{
+                  position: 'absolute',
+                  overflow: 'hidden',
+                  left: Animated.subtract(reveal.x, radius),
+                  top: Animated.subtract(reveal.y, radius),
+                  width: Animated.multiply(radius, 2),
+                  height: Animated.multiply(radius, 2),
+                  borderRadius: radius,
+                }}>
+                <Animated.Image
+                  source={{ uri: reveal.to }}
+                  fadeDuration={0}
+                  resizeMode="stretch"
+                  style={{
+                    position: 'absolute',
+                    width,
+                    height,
+                    left: Animated.subtract(radius, reveal.x),
+                    top: Animated.subtract(radius, reveal.y),
+                  }}
+                />
+              </Animated.View>
+            )}
+          </View>
+        )}
+      </View>
     </ThemeContext.Provider>
   );
 }
