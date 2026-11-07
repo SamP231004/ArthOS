@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { Alert, Switch, View } from 'react-native';
 
 import { Logo } from '@/components/logo';
 import { SavingsRuleField } from '@/components/savings-rule';
@@ -7,8 +8,11 @@ import { Screen } from '@/components/screen';
 import { Button, Card, Chip, ErrorNote, Input, Segmented, T } from '@/components/ui';
 import { API_URL } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
+import { currentMonth } from '@/lib/format';
+import { pinAlertsEnabled, setPinAlerts, syncAlertNotifications } from '@/lib/notify';
 import { useUpdateProfile } from '@/lib/queries';
 import type { SavingsMode } from '@/lib/savings';
+import type { Insights } from '@/lib/types';
 import { alpha, S, useTheme, type Mode } from '@/theme';
 
 const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD'];
@@ -22,6 +26,11 @@ export default function SettingsScreen() {
   const [savingsMode, setSavingsMode] = useState<SavingsMode>(user?.savingsMode ?? 'PERCENT');
   const [savingsValue, setSavingsValue] = useState(String(user?.savingsValue ?? 20));
   const [startingBalance, setStartingBalance] = useState(String(user?.savingsStartingBalance ?? 0));
+  const [pinned, setPinned] = useState(true);
+  const qc = useQueryClient();
+  useEffect(() => {
+    pinAlertsEnabled().then(setPinned);
+  }, []);
 
   if (!user) return null;
 
@@ -44,6 +53,29 @@ export default function SettingsScreen() {
             { value: 'light', label: 'Ivory (light)' },
           ]}
         />
+      </Card>
+
+      <Card style={{ gap: S.md }}>
+        <T variant="label">Notifications</T>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.md }}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <T style={{ fontSize: 15 }}>Pin money alerts</T>
+            <T variant="small">Keeps your most urgent alert (like being over budget) in the notification shade until it&apos;s resolved. &quot;Clear all&quot; won&apos;t remove it.</T>
+          </View>
+          <Switch
+            value={pinned}
+            onValueChange={(v) => {
+              setPinned(v);
+              setPinAlerts(v).then(() => {
+                const data = qc.getQueryData<Insights>(['insights', currentMonth()]);
+                if (data) syncAlertNotifications(data).catch(() => {});
+              });
+            }}
+            trackColor={{ true: c.brand, false: c.lineStrong }}
+            thumbColor={c.fg}
+            accessibilityLabel="Pin money alerts"
+          />
+        </View>
       </Card>
 
       <Card style={{ gap: S.md }}>

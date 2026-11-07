@@ -252,6 +252,6 @@ export type Insights = {
     priceRises: { name: string; before: number; now: number; changePct: number }[];
   };
   health: { score: number; grade: string; headline: string; components: { key: string; label: string; points: number; max: number; value: string; explanation: string; tip: string }[] };
-  alerts: { key: string; level: InsightLevel; title: string; body: string; dueDate?: string }[];
+  alerts: { key: string; level: InsightLevel; title: string; body: string; dueDate?: string; brief?: string }[];
   suggestions: { title: string; body: string; monthlyImpact?: number }[];
 };

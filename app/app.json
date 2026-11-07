@@ -84,7 +84,8 @@
               "maxResizeHeight": "220dp",
               "resizeMode": "horizontal|vertical",
               "updatePeriodMillis": 1800000,
-              "widgetFeatures": "reconfigurable|configuration_optional"
+              "widgetFeatures": "reconfigurable|configuration_optional",
+              "previewImage": "./assets/widget-preview/safe-to-spend.png"
             },
             {
               "name": "MonthSnapshot",
@@ -98,7 +99,8 @@
               "maxResizeHeight": "220dp",
               "resizeMode": "horizontal|vertical",
               "updatePeriodMillis": 1800000,
-              "widgetFeatures": "reconfigurable|configuration_optional"
+              "widgetFeatures": "reconfigurable|configuration_optional",
+              "previewImage": "./assets/widget-preview/month-snapshot.png"
             },
             {
               "name": "Portfolio",
@@ -112,7 +114,8 @@
               "maxResizeHeight": "220dp",
               "resizeMode": "horizontal|vertical",
               "updatePeriodMillis": 1800000,
-              "widgetFeatures": "reconfigurable|configuration_optional"
+              "widgetFeatures": "reconfigurable|configuration_optional",
+              "previewImage": "./assets/widget-preview/portfolio.png"
             },
             {
               "name": "QuickAdd",
@@ -125,7 +128,8 @@
               "maxResizeWidth": "400dp",
               "maxResizeHeight": "180dp",
               "resizeMode": "horizontal|vertical",
-              "widgetFeatures": "reconfigurable|configuration_optional"
+              "widgetFeatures": "reconfigurable|configuration_optional",
+              "previewImage": "./assets/widget-preview/quick-add.png"
             }
           ]
         }

@@ -1,7 +1,7 @@
 import { getWidgetInfo, requestWidgetUpdate, type WidgetTaskHandlerProps } from 'react-native-android-widget';
 
-import { cachedSnapshot, deletePrefs, loadSnapshot, readPrefs, resolveScheme, type WidgetState } from './data';
-import { renderWidgetFor, WIDGET_NAMES } from './widgets';
+import { cachedSnapshot, DEFAULT_PREFS, deletePrefs, loadSnapshot, readPrefs, resolveScheme, type WidgetState } from './data';
+import { errorWidget, renderWidgetFor, WIDGET_NAMES } from './widgets';
 
 /**
  * Runs headlessly whenever Android asks for a widget update: when it's added, every 30 minutes, when resized, or when
@@ -12,18 +12,37 @@ export async function widgetTaskHandler({ widgetInfo, widgetAction, renderWidget
     await deletePrefs(widgetInfo.widgetId);
     return;
   }
-  const prefs = await readPrefs(widgetInfo.widgetId);
-  const scheme = await resolveScheme(prefs.theme);
-  const draw = (state: WidgetState) =>
-    renderWidget(renderWidgetFor(widgetInfo.widgetName, { state, prefs, scheme, width: widgetInfo.width, height: widgetInfo.height }));
+  const size = { width: widgetInfo.width, height: widgetInfo.height };
+  // Something visible immediately, before any storage or network work, so a widget is never an empty box.
+  safeDraw(renderWidget, () => renderWidgetFor(widgetInfo.widgetName, { state: { kind: 'loading' }, prefs: DEFAULT_PREFS, scheme: 'dark', ...size }));
+  try {
+    const prefs = await readPrefs(widgetInfo.widgetId);
+    const scheme = await resolveScheme(prefs.theme);
+    const draw = (state: WidgetState) => safeDraw(renderWidget, () => renderWidgetFor(widgetInfo.widgetName, { state, prefs, scheme, ...size }));
 
-  if (widgetInfo.widgetName === 'QuickAdd') {
-    draw({ kind: 'error' }); // no data needed
-    return;
+    if (widgetInfo.widgetName === 'QuickAdd') {
+      draw({ kind: 'error' }); // no data needed
+      return;
+    }
+    const cached = await cachedSnapshot();
+    if (cached) draw(cached);
+    draw(await loadSnapshot());
+  } catch (e) {
+    safeDraw(renderWidget, () => errorWidget(e, size));
   }
-  const cached = await cachedSnapshot();
-  if (cached) draw(cached);
-  draw(await loadSnapshot());
+}
+
+/** Draw, and if building the widget throws, draw the error instead (so problems show up on the widget, not as a blank). */
+function safeDraw(renderWidget: WidgetTaskHandlerProps['renderWidget'], build: () => ReturnType<typeof renderWidgetFor>) {
+  try {
+    renderWidget(build());
+  } catch (e) {
+    try {
+      renderWidget(errorWidget(e, { width: 0, height: 0 }));
+    } catch {
+      // nothing more we can do
+    }
+  }
 }
 
 let inFlight: Promise<void> | null = null;
@@ -43,8 +62,12 @@ export function refreshWidgets(): Promise<void> {
       await requestWidgetUpdate({
         widgetName: name,
         renderWidget: async (info) => {
-          const prefs = await readPrefs(info.widgetId);
-          return renderWidgetFor(name, { state, prefs, scheme: await resolveScheme(prefs.theme), width: info.width, height: info.height });
+          try {
+            const prefs = await readPrefs(info.widgetId);
+            return renderWidgetFor(name, { state, prefs, scheme: await resolveScheme(prefs.theme), width: info.width, height: info.height });
+          } catch (e) {
+            return errorWidget(e, info);
+          }
         },
       }).catch(() => {});
     }

@@ -25,6 +25,8 @@ Each entry follows the same shape: **🐛 Symptom → 🔍 Root cause → 🛠�
 | 14 | [🔐 Google sign-in on Android](#14--google-sign-in-on-android) | 📱 App | 🔄 In progress |
 | 15 | [✂️ Selling more than you held, after an edit](#15-️-selling-more-than-you-held-after-an-edit) | 📈 Investments | ✅ Fixed |
 | 16 | [🧵 A virtual-thread deadlock in the price cache](#16--a-virtual-thread-deadlock-in-the-price-cache) | ☕ Backend | ✅ Fixed |
+| 17 | [🫥 Home-screen widgets were completely blank](#17--home-screen-widgets-were-completely-blank) | 📱 App | ✅ Fixed |
+| 18 | [🔔 Alerts vanished with "Clear all"](#18--alerts-vanished-with-clear-all) | 📱 App | ✅ Fixed |
 
 ---
 
@@ -293,4 +295,27 @@ APKs use the **v2** signing block. We wrote a small parser that reads the certif
 | 🔍 **Root cause** | The price cache loaded entries with `ConcurrentHashMap.computeIfAbsent(key, k -> store.findById(k))`: a **blocking database read inside the map's `synchronized` lock**. On Java 21, a **virtual thread that blocks inside `synchronized` pins its carrier thread**, and there are only as many carriers as CPU cores. When the new startup price warm-up overlapped a request's lookups, every carrier was pinned and the other virtual threads couldn't run until their 12 s timeouts. |
 | 🛠️ **Fix** | Read from the database **outside** the lock, then `putIfAbsent` (the first writer wins if two threads race). The same startup scenario now answers in ~0.4 s, with no timeouts. |
 | 💡 **Lesson** | With virtual threads, never do I/O inside `synchronized`, including the hidden lock in `computeIfAbsent`. (JDK 24 removes this pinning, but production runs Java 21.) |
+
+---
+
+## 17. 🫥 Home-screen widgets were completely blank
+
+| | |
+|---|---|
+| 🐛 **Symptom** | The widgets could be placed and resized, but drew **nothing**: no background, no text, just an empty outline on the home screen. The widget picker showed the app icon on a white card. |
+| 🔍 **Root cause** | The app has the **React Compiler** on (`"reactCompiler": true` in `app.json`). It rewrote the widget components to call a memoisation hook (`react/compiler-runtime`). But the widget library doesn't render through React: it **calls each component as a plain function** to build Android RemoteViews. Calling a hook outside React throws *"Invalid hook call"*, the background task died before drawing, and the widget stayed transparent. |
+| 🔎 **How we confirmed it** | Ran the widget file through the app's own Babel preset with the compiler enabled: the output referenced `compiler-runtime`. With the fix, it referenced it 0 times. |
+| 🛠️ **Fix** | `"use no memo";` at the top of [`widgets.tsx`](../app/src/widgets/widgets.tsx) opts that file out of the compiler. The handler also got hardened: it draws a **"Loading…" tile immediately**, and if anything throws it draws the **error message on the widget**, so a failure can never look like an empty box again. The picker got real **preview images**. |
+| 💡 **Lesson** | Compilers that rewrite components assume React is rendering them. Libraries that call components as plain functions (widget renderers, email/PDF templates) need to be opted out. And make failures visible instead of blank. |
+
+---
+
+## 18. 🔔 Alerts vanished with "Clear all"
+
+| | |
+|---|---|
+| 🐛 **Symptom** | An alert like *"On pace to overspend — At this pace you'll spend ₹44,531 — ₹4,531 over budget."* took two lines, and tapping **Clear all** removed it for good. Each alert was notified only once, so there was no way to bring it back. |
+| 🛠️ **Fix: one line** | The backend now sends a short `brief` with every alert (*"On pace to overspend by ₹4,531"*, *"Broadband ₹999 due tomorrow"*), and notifications show just that line. |
+| 🛠️ **Fix: pinned** | One **ongoing** notification shows the most urgent alert (*"· +1 more"* when there are several). "Clear all" skips ongoing notifications. If it's swiped away (Android 14+ allows that), it **comes back the next time the app opens**, and it **removes itself** once nothing is urgent. It buzzes only when a **new** alert appears; refreshes go through a silent channel. |
+| ⚙️ **Control** | Settings → Notifications → **Pin money alerts** (on by default). Off = each alert notifies once, dismissible. Signing out clears it. Tapping it opens Insights. |
 

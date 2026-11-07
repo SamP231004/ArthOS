@@ -57,7 +57,8 @@ public final class InsightsCalculator {
 
     public enum Level { DANGER, WARN, INFO }
 
-    public record Alert(String key, Level level, String title, String body, LocalDate dueDate) {}
+    /** {@code brief}: the alert in one short line, for phone notifications (title + body are for the app). */
+    public record Alert(String key, Level level, String title, String body, LocalDate dueDate, String brief) {}
 
     public record Suggestion(String title, String body, BigDecimal monthlyImpact) {}
 
@@ -328,20 +329,24 @@ public final class InsightsCalculator {
         if (b != null && b.configured() && b.status() != null) {
             switch (b.status()) {
                 case OVER_MONTH -> out.add(new Alert("budget-month-" + m, Level.DANGER, "Monthly budget exceeded",
-                        "You're " + money.f(b.remainingMonth().negate()) + " over your " + money.f(b.limit()) + " budget.", null));
+                        "You're " + money.f(b.remainingMonth().negate()) + " over your " + money.f(b.limit()) + " budget.", null,
+                        "Over budget by " + money.f(b.remainingMonth().negate())));
                 case OVER -> out.add(new Alert("budget-day-" + in.today(), Level.WARN, "Over today's budget",
-                        "You've spent " + money.f(b.spentToday()) + " today against " + money.f(b.todayAllowance()) + ". The coming days will absorb it.", null));
+                        "You've spent " + money.f(b.spentToday()) + " today against " + money.f(b.todayAllowance()) + ". The coming days will absorb it.", null,
+                        "Over today's budget by " + money.f(b.spentToday().subtract(b.todayAllowance()).max(BigDecimal.ZERO))));
                 default -> {
                 }
             }
             if (b.status() != BudgetStatus.Status.OVER_MONTH && b.projectedSpend() != null && b.limit() != null && b.projectedSpend().compareTo(b.limit()) > 0) {
                 out.add(new Alert("budget-pace-" + m, Level.WARN, "On pace to overspend",
-                        "At this pace you'll spend " + money.f(b.projectedSpend()) + " — " + money.f(b.projectedSpend().subtract(b.limit())) + " over budget.", null));
+                        "At this pace you'll spend " + money.f(b.projectedSpend()) + " — " + money.f(b.projectedSpend().subtract(b.limit())) + " over budget.", null,
+                        "On pace to overspend by " + money.f(b.projectedSpend().subtract(b.limit()))));
             }
         }
         if (in.savings() != null && in.savings().closing().signum() < 0) {
             out.add(new Alert("savings-overdrawn-" + m, Level.DANGER, "Savings account overdrawn",
-                    "Investments have run " + money.f(in.savings().closing().negate()) + " ahead of what you've saved.", null));
+                    "Investments have run " + money.f(in.savings().closing().negate()) + " ahead of what you've saved.", null,
+                    "Savings overdrawn by " + money.f(in.savings().closing().negate())));
         }
         // recurring bills from last month that are due in the next 3 days (or today) and not logged yet
         YearMonth prev = m.minusMonths(1);
@@ -357,10 +362,12 @@ public final class InsightsCalculator {
                     if (days < 0 || days > 3) return;
                     String name = e.getMerchant() != null ? e.getMerchant() : label(e.getCategory());
                     out.add(new Alert("recurring-" + k + "-" + due, Level.INFO, name + " due " + (days == 0 ? "today" : days == 1 ? "tomorrow" : "in " + days + " days"),
-                            money.f(e.getAmount()) + " on " + DAY.format(due) + ", like last month.", due));
+                            money.f(e.getAmount()) + " on " + DAY.format(due) + ", like last month.", due,
+                            name + " " + money.f(e.getAmount()) + " due " + (days == 0 ? "today" : days == 1 ? "tomorrow" : "in " + days + " days")));
                 });
         leakage.priceRises().forEach(r -> out.add(new Alert("price-" + MerchantKey.of(r.name()) + "-" + m, Level.INFO, r.name() + " costs more now",
-                "Up from " + money.f(r.before()) + " to " + money.f(r.now()) + " (" + r.changePct().setScale(0, RoundingMode.HALF_UP) + "%).", null)));
+                "Up from " + money.f(r.before()) + " to " + money.f(r.now()) + " (" + r.changePct().setScale(0, RoundingMode.HALF_UP) + "%).", null,
+                r.name() + " now " + money.f(r.now()) + " (was " + money.f(r.before()) + ")")));
         return out;
     }
 

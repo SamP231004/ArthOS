@@ -191,18 +191,21 @@ At most **4**, each from a simple rule:
 ## 📱 Notifications (app)
 
 [`app/src/lib/notify.ts`](../app/src/lib/notify.ts) turns alerts into phone notifications, **locally**: no push server, no third party.
+Every notification is **one line**: the alert's `brief`, e.g. *"On pace to overspend by ₹4,531"*.
 
-| Alert type | When you're notified |
+| Alert type | How you're notified |
 |---|---|
-| 🔴🟡 Urgent (over budget, on pace to overspend, savings overdrawn) | Once, the first time the app sees it |
+| 📌 Urgent (over budget, on pace to overspend, savings overdrawn) | **One pinned notification** with the most urgent alert (*"· +1 more"* if several). "Clear all" doesn't remove it; if swiped away it returns the next time the app opens; it disappears on its own when nothing is urgent. Sound/heads-up only for a **new** alert. |
 | 🧾 Bill due | Scheduled for **9:00 am on the due date**, so it fires even if the app is closed (immediately if that time has passed) |
 | 🔵 Other info | Not notified; shown in the app only |
 
 | Detail | |
 |---|---|
-| 🔁 No repeats | Each alert's key is remembered on the device (last 200), so you're never notified twice for the same thing. |
-| 📣 Channel | Android channel **"Money alerts"** (high importance) |
-| 🙋 Permission | Asked the first time there's something to notify. |
+| ⚙️ Setting | Settings → Notifications → **Pin money alerts** (default on). Off = each urgent alert notifies once, dismissible |
+| 👆 Tap | Opens **Insights** |
+| 📣 Channels | **Money alerts** (high importance, for new things) and **Pinned money alert** (low, silent refreshes) |
+| 🔐 Sign-out | Clears the pinned alert |
+| 🙋 Permission | Asked the first time there's something to notify |
 
 ---
 

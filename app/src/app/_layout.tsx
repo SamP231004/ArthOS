@@ -16,6 +16,7 @@ import { scanAvailable } from '@/lib/scan';
 import { useAuth, useHydrated } from '@/lib/auth-store';
 import { F, ThemeProvider, useTheme } from '@/theme';
 import { scheduleWidgetRefresh } from '@/widgets/refresh';
+import { clearAlertNotifications } from '@/lib/notify';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -69,7 +70,10 @@ function AppStack({ fontsLoaded, queryClient }: { fontsLoaded: boolean; queryCli
 
   // Clear cached data from the previous account when signing out.
   useEffect(() => {
-    if (!token) queryClient.clear();
+    if (!token) {
+      queryClient.clear();
+      clearAlertNotifications().catch(() => {});
+    }
   }, [token, queryClient]);
 
   // Home-screen widgets follow sign-in/out and the theme, and catch up whenever the app comes back to the foreground.

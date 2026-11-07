@@ -1,3 +1,7 @@
+// The widget library calls these components as plain functions (not through React's renderer), so the React
+// Compiler's memoisation hooks would throw "Invalid hook call" and leave every widget blank. Opt this file out.
+"use no memo";
+
 import { FlexWidget, TextWidget } from 'react-native-android-widget';
 
 import { money } from '@/lib/format';
@@ -160,8 +164,16 @@ function Message({ t, title, body, uri, label }: { t: Tone; title: string; body:
   );
 }
 
-/** Signed-out / unreachable states shared by every data widget; null when there is data to show. */
+/** Shown if a widget fails to build: the message makes the problem visible instead of an empty box. */
+export function errorWidget(e: unknown, _size: { width: number; height: number }) {
+  const t = TONES.dark;
+  const msg = e instanceof Error ? e.message : String(e);
+  return <Message t={t} title="Widget error" body={`${msg}`.slice(0, 140)} uri="arthos://" label="Open ArthOS" />;
+}
+
+/** Loading / signed-out / unreachable states shared by every data widget; null when there is data to show. */
 function fallback(p: Props, t: Tone) {
+  if (p.state.kind === 'loading') return <Message t={t} title="ArthOS" body="Loading your numbers…" uri="arthos://" label="Open ArthOS" />;
   if (p.state.kind === 'signed-out') return <Message t={t} title="Sign in to ArthOS" body="Your numbers will show up here." uri="arthos://" label="Open ArthOS to sign in" />;
   if (p.state.kind === 'error') return <Message t={t} title="Can't reach ArthOS" body="Tap to open the app; the widget refreshes on its own." uri="arthos://" label="Open ArthOS" />;
   return null;

@@ -33,6 +33,7 @@ export type WidgetSnapshot = {
 };
 
 export type WidgetState =
+  | { kind: 'loading' }
   | { kind: 'signed-out' }
   | { kind: 'ok'; data: WidgetSnapshot; stale: boolean }
   | { kind: 'error' };

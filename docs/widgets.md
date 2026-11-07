@@ -17,7 +17,7 @@ Check your money without opening the app. Long-press the home screen → **Widge
 | 📈 **Portfolio** | 2 × 2 | Portfolio value, **today's move** ▲/▼, overall gain, number of holdings | Invest |
 | ⚡ **Quick add** | 2 × 1 | **+ Expense** and **Scan** buttons (**+ Income** too when made taller) | That screen |
 
-All widgets are **resizable**, and they all have empty and signed-out states: *"Set a budget"*, *"No investments yet"*, *"Sign in to ArthOS"*.
+The widget picker shows a **preview image** of each one. All widgets are **resizable**, and they all have loading, error, empty and signed-out states: *"Set a budget"*, *"No investments yet"*, *"Sign in to ArthOS"*.
 
 ### 🚦 Colours
 
