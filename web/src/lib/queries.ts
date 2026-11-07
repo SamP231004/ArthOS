@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { useAuth } from "./auth-store";
-import type { CategorySuggestion, Insights, ParseResult, RecurringCandidate } from "./types";
+import type { CategorySuggestion, Insights, WidgetSnapshot, ParseResult, RecurringCandidate } from "./types";
 import type { AssetClass, BudgetInput, BudgetStatus, HoldingInput, HoldingView, LotInput, Portfolio, PortfolioRange, Quote, SymbolMatch, Expense, ExpenseInput, Income, IncomeInput, MonthSummary, User } from "./types";
 
 export const keys = {
@@ -35,6 +35,7 @@ function useInvalidateMoney() {
   const qc = useQueryClient();
   return () => {
     qc.invalidateQueries({ queryKey: ["insights"] });
+    qc.invalidateQueries({ queryKey: ["widget"] });
     qc.invalidateQueries({ queryKey: ["recurring-candidates"] });
     qc.invalidateQueries({ queryKey: ["category-suggestion"] });
     qc.invalidateQueries({ queryKey: ["summary"] });
@@ -219,4 +220,10 @@ export function useMarkRecurring() {
 
 export function useInsights(month: string) {
   return useQuery({ queryKey: ["insights", month], queryFn: () => api<Insights>(`/api/insights?month=${month}`), staleTime: 60_000 });
+}
+
+// ---- Home-screen widgets (Phase 6): the same snapshot the Android widgets draw
+
+export function useWidgetSnapshot() {
+  return useQuery({ queryKey: ["widget"], queryFn: () => api<WidgetSnapshot>("/api/widget"), staleTime: 60_000 });
 }

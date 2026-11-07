@@ -1,6 +1,7 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, ChevronRight, LayoutGrid } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { SavingsRuleField } from "@/components/savings-rule";
@@ -44,6 +45,17 @@ export default function SettingsPage() {
   return (
     <div className="max-w-3xl space-y-6">
       <PageHeader title="Settings" subtitle="Profile and preferences, shared with the Android app." />
+
+      <Link href="/dashboard/widgets" className="panel flex items-center gap-4 p-5 transition hover:border-line-strong">
+        <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand/15 text-brand">
+          <LayoutGrid size={18} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-medium">Home-screen widgets</span>
+          <span className="block text-sm text-subtle">Safe to spend, month snapshot, portfolio and quick add — preview them and add them on Android.</span>
+        </span>
+        <ChevronRight size={18} className="text-subtle" />
+      </Link>
 
       <form onSubmit={save} className="panel divide-y divide-line">
         <Section title="Profile" desc="How ArthOS greets you.">

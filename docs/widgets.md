@@ -111,3 +111,4 @@ flowchart LR
 | `arthos://scan` | Scan a screenshot |
 
 > ℹ️ Widgets are Android-only: a website can't place widgets on a home screen, and the iOS app isn't built yet ([roadmap](roadmap.md)).
+> The website's **Widgets** page (`/dashboard/widgets`, also linked from Settings) previews all four with your live numbers, using the same `/api/widget` snapshot, and explains how to add them.

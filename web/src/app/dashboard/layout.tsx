@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowDownLeft, ArrowUpRight, ChartPie, Gauge, LayoutDashboard, Lightbulb, LogOut, PanelLeftClose, PanelLeftOpen, Settings, Sparkles } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ChartPie, Gauge, LayoutDashboard, LayoutGrid, Lightbulb, LogOut, PanelLeftClose, PanelLeftOpen, Settings, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -24,7 +24,7 @@ const nav = [
 ];
 
 const SETTINGS = "/dashboard/settings";
-const soon = ["Widgets"];
+const WIDGETS = "/dashboard/widgets";
 
 function initials(name?: string) {
   return (name ?? "?").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
@@ -124,19 +124,28 @@ function Shell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {!collapsed && (
-          <>
-            <p className="mt-8 px-3 text-[10.5px] font-medium uppercase tracking-[0.16em] text-subtle">Coming soon</p>
-            <div className="mt-2 space-y-0.5">
-              {soon.map((x) => (
-                <div key={x} className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-subtle">
-                  {x}
-                  <span className="rounded-full border border-line px-1.5 py-px text-[9.5px] uppercase tracking-wider">Soon</span>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+        {!collapsed && <p className="mt-8 px-3 text-[10.5px] font-medium uppercase tracking-[0.16em] text-subtle">On your phone</p>}
+        {(() => {
+          const active = isActive(WIDGETS);
+          return (
+            <Link
+              href={WIDGETS}
+              title={collapsed ? "Widgets" : undefined}
+              className={`group relative ${collapsed ? "mt-4 justify-center px-0" : "mt-2 gap-3 px-3"} flex items-center rounded-xl py-2.5 text-sm transition ${
+                active ? "bg-fg/[0.06] text-fg shadow-[inset_0_1px_0_rgb(var(--hl)/0.05)]" : "text-muted hover:bg-fg/[0.03] hover:text-fg"
+              }`}
+            >
+              {active && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-brand" />}
+              <LayoutGrid size={collapsed ? 19 : 17} className={active ? "text-brand" : "text-subtle group-hover:text-fg-2"} />
+              {!collapsed && (
+                <>
+                  Widgets
+                  <span className="ml-auto rounded-full border border-line px-1.5 py-px text-[9.5px] uppercase tracking-wider text-subtle">Android</span>
+                </>
+              )}
+            </Link>
+          );
+        })()}
 
         {(() => {
           const n = nav.find((x) => x.href === SETTINGS)!;
