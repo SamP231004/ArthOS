@@ -23,6 +23,8 @@ android {
     targetSdkVersion safeExtGet("targetSdkVersion", 36)
     versionCode 1
     versionName "1.0.0"
+    // ML Kit finds its parts by class name at runtime; keep them through the app's release minification (R8)
+    consumerProguardFiles "consumer-rules.pro"
   }
   lintOptions {
     abortOnError false
