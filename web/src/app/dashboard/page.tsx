@@ -8,6 +8,7 @@ import { PortfolioCard } from "@/components/invest/portfolio-card";
 import { SavingsAccountCard } from "@/components/savings-account-card";
 import { CATEGORY_COLORS, DailyBars, Donut, SpendCurve } from "@/components/charts";
 import { MonthPicker } from "@/components/month-picker";
+import { InsightsStrip } from "@/components/insights-strip";
 import { ScanImport } from "@/components/scan-import";
 import { ExpenseModal, IncomeModal } from "@/components/transaction-forms";
 import { Button, ErrorNote, Skeleton } from "@/components/ui";
@@ -139,6 +140,8 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
           </div>
         </div>
       </section>
+
+      <InsightsStrip month={s.month} />
 
       <section className="grid gap-6 lg:grid-cols-2">
         <BudgetCard month={s.month} currency={cur} />

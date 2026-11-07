@@ -124,7 +124,9 @@ public final class InsightsCalculator {
         trends.stream().filter(t -> t.changePct() != null && t.changePct().compareTo(BigDecimal.valueOf(-20)) <= 0
                         && t.typical().subtract(t.thisMonth()).compareTo(BigDecimal.valueOf(300)) >= 0)
                 .findFirst()
-                .ifPresent(t -> out.add(label(t.category()) + " is down " + t.changePct().abs().setScale(0, RoundingMode.HALF_UP) + "% ("
+                .ifPresent(t -> out.add(t.thisMonth().signum() == 0
+                        ? "Nothing on " + label(t.category()).toLowerCase(Locale.ROOT) + " yet — usually " + money.f(t.typical()) + (current ? " by now." : " a month.")
+                        : label(t.category()) + " is down " + t.changePct().abs().setScale(0, RoundingMode.HALF_UP) + "% ("
                         + money.f(t.thisMonth()) + " vs " + money.f(t.typical()) + ") — nicely done."));
 
         BigDecimal income = sumIncome(in.incomes(), m);
@@ -169,6 +171,7 @@ public final class InsightsCalculator {
         Set<ExpenseCategory> cats = EnumSet.noneOf(ExpenseCategory.class);
         cats.addAll(now.keySet());
         cats.addAll(typical.keySet());
+        cats.removeAll(FIXED); // rent and EMIs don't move month to month — they're in the health score instead
         return cats.stream()
                 .map(c -> {
                     BigDecimal a = now.getOrDefault(c, BigDecimal.ZERO), t = typical.getOrDefault(c, BigDecimal.ZERO);
@@ -266,7 +269,10 @@ public final class InsightsCalculator {
             BigDecimal projected = b.projectedSpend() != null ? b.projectedSpend() : b.spentMonth();
             BigDecimal ratio = projected == null ? BigDecimal.ZERO : projected.divide(b.limit(), 3, RoundingMode.HALF_UP);
             int pts = ratio.compareTo(BigDecimal.ONE) <= 0 ? 20 : ratio.compareTo(new BigDecimal("1.1")) <= 0 ? 12 : ratio.compareTo(new BigDecimal("1.25")) <= 0 ? 6 : 0;
-            parts.add(new Component("budget", "Budget", pts, 20, ratio.multiply(HUNDRED).setScale(0, RoundingMode.HALF_UP) + "% of limit",
+            BigDecimal usedPct = ratio.multiply(HUNDRED);
+            String used = (usedPct.compareTo(BigDecimal.valueOf(95)) > 0 && usedPct.compareTo(BigDecimal.valueOf(105)) < 0
+                    ? usedPct.setScale(1, RoundingMode.HALF_UP) : usedPct.setScale(0, RoundingMode.HALF_UP)).toPlainString();
+            parts.add(new Component("budget", "Budget", pts, 20, used + "% of limit",
                     "On course to spend " + money.f(projected) + " against your " + money.f(b.limit()) + " budget.",
                     pts == 20 ? "Right on track." : "Ease off for a few days — the daily budget adapts as you do."));
         } else {
