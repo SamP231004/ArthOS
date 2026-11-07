@@ -1,144 +1,167 @@
-# ArthOS — Take Control of Your अर्थ
+<div align="center">
 
-ArthOS is a personal financial operating system that tracks income, expenses, budgets, investments and net worth in one place.
-Users get it two ways, the **Android app** and the **website**, and both use the **same backend and account**.
+<img src="docs/images/logo.svg" alt="ArthOS अर्थ logo" width="112" height="112" />
+
+# ArthOS
+
+### Take Control of Your अर्थ
+
+**A personal financial operating system: income, spending, budgets, savings, investments and insights in one place.**
+
+[🌐 Live website](https://os-arth.vercel.app/) · [📱 Download the Android app](https://github.com/SamP231004/ArthOS/releases/tag/android-latest) · [📚 Documentation](#-documentation)
+
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F?logo=springboot&logoColor=white)
+![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
+![Expo](https://img.shields.io/badge/Expo-SDK_58-000020?logo=expo&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-v4-06B6D4?logo=tailwindcss&logoColor=white)
+
+</div>
+
+---
+
+## 💡 What is ArthOS?
+
+Most people track money in three places: salary in a bank app, spending in a notes app or spreadsheet, and
+investments in a broker app. None of them answer the questions that matter day to day:
+
+> *"How much can I spend **today**?"* · *"Am I actually saving?"* · *"Where did my money go this month?"* · *"Is my portfolio growing?"*
+
+ArthOS brings all of it together around one simple promise:
+
+| | |
+|---|---|
+| 💰 **Know what comes in** | Salary, freelance, bonuses, dividends, refunds, all logged by type. |
+| 💸 **Know what goes out** | Every expense by category, merchant and payment method. Add one by scanning a screenshot. |
+| 🏦 **Know what you keep** | **Save first:** a share of every income goes into a savings account the moment it arrives, and carries forward month after month. |
+| 📈 **Know what grows** | Stocks, mutual funds, gold and bonds at live prices, with P&L, XIRR and allocation. |
+| 🧭 **Know what to do next** | A daily spending number, a health score that explains itself, and alerts before things go wrong. |
+
+The same account works on the **🌐 website** and the **📱 Android app**. Both talk to the same backend, so anything you add on one appears on the other immediately.
+
+> **Try it without signing up:** tap **"Try the demo"** on the [website](https://os-arth.vercel.app/) or in the app. You get a private sandbox with six months of realistic data. It deletes itself after 24 hours.
+
+---
+
+## ✨ Features at a glance
+
+| Module | What it does | Read more |
+|---|---|---|
+| 🏠 **Overview** | Month at a glance: income, spending, saved first, left to spend, daily trend, top categories, recent activity. | [Money model](docs/money-model.md) |
+| 💰 **Income** | Log income by type (salary, freelance, bonus, interest, dividend…), mark it recurring, filter by month. | [Money model](docs/money-model.md) |
+| 💸 **Expenses** | 15 categories, 7 payment sources, merchant search, filters, recurring flag, and smart category suggestions as you type. | [Automation](docs/automation.md) |
+| 🎯 **Budget** | Turns a monthly limit into **one daily number**. Fixed, adaptive or weekly modes, with a calendar history and an explanation of the maths. | [Budget engine](docs/budget.md) |
+| 🏦 **Savings** | Save-first rule (a % of income or a fixed amount). The savings account carries forward and funds your investments. | [Money model](docs/money-model.md) |
+| 📈 **Investments** | Stocks/ETFs (NSE/BSE), mutual funds (AMFI), gold (24K/22K, digital/physical/SGB) and bonds. Live prices, P&L, XIRR, allocation, history. Each purchase can be paid from savings, spending money, or split between them. | [Investments](docs/investments.md) |
+| 📸 **Scan to add** | Share a GPay/PhonePe/Paytm screenshot, bank SMS or receipt to ArthOS. The text is read **on your device** and opens a pre-filled form. | [Automation](docs/automation.md) |
+| 🔁 **Recurring detection** | Finds bills and income that repeat monthly but aren't marked recurring yet. | [Automation](docs/automation.md) |
+| 💡 **Insights** | The month summarised in a few lines, a **financial health score out of 100**, unusual spending, subscription leakage, alerts and suggestions. **No external AI.** | [Insights](docs/insights.md) |
+| 🔔 **Notifications** | The app notifies you about budget overages and recurring bills due soon. Bills are reminded at 9 am on their due date. | [Insights](docs/insights.md#-notifications-app) |
+| 🎨 **Two themes** | 🌲 **Forest** (dark) and 🕊️ **Ivory** (light), toggled with the sun/moon button. The app mirrors the website. | [Design](docs/design.md) |
+
+---
+
+## 🧱 How it's built
+
+```mermaid
+flowchart LR
+    subgraph Clients
+        W["🌐 Website<br/>Next.js 16 · Vercel"]
+        A["📱 Android app<br/>Expo SDK 58 · EAS"]
+    end
+    subgraph Server["☁️ Backend · Render (Docker)"]
+        API["Spring Boot 3.5 REST API<br/>JWT auth"]
+        ENG["Pure calculators<br/>Budget · Savings · Portfolio · Insights · Parser"]
+        JOB["⏱️ Price refresh job<br/>every 15 min"]
+    end
+    DB[("🍃 MongoDB Atlas")]
+    MKT["📊 Market data<br/>Yahoo Finance · mfapi.in"]
+
+    W -- HTTPS + Bearer token --> API
+    A -- HTTPS + Bearer token --> API
+    API --> ENG
+    API --> DB
+    JOB --> MKT
+    JOB --> DB
+```
 
 ```
 ArthOS/
-├── backend/   Spring Boot 3.5 · Java 21 · MongoDB · JWT     → deploy as Docker (Render / Railway / Fly)
-├── web/       Next.js 16 · React 19 · Tailwind v4           → deploy on Vercel (Root Directory = web)
-├── app/       Expo SDK 58 · React Native · Expo Router      → build with EAS (Android first)
-└── ArthOS_Detailed_Product_Blueprint.docx                   → product spec
+├── backend/   ☕ Spring Boot 3.5 · Java 21 · MongoDB · JWT        → Docker on Render
+├── web/       ▲  Next.js 16 · React 19 · Tailwind v4             → Vercel
+├── app/       📱 Expo SDK 58 · React Native 0.88 · Expo Router   → APK via GitHub Actions + EAS
+├── docs/      📚 Detailed documentation (you are here ↓)
+└── ArthOS_Detailed_Product_Blueprint.docx                       → the original product spec
 ```
 
-Each folder is independent, with its own dependencies, env file and deploy target.
+Each folder is independent, with its own dependencies, env file and deploy target. → [Tech stack & architecture](docs/tech-stack.md)
 
-## Phase 1 — Foundation (this release)
+---
 
-| Area | Backend | Web | App |
-|---|---|---|---|
-| Register / login (JWT) | ✅ | ✅ | ✅ (token in SecureStore) |
-| First-run onboarding (income target, currency, timezone) | ✅ | ✅ | ✅ |
-| Income CRUD (types, recurring flag, notes) | ✅ | ✅ | ✅ |
-| Expense CRUD (category, merchant, payment source, recurring) | ✅ | ✅ | ✅ |
-| Expense search & category filter | ✅ | ✅ | ✅ |
-| Month summary dashboard (totals, savings rate, category split, daily spend, recent) | ✅ | ✅ | ✅ |
-| Marketing landing page | — | ✅ | — |
+## 📚 Documentation
 
-Data is grouped by month: every income or expense stores a `monthKey` (`YYYY-MM`) with an index on `{userId, monthKey, date}`.
-Money is stored as `Decimal128`.
+| Doc | What's inside |
+|---|---|
+| 🧰 [Tech stack & architecture](docs/tech-stack.md) | Every library and why, the request flow, the data model, security, and the project principles. |
+| 🏦 [Money model: income, spending & save-first](docs/money-model.md) | How "saved first", "left to spend" and the carry-forward savings account are calculated. |
+| 🎯 [Budget engine](docs/budget.md) | Fixed, adaptive and weekly modes, with formulas and worked examples. |
+| 📈 [Investments](docs/investments.md) | Asset classes, price sources, average cost, XIRR, funding from savings, merging holdings. |
+| 📸 [Automation: scan, categories & recurring](docs/automation.md) | On-device OCR, the text parser, learned categories, recurring detection, Share → ArthOS. |
+| 💡 [Insights & health score](docs/insights.md) | Summaries, anomalies, leakage, the 100-point health score, alerts, notifications. |
+| 🎨 [Design system](docs/design.md) | Themes, typography, the dial navigation, and how the app mirrors the website. |
+| 🔌 [API reference](docs/api.md) | Every endpoint, with request and response notes. |
+| 🚀 [Running & deploying](docs/deployment.md) | Local setup, environment variables, Render, Vercel, and the Android build pipeline. |
+| 🗺️ [Roadmap](docs/roadmap.md) | What's shipped (Phases 1–5) and what's next (widgets, AI assistant, scale). |
 
-## Phase 2 — Budget engine (this release)
+---
 
-| Area | Backend | Web | App |
-|---|---|---|---|
-| Fixed daily, adaptive daily and weekly modes | ✅ | ✅ | ✅ |
-| Fixed costs excluded from the allowance (default: Rent, EMI) | ✅ | ✅ | ✅ |
-| Safe to spend today, month remaining, projection, week view | ✅ | ✅ | ✅ |
-| Warnings (80% caution, over today, over month) | ✅ | ✅ | ✅ |
-| Day-by-day calendar history | ✅ | ✅ | ✅ |
-| Step-by-step explanation of today's number | — | ✅ | ✅ |
+## 📸 Screenshots
 
-A budget is set once and carries forward to later months until changed. The engine is pure and unit-tested in
-[`BudgetCalculator`](backend/src/main/java/com/arthos/budget/BudgetCalculator.java).
+> 🚧 *Coming soon:* product screenshots of the website and app (Overview, Budget, Investments, Insights, Scan) will be added to [`docs/images/`](docs/images/).
 
-## Phase 3 — Investments (this release)
+---
 
-Stocks & ETFs (NSE/BSE via Yahoo Finance), mutual funds (AMFI NAVs via mfapi.in), gold (COMEX spot × USD/INR, per gram,
-24K/22K, digital/physical/SGB) and bonds (coupon, maturity, manual or face-value pricing). Holdings keep dated buy/sell
-lots, so the engine computes average-cost P&L, realised gains, day change, per-holding and portfolio XIRR, allocation by
-class and horizon, and a value-vs-invested history. Price providers sit behind a swappable interface with a Mongo-backed
-cache and a 15-minute refresh job. APIs: `/api/portfolio`, `/api/holdings` (+ `/lots`), `/api/market/search|quote`.
-
-## Phase 4 — Automation (this release)
-
-Scan a payment screenshot (GPay, PhonePe, Paytm, bank apps), a bank SMS or a shop receipt: the text is read **on the
-device** — Tesseract.js in the browser, Google ML Kit on Android (`expo-text-extractor`) — so the image is never uploaded.
-The backend's `TransactionTextParser` turns that text into a draft (income/expense, amount, date, merchant, UPI/UTR
-reference, payment method), and the normal form opens pre-filled for confirmation. Smart categories combine built-in
-Indian merchant rules with per-user rules learned from every saved expense (corrections win), and the expense form
-follows them as you type. `RecurringDetector` finds monthly bills/income at a steady amount and date that aren't marked
-recurring yet. APIs: `/api/automation/parse`, `/api/automation/category`, `/api/automation/recurring`.
-
-## Run locally
-
-**1. Backend** (needs MongoDB: local, Docker, or a free Atlas cluster)
+## ⚡ Quick start
 
 ```bash
-cd backend
-# optional: export MONGODB_URI=mongodb+srv://...   (defaults to mongodb://localhost:27017/arthos)
-mvn spring-boot:run          # http://localhost:8080/api/health
-mvn test                     # unit + web-layer tests (no DB needed)
+# 1️⃣ Backend: needs MongoDB (local, Docker, or a free Atlas cluster)
+cd backend && mvn spring-boot:run              # → http://localhost:8080/api/health
+
+# 2️⃣ Website
+cd web && cp .env.example .env.local           # NEXT_PUBLIC_API_URL=http://localhost:8080
+npm install && npm run dev                     # → http://localhost:3000
+
+# 3️⃣ App
+cd app && cp .env.example .env                 # EXPO_PUBLIC_API_URL=http://10.0.2.2:8080 (emulator)
+npm install && npx expo run:android            # dev build (the app has native modules)
 ```
 
-**2. Web**
+Full details, environment variables and deployment: [docs/deployment.md](docs/deployment.md).
 
-```bash
-cd web
-cp .env.example .env.local   # NEXT_PUBLIC_API_URL=http://localhost:8080
-npm install && npm run dev   # http://localhost:3000
-```
+---
 
-**3. App**
+## 🗺️ Roadmap
 
-```bash
-cd app
-cp .env.example .env         # EXPO_PUBLIC_API_URL (10.0.2.2 = host from Android emulator)
-npm install && npx expo start --android
-```
-
-## API (v1)
-
-All endpoints except `/api/auth/*` and `/api/health` need `Authorization: Bearer <token>`.
-
-| Method | Path | Notes |
+| Phase | Theme | Status |
 |---|---|---|
-| POST | `/api/auth/register` | `{name, email, password}` → `{token, expiresAt, user}` |
-| POST | `/api/auth/login` | `{email, password}` → `{token, expiresAt, user}` |
-| GET / PATCH | `/api/users/me` | profile, `monthlyIncomeTarget`, `onboardingCompleted` |
-| GET / POST | `/api/incomes?month=YYYY-MM` | list for month / create |
-| GET / PUT / DELETE | `/api/incomes/{id}` | |
-| GET / POST | `/api/expenses?month=&category=&q=&minAmount=&maxAmount=` | filtered list / create |
-| GET / PUT / DELETE | `/api/expenses/{id}` | |
-| GET | `/api/summary?month=YYYY-MM` | dashboard payload |
-| GET / PUT / DELETE | `/api/budget?month=YYYY-MM` | budget status (safe-to-spend today, week, day-by-day calendar); PUT `{limit, mode, excludedCategories}` |
-| POST | `/api/auth/demo` | private demo sandbox (3 months of data + budget), self-deletes after 24h |
-| GET | `/api/health` | liveness |
+| 1 | 🧱 Foundation: auth, onboarding, income, expenses, dashboard | ✅ Shipped |
+| 2 | 🎯 Budget engine: fixed, adaptive, weekly | ✅ Shipped |
+| 3 | 📈 Investments: stocks, MFs, gold, bonds, live prices | ✅ Shipped |
+| 4 | 📸 Automation: OCR scan, smart categories, recurring detection | ✅ Shipped |
+| 5 | 💡 Insights: summaries, health score, anomalies, notifications | ✅ Shipped |
+| 6 | 🧩 Home-screen widgets | 🔜 Next |
+| 7 | 🤖 AI assistant | 📝 Planned |
+| 8 | 🚀 Scale: goals, family sharing, documents | 📝 Planned |
 
-Errors always use the same shape: `{status, message, fieldErrors?, timestamp}`.
+Details in [docs/roadmap.md](docs/roadmap.md).
 
-## Deploy
+---
 
-### Backend → Render (or any Docker host)
+<div align="center">
 
-Vercel can't run Spring Boot because it has no Java runtime, so the backend ships as a Docker image.
+<img src="docs/images/logo.svg" alt="अर्थ" width="40" height="40" />
 
-- **Render:** *New → Blueprint* picks up [`render.yaml`](render.yaml), which builds only `backend/`. Set `MONGODB_URI` and `CORS_ALLOWED_ORIGINS`; `JWT_SECRET` is generated for you.
-- **Railway / Fly.io / Cloud Run:** point the service at `backend/` and use its `Dockerfile`. The service must listen on `$PORT`.
+Built by **Samarth Patel** · *Understand every rupee in motion.*
 
-| Env var | Required | Example |
-|---|---|---|
-| `MONGODB_URI` | ✅ | `mongodb+srv://user:pass@cluster.mongodb.net/arthos` |
-| `JWT_SECRET` | ✅ | 32+ random chars (`openssl rand -base64 48`) |
-| `CORS_ALLOWED_ORIGINS` | ✅ | `https://arthos.vercel.app,https://*.vercel.app` |
-| `JWT_EXPIRY_HOURS` | | `168` (7 days) |
-
-### Web → Vercel
-
-1. *Add New Project* → import this repo → set **Root Directory** to `web` (Next.js is auto-detected).
-2. Add env var `NEXT_PUBLIC_API_URL` = your backend URL.
-3. Add the Vercel domain to the backend's `CORS_ALLOWED_ORIGINS`.
-
-### App → EAS
-
-```bash
-cd app
-npx eas-cli@latest build --platform android --profile preview
-```
-
-Set `EXPO_PUBLIC_API_URL` to the production backend URL first, either in `.env` or in the EAS environment variables.
-
-## Roadmap
-
-~~Phase 2 Budget engine~~ ✅ → ~~3 Investments~~ ✅ → ~~4 OCR automation~~ ✅ → 5 Insights → 6 Widgets → 7 AI assistant → 8 Scale.
-See the blueprint for details.
+</div>
