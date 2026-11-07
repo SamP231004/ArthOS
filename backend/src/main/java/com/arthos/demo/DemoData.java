@@ -32,7 +32,7 @@ public final class DemoData {
     private final String userId;
     private final LocalDate today;
     private final Instant expiresAt;
-    private final Random rnd;
+    private Random rnd;
     private final List<Income> incomes = new ArrayList<>();
     private final List<Expense> expenses = new ArrayList<>();
 
@@ -46,7 +46,12 @@ public final class DemoData {
     public static Seed generate(String userId, LocalDate today, Instant expiresAt, Random rnd) {
         DemoData d = new DemoData(userId, today, expiresAt, rnd);
         YearMonth current = YearMonth.from(today);
-        for (int back = MONTHS - 1; back >= 0; back--) d.month(current.minusMonths(back), back);
+        long[] seeds = new long[MONTHS];
+        for (int i = 0; i < MONTHS; i++) seeds[i] = rnd.nextLong();
+        for (int back = MONTHS - 1; back >= 0; back--) {
+            d.rnd = new Random(seeds[back]); // each month draws from its own stream, so detail in one month never reshuffles another
+            d.month(current.minusMonths(back), back);
+        }
         return new Seed(d.incomes, d.expenses);
     }
 
@@ -71,9 +76,14 @@ public final class DemoData {
         expense(ym, 14, 1_500, HEALTH, "Cult gym", UPI, "Membership", true);
 
         // ---- everyday spending ----
+        // Full day-by-day detail for this month and last month (the ones people browse). Older months get fewer, larger
+        // entries with about the same totals: every demo inserts ~30% fewer documents, which is most of its start-up time.
+        int step = monthsAgo >= 2 ? 3 : 1;
         for (int day = 1; day <= ym.lengthOfMonth(); day++) {
-            if (chance(0.62)) expense(ym, day, between(140, 780), FOOD, pick("Swiggy", "Zomato", "Third Wave Coffee", "Office canteen", "Truffles"), UPI, null, false);
-            if (chance(0.48)) expense(ym, day, between(60, 420), TRANSPORT, pick("Uber", "Namma Metro", "Rapido", "Ola"), UPI, null, false);
+            if (day % step == 0 || step == 1) {
+                if (chance(0.62)) expense(ym, day, between(140 * step, 780 * step), FOOD, pick("Swiggy", "Zomato", "Third Wave Coffee", "Office canteen", "Truffles"), UPI, null, false);
+                if (chance(0.48)) expense(ym, day, between(60 * step, 420 * step), TRANSPORT, pick("Uber", "Namma Metro", "Rapido", "Ola"), UPI, null, false);
+            }
             if (day % 4 == 2) expense(ym, day, between(550, 2_400), GROCERIES, pick("BigBasket", "Blinkit", "Zepto", "DMart"), UPI, null, false);
         }
         for (int i = 0; i < 2 + rnd.nextInt(2); i++)

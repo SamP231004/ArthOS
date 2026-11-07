@@ -31,7 +31,7 @@ class DemoDataTest {
 
         assertTrue(seed.incomes().stream().allMatch(i -> !i.getDate().isAfter(today) && expiry.equals(i.getExpiresAt()) && "u1".equals(i.getUserId())));
         assertTrue(seed.expenses().stream().allMatch(e -> !e.getDate().isAfter(today) && expiry.equals(e.getExpiresAt()) && e.getAmount().signum() > 0));
-        assertTrue(seed.expenses().size() > 200, "should look lived-in, was " + seed.expenses().size());
+        assertTrue(seed.expenses().size() > 150, "should look lived-in (older months are coarser), was " + seed.expenses().size());
     }
 
     @Test

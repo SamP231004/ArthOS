@@ -1,5 +1,9 @@
 package com.arthos.demo;
 
+import com.arthos.common.Parallel;
+import java.util.concurrent.CompletableFuture;
+import org.springframework.scheduling.annotation.Scheduled;
+
 import com.arthos.budget.Budget;
 import com.arthos.budget.BudgetController;
 import com.arthos.budget.BudgetMode;
@@ -59,23 +63,30 @@ public class DemoService {
         Instant expiresAt = Instant.now().plus(TTL);
         String tag = UUID.randomUUID().toString().substring(0, 8);
 
-        User u = new User();
-        u.setName("Samarth Patel");
-        u.setEmail("demo-" + tag + "@demo.arthos.app");
-        u.setPasswordHash(encoder.encode(UUID.randomUUID().toString())); // unguessable: demo accounts can't log in by password
-        u.setOnboardingCompleted(true);
-        u.setSavingsMode(com.arthos.user.SavingsRule.Mode.PERCENT);
-        u.setSavingsValue(java.math.BigDecimal.valueOf(20));
-        u.setDemo(true);
-        u.setExpiresAt(expiresAt);
-        u = users.save(u);
+        User draft = new User();
+        draft.setName("Samarth Patel");
+        draft.setEmail("demo-" + tag + "@demo.arthos.app");
+        draft.setPasswordHash(encoder.encode(UUID.randomUUID().toString())); // unguessable: demo accounts can't log in by password
+        draft.setOnboardingCompleted(true);
+        draft.setSavingsMode(com.arthos.user.SavingsRule.Mode.PERCENT);
+        draft.setSavingsValue(java.math.BigDecimal.valueOf(20));
+        draft.setDemo(true);
+        draft.setExpiresAt(expiresAt);
+        final User u = users.save(draft);
 
         LocalDate today = LocalDate.now(java.time.ZoneId.of(u.getTimezone()));
         // Seeded by the date, not randomly: every demo started on the same day (web or app) shows the same month,
         // so the two clients agree. The data still moves with the calendar each day.
         DemoData.Seed seed = DemoData.generate(u.getId(), today, expiresAt, new Random(today.toEpochDay()));
-        incomes.saveAll(seed.incomes());
-        expenses.saveAll(seed.expenses());
+        // Everything below is independent, so it runs at once: the database is a network hop away and the market
+        // histories come from outside, so doing them one after another made the demo take several seconds.
+        var histories = Parallel.async(() -> market.histories(DemoPortfolio.marketKeys()));
+        var savedIncomes = Parallel.async(() -> incomes.saveAll(seed.incomes()));
+        // ~300 expenses: one insert per month, in parallel (a single bulk insert of all of them took over a second)
+        var savedExpenses = CompletableFuture.allOf(seed.expenses().stream()
+                .collect(java.util.stream.Collectors.groupingBy(com.arthos.expense.Expense::getMonthKey)).values().stream()
+                .map(batch -> Parallel.async(() -> expenses.saveAll(batch)))
+                .toArray(CompletableFuture[]::new));
 
         // One adaptive budget on the first demo month; later months inherit it, as a real user's would.
         Budget b = new Budget();
@@ -85,18 +96,34 @@ public class DemoService {
         b.setMode(BudgetMode.ADAPTIVE_DAILY);
         b.setExcludedCategories(BudgetController.DEFAULT_EXCLUDED);
         b.setExpiresAt(expiresAt);
-        budgets.save(b);
+        var savedBudget = Parallel.async(() -> budgets.save(b));
 
         // Investments priced from real history on each purchase date (falls back to fixed prices if sources are down).
         try {
-            var histories = market.histories(DemoPortfolio.marketKeys());
-            var portfolio = DemoPortfolio.build(u.getId(), today, expiresAt, histories);
-            fundFromSavings(u, portfolio, seed, today, histories.getOrDefault("GOLD:XAU", List.of()));
+            var h = Parallel.get(histories);
+            var portfolio = DemoPortfolio.build(u.getId(), today, expiresAt, h);
+            fundFromSavings(u, portfolio, seed, today, h.getOrDefault("GOLD:XAU", List.of()));
+            var savedUser = Parallel.async(() -> users.save(u));
             holdings.saveAll(portfolio);
+            Parallel.get(savedUser);
         } catch (Exception e) {
             log.warn("Demo portfolio skipped: {}", e.getMessage());
         }
+        Parallel.get(CompletableFuture.allOf(savedIncomes, savedExpenses, savedBudget));
         return u;
+    }
+
+    /**
+     * Keeps the demo portfolio's price histories in memory, so creating a demo never waits on Yahoo/mfapi or on
+     * loading two years of prices from the database. Runs right after startup, then every 30 minutes.
+     */
+    @Scheduled(initialDelayString = "PT5S", fixedDelayString = "PT30M")
+    void warmDemoPrices() {
+        try {
+            market.histories(DemoPortfolio.marketKeys());
+        } catch (Exception e) {
+            log.warn("Demo price warm-up failed: {}", e.getMessage());
+        }
     }
 
     /**
@@ -121,6 +148,5 @@ public class DemoService {
         BigDecimal start = low.negate().add(BigDecimal.valueOf(60_000)).max(BigDecimal.valueOf(60_000))
                 .divide(BigDecimal.valueOf(1000), 0, RoundingMode.CEILING).multiply(BigDecimal.valueOf(1000));
         u.setSavingsStartingBalance(start);
-        users.save(u);
     }
 }

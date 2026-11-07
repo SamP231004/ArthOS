@@ -3,6 +3,9 @@ package com.arthos.summary;
 import com.arthos.auth.CurrentUser;
 import com.arthos.common.ApiException;
 import com.arthos.common.MonthKey;
+import com.arthos.common.Parallel;
+import com.arthos.income.Income;
+import com.arthos.portfolio.HoldingRepository;
 import com.arthos.expense.ExpenseRepository;
 import com.arthos.income.IncomeRepository;
 import com.arthos.savings.SavingsService;
@@ -25,13 +28,13 @@ public class SummaryController {
     private final UserRepository users;
     private final IncomeRepository incomes;
     private final ExpenseRepository expenses;
-    private final SavingsService savings;
+    private final HoldingRepository holdings;
 
-    public SummaryController(UserRepository users, IncomeRepository incomes, ExpenseRepository expenses, SavingsService savings) {
+    public SummaryController(UserRepository users, IncomeRepository incomes, ExpenseRepository expenses, HoldingRepository holdings) {
         this.users = users;
         this.incomes = incomes;
         this.expenses = expenses;
-        this.savings = savings;
+        this.holdings = holdings;
     }
 
     /** Month summary for the dashboard. {@code month} is "YYYY-MM"; defaults to the current month. */
@@ -40,10 +43,19 @@ public class SummaryController {
         User user = users.findById(CurrentUser.id()).orElseThrow(() -> ApiException.unauthorized("Account no longer exists"));
         ZoneId zone = MonthKey.zoneOrDefault(user.getTimezone());
         YearMonth ym = MonthKey.parseOrCurrent(month, zone);
-        String key = ym.toString();
+        String key = ym.toString(), uid = user.getId();
+        // independent reads, all at once
+        var allIncomesF = Parallel.async(() -> incomes.findByUserId(uid));
+        var holdingsF = Parallel.async(() -> holdings.findByUserIdOrderByCreatedAtAsc(uid));
+        var expensesF = Parallel.async(() -> expenses.findByUserIdAndMonthKeyOrderByDateDescCreatedAtDesc(uid, key));
+        var allIncomes = Parallel.get(allIncomesF);
+        var monthIncomes = allIncomes.stream().filter(i -> key.equals(i.getMonthKey()))
+                .sorted(java.util.Comparator.comparing(Income::getDate, java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder()))
+                        .thenComparing(Income::getCreatedAt, java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())))
+                .toList();
         return MonthSummaryCalculator.calculate(
-                ym, LocalDate.now(zone), user.getCurrency(), user.getMonthlyIncomeTarget(), user.savingsRule(), savings.account(user, ym),
-                incomes.findByUserIdAndMonthKeyOrderByDateDescCreatedAtDesc(user.getId(), key),
-                expenses.findByUserIdAndMonthKeyOrderByDateDescCreatedAtDesc(user.getId(), key));
+                ym, LocalDate.now(zone), user.getCurrency(), user.getMonthlyIncomeTarget(), user.savingsRule(),
+                SavingsService.account(user, ym, allIncomes, Parallel.get(holdingsF)),
+                monthIncomes, Parallel.get(expensesF));
     }
 }

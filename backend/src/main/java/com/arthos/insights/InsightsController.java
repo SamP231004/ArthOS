@@ -7,6 +7,7 @@ import com.arthos.budget.BudgetRepository;
 import com.arthos.budget.BudgetStatus;
 import com.arthos.common.ApiException;
 import com.arthos.common.MonthKey;
+import com.arthos.common.Parallel;
 import com.arthos.expense.Expense;
 import com.arthos.expense.ExpenseRepository;
 import com.arthos.income.IncomeRepository;
@@ -58,23 +59,32 @@ public class InsightsController {
 
         List<String> months = new ArrayList<>();
         for (int i = 0; i <= 3; i++) months.add(ym.minusMonths(i).toString());
-        List<Expense> ex = expenses.findByUserIdAndMonthKeyIn(user.getId(), months);
-        var in = incomes.findByUserIdAndMonthKeyIn(user.getId(), months);
+        String uid = user.getId(), key = ym.toString();
+        // independent reads, all at once (one database round trip instead of six)
+        var exF = Parallel.async(() -> expenses.findByUserIdAndMonthKeyIn(uid, months));
+        var allIncomesF = Parallel.async(() -> incomes.findByUserId(uid));
+        var holdingsF = Parallel.async(() -> holdings.findByUserIdOrderByCreatedAtAsc(uid));
+        var ownF = Parallel.async(() -> budgets.findByUserIdAndMonthKey(uid, key));
+        var earlierF = Parallel.async(() -> budgets.findFirstByUserIdAndMonthKeyLessThanOrderByMonthKeyDesc(uid, key));
+
+        List<Expense> ex = Parallel.get(exF);
+        var allIncomes = Parallel.get(allIncomesF);
+        var allHoldings = Parallel.get(holdingsF);
+        var in = allIncomes.stream().filter(i -> months.contains(i.getMonthKey())).toList();
 
         List<LocalDate> buys = new ArrayList<>();
-        for (Holding h : holdings.findByUserIdOrderByCreatedAtAsc(user.getId()))
+        for (Holding h : allHoldings)
             for (Holding.Lot l : h.getLots())
                 if (l.getType() == Holding.LotType.BUY && l.getDate() != null) buys.add(l.getDate());
 
         return InsightsCalculator.calculate(new InsightsCalculator.Input(ym, today, user.getCurrency(), user.savingsRule(), ex, in,
-                budget(user.getId(), ym, today, ex), savings.account(user, ym), buys));
+                budget(ym, today, ex, Parallel.get(ownF), Parallel.get(earlierF)), SavingsService.account(user, ym, allIncomes, allHoldings), buys));
     }
 
     /** The month's own budget, or the latest earlier one it inherits (as the budget page does). */
-    private BudgetStatus budget(String userId, YearMonth ym, LocalDate today, List<Expense> ex) {
+    private static BudgetStatus budget(YearMonth ym, LocalDate today, List<Expense> ex, Optional<Budget> own, Optional<Budget> earlier) {
         String key = ym.toString();
-        Optional<Budget> own = budgets.findByUserIdAndMonthKey(userId, key);
-        Optional<Budget> b = own.isPresent() ? own : budgets.findFirstByUserIdAndMonthKeyLessThanOrderByMonthKeyDesc(userId, key);
+        Optional<Budget> b = own.isPresent() ? own : earlier;
         if (b.isEmpty()) return BudgetStatus.notConfigured(key);
         List<Expense> monthOnly = ex.stream().filter(e -> key.equals(e.getMonthKey())).toList();
         return BudgetCalculator.calculate(ym, today, b.get().getLimit(), b.get().getMode(), b.get().getExcludedCategories(), monthOnly,

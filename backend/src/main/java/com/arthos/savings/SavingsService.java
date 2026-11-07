@@ -1,5 +1,6 @@
 package com.arthos.savings;
 
+import com.arthos.common.Parallel;
 import com.arthos.income.Income;
 import com.arthos.income.IncomeRepository;
 import com.arthos.portfolio.Holding;
@@ -29,8 +30,14 @@ public class SavingsService {
     }
 
     public SavingsAccount account(User u, YearMonth month) {
-        return SavingsAccount.calculate(month, u.getSavingsStartingBalance(), u.savingsRule(),
-                incomeByMonth(incomes.findByUserId(u.getId())), flows(holdings.findByUserIdOrderByCreatedAtAsc(u.getId())));
+        var allIncomes = Parallel.async(() -> incomes.findByUserId(u.getId()));
+        var all = Parallel.async(() -> holdings.findByUserIdOrderByCreatedAtAsc(u.getId()));
+        return account(u, month, Parallel.get(allIncomes), Parallel.get(all));
+    }
+
+    /** Same, from data the caller already loaded (all of the user's incomes and holdings). */
+    public static SavingsAccount account(User u, YearMonth month, List<Income> allIncomes, List<Holding> allHoldings) {
+        return SavingsAccount.calculate(month, u.getSavingsStartingBalance(), u.savingsRule(), incomeByMonth(allIncomes), flows(allHoldings));
     }
 
     public static Map<YearMonth, BigDecimal> incomeByMonth(List<Income> list) {
