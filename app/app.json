@@ -45,13 +45,15 @@
         }
       ],
       [
-        "expo-share-intent",
+        "expo-sharing",
         {
-          "androidIntentFilters": [
-            "image/*",
-            "text/*"
-          ],
-          "disableIOS": true
+          "android": {
+            "enabled": true,
+            "singleShareMimeTypes": [
+              "image/*",
+              "text/plain"
+            ]
+          }
         }
       ]
     ],

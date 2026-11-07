@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider as NavThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { ShareIntentProvider } from 'expo-share-intent';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -46,13 +45,11 @@ export default function RootLayout() {
       }),
   );
   return (
-    <ShareIntentProvider options={{ disabled: !scanAvailable, resetOnBackground: true }}>
-      <ThemeProvider>
-        <QueryClientProvider client={queryClient}>
-          <AppStack fontsLoaded={fontsLoaded} queryClient={queryClient} />
-        </QueryClientProvider>
-      </ThemeProvider>
-    </ShareIntentProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <AppStack fontsLoaded={fontsLoaded} queryClient={queryClient} />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 

@@ -21,7 +21,7 @@ export async function readText(uri: string): Promise<string> {
 /** Short, user-facing reason for a failed read (shown under the friendly message so problems can be reported). */
 export function readError(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);
-  return msg.length > 140 ? `${msg.slice(0, 140)}…` : msg;
+  return msg.length > 320 ? `${msg.slice(0, 320)}…` : msg;
 }
 
 /** What the form screens receive (as a JSON route param) to open pre-filled for confirmation. */
