@@ -57,6 +57,7 @@ The same account works on the **🌐 website** and the **📱 Android app**. Bot
 | 📸 **Scan to add** | Share a GPay/PhonePe/Paytm screenshot, bank SMS or receipt to ArthOS. The text is read **on your device** and opens a pre-filled form. | [Automation](docs/automation.md) |
 | 🔁 **Recurring detection** | Finds bills and income that repeat monthly but aren't marked recurring yet. | [Automation](docs/automation.md) |
 | 💡 **Insights** | The month summarised in a few lines, a **financial health score out of 100**, unusual spending, subscription leakage, alerts and suggestions. **No external AI.** | [Insights](docs/insights.md) |
+| 🧩 **Home-screen widgets** | Safe to spend, month snapshot, portfolio and quick add on your Android home screen, with per-widget theme and a hide-amounts option. | [Widgets](docs/widgets.md) |
 | 🔔 **Notifications** | The app notifies you about budget overages and recurring bills due soon. Bills are reminded at 9 am on their due date. | [Insights](docs/insights.md#-notifications-app) |
 | 🎨 **Two themes** | 🌲 **Forest** (dark) and 🕊️ **Ivory** (light), toggled with the sun/moon button. The app mirrors the website. | [Design](docs/design.md) |
 
@@ -109,10 +110,12 @@ Each folder is independent, with its own dependencies, env file and deploy targe
 | 📈 [Investments](docs/investments.md) | Asset classes, price sources, average cost, XIRR, funding from savings, merging holdings. |
 | 📸 [Automation: scan, categories & recurring](docs/automation.md) | On-device OCR, the text parser, learned categories, recurring detection, Share → ArthOS. |
 | 💡 [Insights & health score](docs/insights.md) | Summaries, anomalies, leakage, the 100-point health score, alerts, notifications. |
+| 🧩 [Home-screen widgets](docs/widgets.md) | The four Android widgets, their settings, and how they stay fresh. |
 | 🎨 [Design system](docs/design.md) | Themes, typography, the dial navigation, and how the app mirrors the website. |
 | 🔌 [API reference](docs/api.md) | Every endpoint, with request and response notes. |
 | 🚀 [Running & deploying](docs/deployment.md) | Local setup, environment variables, Render, Vercel, and the Android build pipeline. |
-| 🗺️ [Roadmap](docs/roadmap.md) | What's shipped (Phases 1–5) and what's next (widgets, AI assistant, scale). |
+| 🗺️ [Roadmap](docs/roadmap.md) | What's shipped (Phases 1–6) and what's next (AI assistant, scale). |
+| 🧗 [Challenges & fixes](docs/challenges.md) | The hardest bugs we hit (sharing, OCR, demo speed…), what caused them and how we fixed them. |
 
 ---
 
@@ -150,7 +153,7 @@ Full details, environment variables and deployment: [docs/deployment.md](docs/de
 | 3 | 📈 Investments: stocks, MFs, gold, bonds, live prices | ✅ Shipped |
 | 4 | 📸 Automation: OCR scan, smart categories, recurring detection | ✅ Shipped |
 | 5 | 💡 Insights: summaries, health score, anomalies, notifications | ✅ Shipped |
-| 6 | 🧩 Home-screen widgets | 🔜 Next |
+| 6 | 🧩 Home-screen widgets | 🧪 Built, testing on device |
 | 7 | 🤖 AI assistant | 📝 Planned |
 | 8 | 🚀 Scale: goals, family sharing, documents | 📝 Planned |
 

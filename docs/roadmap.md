@@ -9,7 +9,7 @@ ArthOS follows the eight phases in the product blueprint
 timeline
     title ArthOS phases
     Shipped : 1 Foundation : 2 Budget engine : 3 Investments : 4 Automation : 5 Insights
-    Next    : 6 Widgets
+    Testing : 6 Widgets
     Planned : 7 AI assistant : 8 Scale
 ```
 
@@ -20,7 +20,7 @@ timeline
 | 3 | 📈 Investments | ✅ | ✅ | ✅ | ✅ |
 | 4 | 📸 Automation | ✅ | ✅ | ✅ | ✅ |
 | 5 | 💡 Insights | ✅ | ✅ | ✅ | ✅ |
-| 6 | 🧩 Widgets | 🔜 Next | | | |
+| 6 | 🧩 Widgets | 🧪 Testing | ✅ | — | ✅ |
 | 7 | 🤖 AI assistant | 📝 Planned | | | |
 | 8 | 🚀 Scale | 📝 Planned | | | |
 
@@ -60,18 +60,18 @@ alerts · suggestions · phone notifications for budget overages and bill due da
 
 ---
 
-## 🔜 Phase 6: Widgets
+## 🧪 Phase 6: Widgets → [widgets.md](widgets.md)
 
 > *Blueprint: "Deliver small and medium widgets with budget and portfolio information. Allow widget configuration per user preference. Ensure widget values refresh reliably."*
 
-| Planned | Size | Shows |
+| Built | Size | Shows |
 |---|---|---|
-| 🎯 Safe to spend today | Small | Today's allowance and status colour |
-| 📊 Month snapshot | Medium | Spent vs budget bar, left to spend, saved first |
-| 📈 Portfolio | Small/Medium | Value, day change, P&L |
-| ⚡ Quick add | Small | One tap → add expense / scan |
-| ⚙️ Configuration | | Choose which widget shows what |
-| 🔄 Reliable refresh | | Background refresh with a cached last value |
+| 🎯 Safe to spend today | 2×2 | Today's allowance and status colour |
+| 📊 Month snapshot | 4×2 | Spent vs budget bar, left to spend, saved first |
+| 📈 Portfolio | 2×2 | Value, day change, overall gain |
+| ⚡ Quick add | 2×1 | One tap → add expense / scan / income |
+| ⚙️ Configuration | | Per-widget theme (match app / Forest / Ivory) and hide amounts |
+| 🔄 Reliable refresh | | Every 30 min, after every save, on app open; last good values cached |
 
 ## 📝 Phase 7: AI assistant
 

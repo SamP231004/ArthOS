@@ -109,6 +109,12 @@ Details: [automation.md](automation.md)
 
 Details: [insights.md](insights.md)
 
+## 🧩 Widget
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/widget` | Compact snapshot for home-screen widgets: `{month, currency, today, budget, money, portfolio?, generatedAt}`. Details: [widgets.md](widgets.md) |
+
 ## ❤️ Health
 
 | Method | Path | Notes |

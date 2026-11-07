@@ -62,6 +62,73 @@
           "icon": "./assets/images/android-icon-monochrome.png",
           "color": "#a31c1b"
         }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "fonts": [
+            "./node_modules/@expo-google-fonts/manrope/500Medium/Manrope_500Medium.ttf",
+            "./node_modules/@expo-google-fonts/manrope/700Bold/Manrope_700Bold.ttf",
+            "./node_modules/@expo-google-fonts/newsreader/500Medium/Newsreader_500Medium.ttf"
+          ],
+          "widgets": [
+            {
+              "name": "SafeToSpend",
+              "label": "Safe to spend",
+              "description": "What you can spend today, from your budget",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "maxResizeWidth": "320dp",
+              "maxResizeHeight": "220dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000,
+              "widgetFeatures": "reconfigurable|configuration_optional"
+            },
+            {
+              "name": "MonthSnapshot",
+              "label": "Month snapshot",
+              "description": "Spent vs budget, left to spend and saved first",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "maxResizeWidth": "480dp",
+              "maxResizeHeight": "220dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000,
+              "widgetFeatures": "reconfigurable|configuration_optional"
+            },
+            {
+              "name": "Portfolio",
+              "label": "Portfolio",
+              "description": "Portfolio value, today's move and overall gain",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "maxResizeWidth": "400dp",
+              "maxResizeHeight": "220dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000,
+              "widgetFeatures": "reconfigurable|configuration_optional"
+            },
+            {
+              "name": "QuickAdd",
+              "label": "Quick add",
+              "description": "One tap to add an expense or scan a screenshot",
+              "minWidth": "110dp",
+              "minHeight": "40dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 1,
+              "maxResizeWidth": "400dp",
+              "maxResizeHeight": "180dp",
+              "resizeMode": "horizontal|vertical",
+              "widgetFeatures": "reconfigurable|configuration_optional"
+            }
+          ]
+        }
       ]
     ],
     "experiments": {

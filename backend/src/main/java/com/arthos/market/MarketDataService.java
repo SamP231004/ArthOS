@@ -108,14 +108,23 @@ public class MarketDataService {
         return e.getHistory() == null ? List.of() : e.getHistory();
     }
 
+    /**
+     * The cached entry for a key, loading it from Mongo on first use. The database read happens outside the map's
+     * lock on purpose: {@code computeIfAbsent} holds a {@code synchronized} lock while it runs, and a virtual thread
+     * blocking on I/O inside one pins its carrier thread. With every carrier pinned, all other virtual threads stalled
+     * until their 12 s timeouts (seen when the startup price warm-up overlapped a request).
+     */
     private MarketCacheEntry entry(String key) {
-        return memory.computeIfAbsent(key, k -> {
-            try {
-                return store.findById(k).orElseGet(() -> new MarketCacheEntry(k));
-            } catch (Exception ex) {
-                return new MarketCacheEntry(k);
-            }
-        });
+        MarketCacheEntry cached = memory.get(key);
+        if (cached != null) return cached;
+        MarketCacheEntry loaded;
+        try {
+            loaded = store.findById(key).orElseGet(() -> new MarketCacheEntry(key));
+        } catch (Exception ex) {
+            loaded = new MarketCacheEntry(key);
+        }
+        MarketCacheEntry raced = memory.putIfAbsent(key, loaded);
+        return raced != null ? raced : loaded;
     }
 
     private void save(MarketCacheEntry e) {

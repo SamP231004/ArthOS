@@ -2,18 +2,20 @@ import { IBMPlexMono_400Regular } from '@expo-google-fonts/ibm-plex-mono';
 import { Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold } from '@expo-google-fonts/manrope';
 import { Newsreader_400Regular, Newsreader_400Regular_Italic, Newsreader_500Medium } from '@expo-google-fonts/newsreader';
 import { TiroDevanagariHindi_400Regular } from '@expo-google-fonts/tiro-devanagari-hindi';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider as NavThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
+import { AppState } from 'react-native';
 
 import { ShareIntentRouter } from '@/components/share-intent-router';
 import { ApiError } from '@/lib/api';
 import { scanAvailable } from '@/lib/scan';
 import { useAuth, useHydrated } from '@/lib/auth-store';
 import { F, ThemeProvider, useTheme } from '@/theme';
+import { scheduleWidgetRefresh } from '@/widgets/refresh';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -39,6 +41,8 @@ export default function RootLayout() {
   const [queryClient] = useState(
     () =>
       new QueryClient({
+        // any successful save (expense, income, budget, investment, settings) → home-screen widgets show the new numbers
+        mutationCache: new MutationCache({ onSuccess: () => scheduleWidgetRefresh() }),
         defaultOptions: {
           queries: { staleTime: 30_000, retry: (count, err) => !(err instanceof ApiError && err.status >= 400 && err.status < 500) && count < 2 },
         },
@@ -67,6 +71,15 @@ function AppStack({ fontsLoaded, queryClient }: { fontsLoaded: boolean; queryCli
   useEffect(() => {
     if (!token) queryClient.clear();
   }, [token, queryClient]);
+
+  // Home-screen widgets follow sign-in/out and the theme, and catch up whenever the app comes back to the foreground.
+  useEffect(() => {
+    if (hydrated && ready) scheduleWidgetRefresh(500);
+  }, [token, scheme, hydrated, ready]);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (s) => s === 'active' && scheduleWidgetRefresh());
+    return () => sub.remove();
+  }, []);
 
   const navTheme = useMemo(() => {
     const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
