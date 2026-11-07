@@ -22,7 +22,7 @@ Each entry follows the same shape: **🐛 Symptom → 🔍 Root cause → 🛠�
 | 11 | [🕵️ Insights blamed a category for a one-off purchase](#11-️-insights-blamed-a-category-for-a-one-off-purchase) | 💡 Insights | ✅ Fixed |
 | 12 | [➖ "-₹0" on screen](#12--0-on-screen) | 🌐 Web · 📱 App | ✅ Fixed |
 | 13 | [⚛️ React Compiler lint rules](#13-️-react-compiler-lint-rules) | 🌐 Web | ✅ Fixed |
-| 14 | [🔐 Google sign-in on Android](#14--google-sign-in-on-android) | 📱 App | 🔄 In progress |
+| 14 | [🔐 Google sign-in on Android](#14--google-sign-in-on-android) | 📱 App | ✅ Fixed |
 | 15 | [✂️ Selling more than you held, after an edit](#15-️-selling-more-than-you-held-after-an-edit) | 📈 Investments | ✅ Fixed |
 | 16 | [🧵 A virtual-thread deadlock in the price cache](#16--a-virtual-thread-deadlock-in-the-price-cache) | ☕ Backend | ✅ Fixed |
 | 17 | [🫥 Home-screen widgets were completely blank](#17--home-screen-widgets-were-completely-blank) | 📱 App | ✅ Fixed |
@@ -267,6 +267,8 @@ Next.js 16 with the React Compiler enforces strict rules:
 
 **Tooling hurdle:** `keytool -printcert -jarfile` printed nothing, because it only reads old **v1** JAR signatures and modern
 APKs use the **v2** signing block. We wrote a small parser that reads the certificate straight from the APK Signing Block.
+
+✅ **Resolved:** the app code and backend were correct all along; once the Google Cloud OAuth setup matched the checklist below, sign-in worked on the APK.
 
 **Most common causes of `DEVELOPER_ERROR` (code 10):**
 
