@@ -236,3 +236,22 @@ export type ParseResult = {
 };
 export type CategorySuggestion = { category?: ExpenseCategory; source: 'LEARNED' | 'BUILT_IN' | 'NONE' };
 export type RecurringCandidate = { kind: 'INCOME' | 'EXPENSE'; key: string; name: string; tag?: string; typicalAmount: number; months: number; lastDate: string; dayOfMonth: number };
+
+// ---- Insights (Phase 5) — mirrors backend/src/main/java/com/arthos/insights/InsightsCalculator.java ----
+export type InsightLevel = 'DANGER' | 'WARN' | 'INFO';
+export type Insights = {
+  month: string;
+  current: boolean;
+  summary: string[];
+  trends: { category: ExpenseCategory; thisMonth: number; typical: number; changePct?: number }[];
+  anomalies: { id: string; merchant: string; category: ExpenseCategory; amount: number; date: string; typical: number; reason: string }[];
+  leakage: {
+    monthly: number;
+    yearly: number;
+    items: { name: string; category: ExpenseCategory; amount: number; lastDate: string }[];
+    priceRises: { name: string; before: number; now: number; changePct: number }[];
+  };
+  health: { score: number; grade: string; headline: string; components: { key: string; label: string; points: number; max: number; value: string; explanation: string; tip: string }[] };
+  alerts: { key: string; level: InsightLevel; title: string; body: string; dueDate?: string }[];
+  suggestions: { title: string; body: string; monthlyImpact?: number }[];
+};

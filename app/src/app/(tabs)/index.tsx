@@ -10,7 +10,8 @@ import { useAuth } from '@/lib/auth-store';
 import { STATUS_META } from '@/lib/budget-meta';
 import { dayLabel, label, money } from '@/lib/format';
 import { CLASS_META, signedPct, toneColor } from '@/lib/invest-meta';
-import { useBudget, usePortfolio, useSummary } from '@/lib/queries';
+import { useBudget, useInsights, usePortfolio, useSummary } from '@/lib/queries';
+import { healthColor } from '@/lib/health';
 import { tagColor } from '@/lib/ledger';
 import { ruleLabel } from '@/lib/savings';
 import type { MonthSummary, SavingsAccount } from '@/lib/types';
@@ -82,6 +83,7 @@ function Summary({ s }: { s: MonthSummary }) {
         <Button title="+ Expense" style={{ flex: 1 }} onPress={() => router.push('/expense-form')} />
       </View>
 
+      <InsightsMini month={s.month} />
       <BudgetMini month={s.month} cur={cur} />
       {s.savings && <SavingsMini a={s.savings} fmt={fmt} />}
       <PortfolioMini />
@@ -132,6 +134,39 @@ function Summary({ s }: { s: MonthSummary }) {
           </Card>
         </>
       )}
+    </>
+  );
+}
+
+/** Health score + any urgent alert, linking to the Insights tab. */
+function InsightsMini({ month }: { month: string }) {
+  const { c } = useTheme();
+  const { data } = useInsights(month);
+  if (!data) return null;
+  const urgent = data.alerts.filter((a) => a.level !== 'INFO');
+  const color = healthColor(c, data.health.score);
+  return (
+    <>
+      {urgent.map((a) => (
+        <View key={a.key} style={{ borderWidth: 1, borderColor: alpha(a.level === 'DANGER' ? c.expense : c.warn, 0.35), backgroundColor: alpha(a.level === 'DANGER' ? c.expense : c.warn, 0.08), borderRadius: R.md, padding: S.md }}>
+          <Text style={{ color: c.fg, fontFamily: F.uiSemibold, fontSize: 13.5 }}>{a.title}</Text>
+          <T variant="small" style={{ color: c.fg2 }}>{a.body}</T>
+        </View>
+      ))}
+      <Pressable onPress={() => router.push('/insights')}>
+        <Card style={{ flexDirection: 'row', alignItems: 'center', gap: S.md }}>
+          <View style={{ width: 46, height: 46, borderRadius: 23, borderWidth: 3, borderColor: color, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: c.fg, fontFamily: F.uiSemibold, fontSize: 15 }}>{data.health.score}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: c.fg, fontFamily: F.uiSemibold, fontSize: 14 }}>
+              Financial health · <Text style={{ color }}>{data.health.grade}</Text>
+            </Text>
+            <T variant="small" numberOfLines={1}>{data.health.headline}</T>
+          </View>
+          <T variant="small" style={{ color: c.brand }}>›</T>
+        </Card>
+      </Pressable>
     </>
   );
 }

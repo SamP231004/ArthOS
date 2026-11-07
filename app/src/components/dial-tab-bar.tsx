@@ -14,6 +14,7 @@ const ITEMS: Item[] = [
   { key: 'expenses', label: 'Expenses', icon: require('@/assets/images/tabIcons/expense.png'), route: 'expenses' },
   { key: 'budget', label: 'Budget', icon: require('@/assets/images/tabIcons/budget.png'), route: 'budget' },
   { key: 'invest', label: 'Invest', icon: require('@/assets/images/tabIcons/invest.png'), route: 'invest' },
+  { key: 'insights', label: 'Insights', icon: require('@/assets/images/tabIcons/insights.png'), route: 'insights' },
 ];
 
 const R = 128; // arc radius
