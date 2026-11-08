@@ -108,8 +108,8 @@ export default function SettingsScreen() {
                 if (data) syncAlertNotifications(data).catch(() => {});
               });
             }}
-            trackColor={{ true: c.brand, false: c.lineStrong }}
-            thumbColor={c.fg}
+            trackColor={{ true: alpha(c.brand, 0.45), false: c.lineStrong }}
+            thumbColor={pinned ? c.brand : c.subtle}
             accessibilityLabel="Pin money alerts"
           />
         </View>

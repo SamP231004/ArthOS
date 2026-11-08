@@ -36,7 +36,7 @@ export function Logo({ href = "/", size = "md" }: { href?: string; size?: "md" |
           letters' ink is centred on the tile (±0.3px at both sizes). */}
       <span className={`font-display leading-none tracking-tight translate-y-[0.115em] ${lg ? "text-[28px]" : "text-[22px]"}`}>
         <span className="text-fg">Arth</span>
-        <span className="font-medium text-brand">OS</span>
+        <span className="font-medium text-mark">OS</span>
       </span>
     </Link>
   );

@@ -251,7 +251,7 @@ function PortfolioTile(ctx: Ctx) {
 function QuickAdd() {
   return (
     <div className="flex h-[88px] gap-2 rounded-[22px] border border-line bg-surface p-2 shadow-sm">
-      <span className="grid flex-1 place-items-center rounded-2xl bg-brand text-[13px] font-bold text-white">+ Expense</span>
+      <span className="grid flex-1 place-items-center rounded-2xl bg-brand text-[13px] font-bold text-brand-fg">+ Expense</span>
       <span className="grid flex-1 place-items-center rounded-2xl bg-surface-2 text-[13px] font-bold">Scan</span>
     </div>
   );

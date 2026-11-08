@@ -64,10 +64,10 @@ export function DialNav({ items, activeHref }: { items: DialItem[]; activeHref: 
                 pointerEvents: open ? "auto" : "none",
               }}
             >
-              <span className={`grid h-11 w-11 place-items-center rounded-full border transition ${isActive ? "border-brand bg-brand/15 text-brand" : "border-line-strong bg-surface-2 text-fg-2"}`}>
+              <span className={`grid h-11 w-11 place-items-center rounded-full border transition ${isActive ? "border-mark bg-mark/15 text-mark" : "border-line-strong bg-surface-2 text-fg-2"}`}>
                 <it.icon size={18} />
               </span>
-              <span className={`whitespace-nowrap text-[10px] font-medium leading-none ${isActive ? "text-brand" : "text-muted"}`}>{it.label}</span>
+              <span className={`whitespace-nowrap text-[10px] font-medium leading-none ${isActive ? "text-mark" : "text-muted"}`}>{it.label}</span>
             </Link>
           );
         })}
@@ -78,7 +78,7 @@ export function DialNav({ items, activeHref }: { items: DialItem[]; activeHref: 
           onClick={() => setOpen((o) => !o)}
           aria-label={open ? "Close navigation" : `Navigation: ${active.label}. Open menu`}
           aria-expanded={open}
-          className="absolute bottom-3 left-1/2 grid h-[62px] w-[62px] place-items-center rounded-full btn-primary transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+          className="absolute bottom-3 left-1/2 grid h-[62px] w-[62px] place-items-center rounded-full btn-mark transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
           style={{ transform: `translateX(-50%) rotate(${open ? 135 : 0}deg)` }}
         >
           {/* segmented bezel */}

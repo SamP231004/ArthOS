@@ -42,7 +42,7 @@ export function Button({
 }) {
   const { c } = useTheme();
   const s = useStyles(makeButton);
-  const textColor = variant === 'primary' ? c.accentFg : variant === 'danger' ? c.expense : variant === 'ghost' ? c.muted : c.fg;
+  const textColor = variant === 'primary' ? c.inkFg : variant === 'danger' ? c.expense : variant === 'ghost' ? c.muted : c.fg;
   const inner = (
     <View style={[s.inner, size === 'lg' && s.lg]}>
       {loading ? <ActivityIndicator color={textColor} /> : icon}
@@ -56,7 +56,7 @@ export function Button({
       style={({ pressed }) => [s.base, variant === 'secondary' && s.secondary, (disabled || loading) && { opacity: 0.5 }, pressed && { opacity: 0.85, transform: [{ scale: 0.985 }] }, style]}
       {...rest}>
       {variant === 'primary' ? (
-        <LinearGradient colors={[c.accent1, c.accent2, c.accent3]} locations={[0, 0.55, 1]} style={s.gradient}>
+        <LinearGradient colors={[c.ink1, c.ink2]} style={s.gradient}>
           <View style={s.highlight} />
           {inner}
         </LinearGradient>
@@ -164,7 +164,7 @@ const makeText = (c: Palette) =>
     muted: { fontSize: 14, color: c.muted },
     small: { fontSize: 12, color: c.subtle },
     label: { fontFamily: F.uiMedium, fontSize: 11, color: c.subtle, textTransform: 'uppercase', letterSpacing: 1.2 },
-    eyebrow: { fontFamily: F.mono, fontSize: 11, color: c.brand, textTransform: 'uppercase', letterSpacing: 2 },
+    eyebrow: { fontFamily: F.uiMedium, fontSize: 12.5, color: c.muted, letterSpacing: 0.1 },
     big: { fontFamily: F.uiSemibold, fontSize: 40, letterSpacing: -1.2, fontVariant: ['tabular-nums'] },
     num: { fontFamily: F.uiSemibold, fontSize: 18, letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
   });

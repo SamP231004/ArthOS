@@ -1,10 +1,15 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────
-   ArthOS design system (light accent: forest; dark accent: crimson)
+   ArthOS design system
    Palette: Forest Green #06110C · Charcoal #171717 · Crimson #A31C1B
-   Dark  = "Forest": forest-green base, ivory type, crimson accent.
-   Light = "Ivory":  warm paper base, charcoal type, crimson accent.
+   Dark  = "Forest": forest-green base, ivory type.
+   Light = "Ivory":  warm paper base, charcoal type.
+   Each colour has one job:
+     --brand (ink)  interactive things: primary buttons, links, active controls. Neutral, so a
+                    button never reads as "good" (green) or "bad" (red).
+     --mark/accent  crimson identity, the same in both themes: logo, active-nav marker, hero words.
+     income/expense money direction only: in vs out, up vs down, under vs over.
    Theme is set on <html data-theme="dark|light">.
    ───────────────────────────────────────────────────────────── */
 :root,
@@ -15,11 +20,11 @@
 
   --bg: #06110c;
   --bg-2: #08160f;
-  --surface: #0c1a13;
-  --surface-2: #11221a;
-  --surface-3: #182d23;
-  --line: rgb(214 232 222 / 0.08);
-  --line-strong: rgb(214 232 222 / 0.14);
+  --surface: #10231a;
+  --surface-2: #152c21;
+  --surface-3: #1c3629;
+  --line: rgb(214 232 222 / 0.1);
+  --line-strong: rgb(214 232 222 / 0.17);
   --fg: #f2efe8;
   --fg-2: #d9d4c9;
   --muted: #a5b0a9;
@@ -29,7 +34,11 @@
   --accent-2: #c43a35;
   --accent-3: #a31c1b;
   --accent-fg: #fff7f3;
-  --brand: #ec7a74; /* crimson tuned for legibility on forest (≈6.5:1) */
+  --brand: #ece7db; /* ink: ivory on forest */
+  --mark: #e8706a; /* crimson identity, tuned for forest */
+  --ink-1: #f7f3ea;
+  --ink-2: #e0d9ca;
+  --ink-fg: #0c1a13;
   --glow: 196 58 53;
   --hl: 255 255 255;
 
@@ -50,7 +59,7 @@
   --c7: #6fb7ae;
   --c8: #8a948e;
 
-  --brand-fg: #ffffff;
+  --brand-fg: #0c1a13;
   --logo-1: #c43a35;
   --logo-2: #a31c1b;
   --logo-3: #6e1110;
@@ -78,13 +87,16 @@
   --muted: #5e5d58;
   --subtle: #8b8982;
 
-  /* Light accent is Forest Green (crimson read harsh on ivory); crimson stays in the logo only. */
-  --accent-1: #2f6e55;
-  --accent-2: #1d4d3b;
-  --accent-3: #0c2b20;
-  --accent-fg: #f6f4ef;
-  --brand: #1d5a44; /* ≈7.6:1 on ivory */
-  --glow: 29 77 59;
+  --accent-1: #c43a35;
+  --accent-2: #a31c1b;
+  --accent-3: #6e1110;
+  --accent-fg: #fff7f3;
+  --brand: #1f2b25; /* ink: deep forest-charcoal on ivory */
+  --mark: #a31c1b;
+  --ink-1: #2e3c35;
+  --ink-2: #18211d;
+  --ink-fg: #f6f4ef;
+  --glow: 163 28 27;
   --hl: 255 255 255;
 
   --income: #16794c;
@@ -104,7 +116,7 @@
   --c7: #c8643c;
   --c8: #8b8982;
 
-  --brand-fg: #ffffff;
+  --brand-fg: #f6f4ef;
   --field: #ffffff;
   --panel-shadow: 0 1px 2px rgb(23 23 23 / 0.05), 0 12px 32px -14px rgb(23 23 23 / 0.14);
   --silver-1: #171717;
@@ -134,6 +146,7 @@
   --color-muted: var(--muted);
   --color-subtle: var(--subtle);
   --color-brand: var(--brand);
+  --color-mark: var(--mark);
   --color-accent-1: var(--accent-1);
   --color-accent-2: var(--accent-2);
   --color-accent-3: var(--accent-3);
@@ -236,6 +249,18 @@ body {
     pointer-events: none;
   }
 
+  /* On ivory, crimson glow reads as a warning: keep it to a faint warm edge. */
+  [data-theme="light"] .panel-glow {
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgb(var(--glow) / 0.035), transparent 60%),
+      linear-gradient(180deg, rgb(var(--hl) / 0.035), rgb(var(--hl) / 0.01)),
+      var(--surface);
+    box-shadow: inset 0 1px 0 rgb(var(--hl) / 0.06), var(--panel-shadow);
+  }
+  [data-theme="light"] .panel-glow::before {
+    background: linear-gradient(180deg, rgb(var(--glow) / 0.18), var(--line) 35%, var(--line));
+  }
+
   /* Deep forest-green block; stays dark in both themes for contrast moments. */
   .panel-forest {
     position: relative;
@@ -248,16 +273,27 @@ body {
     box-shadow: 0 30px 80px -30px rgb(6 17 12 / 0.6);
   }
 
+  /* Primary action: neutral ink (ivory on Forest, charcoal on Ivory), never a money colour. */
   .btn-primary {
+    color: var(--ink-fg);
+    background: linear-gradient(180deg, var(--ink-1), var(--ink-2));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.22),
+      inset 0 -1px 0 rgb(0 0 0 / 0.15),
+      0 8px 20px -10px rgb(0 0 0 / 0.45);
+  }
+  .btn-primary:hover {
+    filter: brightness(1.08);
+  }
+
+  /* Crimson identity surface (the mobile dial's centre): same in both themes. */
+  .btn-mark {
     color: var(--accent-fg);
     background: linear-gradient(180deg, var(--accent-1), var(--accent-2) 55%, var(--accent-3));
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.28),
       inset 0 -1px 0 rgb(0 0 0 / 0.2),
       0 8px 22px -8px rgb(var(--glow) / 0.6);
-  }
-  .btn-primary:hover {
-    filter: brightness(1.08);
   }
 
   .btn-glass {
@@ -288,12 +324,12 @@ body {
     color: transparent;
   }
 
+  /* Section label: small and calm (was mono, uppercase, wide-tracked). */
   .eyebrow {
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--brand);
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--muted);
   }
 
   .glow-top {

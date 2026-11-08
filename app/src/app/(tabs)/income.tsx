@@ -72,7 +72,7 @@ export default function IncomeTab() {
       <SummaryGrid
         cells={[
           { k: 'Received', v: fmt(total), color: c.income, sub: `${all.length} ${all.length === 1 ? 'entry' : 'entries'}` },
-          { k: 'Saved first', v: fmt(saved), color: c.brand, sub: ruleLabel(rule, fmt) },
+          { k: 'Saved first', v: fmt(saved), color: c.income, sub: ruleLabel(rule, fmt) },
           { k: 'To spend', v: fmt(total - saved), sub: 'after saving first' },
           { k: 'Last month', v: prevTotal ? fmt(prevTotal) : '—', pill: change ? { text: change.text, color: change.up ? c.income : c.expense } : undefined, sub: change ? undefined : 'No data' },
         ]}

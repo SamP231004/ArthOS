@@ -82,7 +82,7 @@ export default function IncomePage() {
       <section className="panel overflow-hidden">
         <div className="grid grid-cols-2 lg:grid-cols-5">
           <SummaryCell k="Received" v={fmt(total)} tone="text-income" sub={`${all.length} ${all.length === 1 ? "entry" : "entries"}`} />
-          <SummaryCell k="Saved first" v={fmt(saved)} tone="text-brand" sub={`${ruleLabel(rule, fmt)} · ${fmt(total - saved)} to spend`} />
+          <SummaryCell k="Saved first" v={fmt(saved)} tone="text-income" sub={`${ruleLabel(rule, fmt)} · ${fmt(total - saved)} to spend`} />
           <SummaryCell k="Recurring" v={fmt(recurring.reduce((s, i) => s + i.amount, 0))} sub={`${recurring.length} monthly ${recurring.length === 1 ? "source" : "sources"}`} />
           <SummaryCell k="Top source" v={top ? fmt(top[1]) : "—"} sub={top ? <span className="truncate">{top[0]}</span> : "No income yet"} />
           <SummaryCell k="Last month" v={prevTotal ? fmt(prevTotal) : "—"} pill={change ? { text: change.text, tone: change.up ? "bg-income/10 text-income" : "bg-expense/10 text-expense" } : undefined} sub={!change ? "No data" : undefined} />

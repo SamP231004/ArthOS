@@ -11,20 +11,31 @@ the app share one design language, and **the app mirrors the web**: same palette
 
 Switch with the **☀️ / 🌙** button in the header. On Android the change is a smooth circular reveal from the button.
 
-| | 🌲 **Forest** (dark, default) | 🕊️ **Ivory** (light) |
+### 🎯 One job per colour
+
+The rule behind the palette: **a colour that means money never decorates, and a decoration never looks like money.**
+
+| Role | 🌲 Forest (dark) | 🕊️ Ivory (light) | Used for |
+|---|---|---|---|
+| ✍️ **Ink** (`brand`) | `#ECE7DB` ivory | `#1F2B25` deep forest-charcoal | Primary buttons, links, active controls, neutral data bars. Never green or red, so "+ Expense" doesn't look like "good" |
+| 🌹 **Crimson identity** (`mark`, `accent`) | `#E8706A` | `#A31C1B` | Logo, the "OS" in ArthOS, active-nav marker, the mobile dial's centre, ✦ highlights. The same brand in both themes |
+| 🟢 **Income / good** | `#4CC38A` | `#16794C` | Money in, gains, under budget |
+| 🔴 **Expense / bad** | `#F07167` | `#B42318` | Money out, losses, over budget |
+| 🟡 **Warning** | `#E8B45C` | `#A86B12` | Close to a limit |
+| 🔵 **Info** | `#84B6D8` | `#2C6E9B` | Bills due, neutral notices |
+
+| Surfaces | 🌲 Forest | 🕊️ Ivory |
 |---|---|---|
-| Background | `#06110C` forest | `#F6F4EF` paper |
+| Background | `#06110C` | `#F6F4EF` paper |
+| Card | `#10231A` (lifted so cards separate from the background) | `#FFFFFF` |
 | Text | `#F2EFE8` ivory | `#171717` charcoal |
-| Brand accent | `#EC7A74` crimson-rose | `#1D5A44` forest green |
-| 🟢 Income / good | `#4CC38A` | `#16794C` |
-| 🔴 Expense / danger | `#F07167` | `#B42318` |
-| 🟡 Warning | `#E8B45C` | `#A86B12` |
-| 🔵 Info | `#84B6D8` | `#2C6E9B` |
 
 Base palette: **Forest Green `#06110C` · Charcoal `#171717` · Crimson `#A31C1B`**.
 
-Colours are **tokens**: CSS variables on the web (Tailwind v4) and a `palettes` object in the app
-([`app/src/theme`](../app/src/theme/index.tsx)). Components never hard-code a hex value, so both themes stay consistent.
+Colours are **tokens**: CSS variables on the web (Tailwind v4: `bg-brand`, `text-mark`, `.btn-primary` for ink, `.btn-mark` for crimson) and a `palettes` object in the app
+([`app/src/theme`](../app/src/theme/index.tsx): `brand`, `mark`, `ink1/ink2/inkFg`). Components never hard-code a hex value, so both themes stay consistent.
+
+> 🗒️ **History:** brand used to be crimson-rose in dark mode (clashing with expense red) and forest green in light mode (clashing with income green), so the brand changed between themes and buttons looked like money states. The current system fixes both.
 
 ---
 
@@ -33,6 +44,7 @@ Colours are **tokens**: CSS variables on the web (Tailwind v4) and a `palettes` 
 | Role | Font | Used for |
 |---|---|---|
 | 🖋️ Display | **Newsreader** (serif) | Page titles, hero numbers |
+| 🏷️ Section labels | Manrope, small, normal tracking | Calm labels like *Financial health* (no longer mono uppercase) |
 | 🧩 UI | **Manrope** | Labels, body, buttons |
 | 🔢 Numbers | **IBM Plex Mono** / tabular figures | Amounts that line up in lists |
 | 🪷 Wordmark | **Tiro Devanagari Hindi** | अर्थ in *"Take Control of Your अर्थ"* |

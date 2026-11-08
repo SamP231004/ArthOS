@@ -108,7 +108,7 @@ function ExpenseForm({ initial, draft }: { initial?: Expense; draft?: ExpenseDra
         <Input label="Note" placeholder="Optional" value={f.note} onChangeText={(note) => setF({ ...f, note })} maxLength={500} />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <T>Recurring (rent, subscription, EMI…)</T>
-          <Switch value={f.recurring} onValueChange={(recurring) => setF({ ...f, recurring })} trackColor={{ true: c.accent2, false: c.lineStrong }} thumbColor={c.surface} />
+          <Switch value={f.recurring} onValueChange={(recurring) => setF({ ...f, recurring })} trackColor={{ true: alpha(c.brand, 0.45), false: c.lineStrong }} thumbColor={f.recurring ? c.brand : c.subtle} />
         </View>
         <ErrorNote message={err && !(err instanceof ApiError && err.fieldErrors) ? err.message : null} />
         <Button size="lg" title={initial ? 'Save changes' : 'Add expense'} onPress={submit} loading={save.isPending} disabled={!valid} />

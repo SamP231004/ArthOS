@@ -94,7 +94,7 @@ function Overview({ d, fmt }: { d: Insights; fmt: Fmt }) {
         <T variant="eyebrow">{d.current ? 'This month so far' : 'The month in a few lines'}</T>
         {d.summary.map((s, i) => (
           <View key={i} style={{ flexDirection: 'row', gap: S.sm, borderTopWidth: 1, borderTopColor: c.line, paddingTop: S.sm }}>
-            <Text style={{ color: c.brand, fontSize: 12, marginTop: 3 }}>✦</Text>
+            <Text style={{ color: c.mark, fontSize: 12, marginTop: 3 }}>✦</Text>
             <Highlight text={s} c={c} />
           </View>
         ))}

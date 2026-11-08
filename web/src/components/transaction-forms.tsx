@@ -36,7 +36,7 @@ function DraftNote() {
 function Recurring({ checked, onChange, text }: { checked: boolean; onChange: (v: boolean) => void; text: string }) {
   return (
     <label className="flex items-center gap-3 text-sm text-muted">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4 accent-[var(--accent-2)]" />
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4 accent-[var(--brand)]" />
       {text}
     </label>
   );

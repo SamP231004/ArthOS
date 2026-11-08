@@ -26,8 +26,8 @@ type Tone = { bg: Hex; surface: Hex; line: Hex; fg: Hex; muted: Hex; subtle: Hex
 
 // same values as app/src/theme palettes (dark = Forest, light = Ivory)
 const TONES: Record<'dark' | 'light', Tone> = {
-  dark: { bg: '#0c1a13', surface: '#152a20', line: '#1f3329', fg: '#f2efe8', muted: '#a5b0a9', subtle: '#7d8b83', brand: '#ec7a74', brandFg: '#ffffff', income: '#4cc38a', expense: '#f07167', warn: '#e8b45c', track: '#1d2f26' },
-  light: { bg: '#ffffff', surface: '#f3f0ea', line: '#e6e2d9', fg: '#171717', muted: '#5e5d58', subtle: '#8b8982', brand: '#1d5a44', brandFg: '#ffffff', income: '#16794c', expense: '#b42318', warn: '#a86b12', track: '#ece8df' },
+  dark: { bg: '#10231a', surface: '#183126', line: '#24392f', fg: '#f2efe8', muted: '#a5b0a9', subtle: '#7d8b83', brand: '#ece7db', brandFg: '#0c1a13', income: '#4cc38a', expense: '#f07167', warn: '#e8b45c', track: '#1d2f26' },
+  light: { bg: '#ffffff', surface: '#f3f0ea', line: '#e6e2d9', fg: '#171717', muted: '#5e5d58', subtle: '#8b8982', brand: '#1f2b25', brandFg: '#f6f4ef', income: '#16794c', expense: '#b42318', warn: '#a86b12', track: '#ece8df' },
 };
 
 const UI = 'Manrope_500Medium';

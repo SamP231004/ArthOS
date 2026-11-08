@@ -58,7 +58,7 @@ function BudgetForm({ month, current, onDone }: { month: string; current?: Budge
                 onClick={() => setMode(m)}
                 className={`flex items-start gap-3 rounded-xl border p-3.5 text-left transition ${active ? "border-brand/60 bg-brand/[0.07]" : "border-line-strong hover:bg-fg/[0.03]"}`}
               >
-                <span className={`mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border ${active ? "border-brand bg-brand text-accent-fg" : "border-line-strong"}`}>
+                <span className={`mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border ${active ? "border-brand bg-brand text-brand-fg" : "border-line-strong"}`}>
                   {active && <Check size={10} strokeWidth={3} />}
                 </span>
                 <span>

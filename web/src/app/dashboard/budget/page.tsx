@@ -182,7 +182,7 @@ function Configured({ b, fmt, month }: { b: BudgetStatus; fmt: (n: number) => st
           </ol>
           <div className="mt-6 rounded-xl border border-line bg-fg/[0.02] p-4 text-xs leading-relaxed text-muted">
             <p className="flex items-center gap-1.5 font-medium text-fg-2">
-              <Sparkles size={13} className="text-brand" /> {MODE_META[b.mode].name}
+              <Sparkles size={13} className="text-mark" /> {MODE_META[b.mode].name}
             </p>
             <p className="mt-1">{MODE_META[b.mode].long}</p>
             {b.excludedCategories.length > 0 && <p className="mt-2">Not counted: {b.excludedCategories.map(label).join(", ")}.</p>}

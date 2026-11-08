@@ -112,7 +112,7 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
             <FlowBar s={s} fmt={fmt} />
 
             <p className="mt-5 flex items-start gap-2 text-sm leading-relaxed text-fg-2">
-              <Sparkles size={15} className="mt-0.5 shrink-0 text-brand" />
+              <Sparkles size={15} className="mt-0.5 shrink-0 text-mark" />
               {insight(s, fmt)}
             </p>
 
@@ -327,7 +327,7 @@ function Meter({ label, value, tone, display }: { label: string; value: number; 
   const bg = {
     income: "linear-gradient(90deg, var(--income-2), var(--income))",
     expense: "linear-gradient(90deg, var(--expense-2), var(--expense))",
-    gold: "linear-gradient(90deg, var(--accent-3), var(--accent-1))",
+    gold: "var(--warn)",
     neutral: "color-mix(in oklab, var(--fg) 30%, transparent)",
   }[tone];
   return (

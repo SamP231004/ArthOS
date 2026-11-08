@@ -47,7 +47,7 @@ function DemoBanner() {
     <div className="relative overflow-hidden border-b border-brand/20 bg-gradient-to-r from-brand/[0.12] via-brand/[0.06] to-transparent">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-8">
         <p className="flex items-center gap-2 text-sm text-fg-2">
-          <Sparkles size={15} className="shrink-0 text-brand" />
+          <Sparkles size={15} className="shrink-0 text-mark" />
           <span>
             You&apos;re exploring a <span className="font-medium text-fg">private demo</span> with sample data. Edit anything — it resets in ~{hours}h.
           </span>
@@ -116,8 +116,8 @@ function Shell({ children }: { children: React.ReactNode }) {
                   active ? "bg-fg/[0.06] text-fg shadow-[inset_0_1px_0_rgb(var(--hl)/0.05)]" : "text-muted hover:bg-fg/[0.03] hover:text-fg"
                 }`}
               >
-                {active && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-brand" />}
-                <n.icon size={collapsed ? 19 : 17} className={active ? "text-brand" : "text-subtle group-hover:text-fg-2"} />
+                {active && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-mark" />}
+                <n.icon size={collapsed ? 19 : 17} className={active ? "text-mark" : "text-subtle group-hover:text-fg-2"} />
                 {!collapsed && n.label}
               </Link>
             );
@@ -135,8 +135,8 @@ function Shell({ children }: { children: React.ReactNode }) {
                 active ? "bg-fg/[0.06] text-fg shadow-[inset_0_1px_0_rgb(var(--hl)/0.05)]" : "text-muted hover:bg-fg/[0.03] hover:text-fg"
               }`}
             >
-              {active && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-brand" />}
-              <LayoutGrid size={collapsed ? 19 : 17} className={active ? "text-brand" : "text-subtle group-hover:text-fg-2"} />
+              {active && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-mark" />}
+              <LayoutGrid size={collapsed ? 19 : 17} className={active ? "text-mark" : "text-subtle group-hover:text-fg-2"} />
               {!collapsed && (
                 <>
                   Widgets
@@ -158,8 +158,8 @@ function Shell({ children }: { children: React.ReactNode }) {
                 active ? "bg-fg/[0.06] text-fg" : "text-muted hover:bg-fg/[0.03] hover:text-fg"
               }`}
             >
-              {active && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-brand" />}
-              <n.icon size={collapsed ? 19 : 17} className={active ? "text-brand" : "text-subtle group-hover:text-fg-2"} />
+              {active && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-mark" />}
+              <n.icon size={collapsed ? 19 : 17} className={active ? "text-mark" : "text-subtle group-hover:text-fg-2"} />
               {!collapsed && n.label}
             </Link>
           );

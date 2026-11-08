@@ -33,7 +33,7 @@ export function Logo({ size = 32 }: { size?: number }) {
       <LogoMark size={size} />
       {/* Newsreader sits its ink high in the line box; nudge down to centre on the tile (as on the web). */}
       <Text style={{ fontFamily: F.display, fontSize, color: c.fg, letterSpacing: -0.4, transform: [{ translateY: fontSize * 0.04 }] }}>
-        Arth<Text style={{ fontFamily: F.displayMedium, color: c.brand }}>OS</Text>
+        Arth<Text style={{ fontFamily: F.displayMedium, color: c.mark }}>OS</Text>
       </Text>
     </View>
   );

@@ -103,10 +103,10 @@ export function DialTabBar({ state, navigateToTab }: BottomTabBarProps) {
                 },
               ]}>
               <Pressable onPress={() => go(it)} accessibilityRole="button" accessibilityLabel={it.label} style={{ alignItems: 'center', gap: 4 }}>
-                <View style={[styles.itemCircle, { backgroundColor: active ? alpha(c.brand, 0.15) : c.surface2, borderColor: active ? c.brand : c.lineStrong }]}>
-                  <Image source={it.icon} style={{ width: 20, height: 20, tintColor: active ? c.brand : c.fg2 }} />
+                <View style={[styles.itemCircle, { backgroundColor: active ? alpha(c.mark, 0.15) : c.surface2, borderColor: active ? c.brand : c.lineStrong }]}>
+                  <Image source={it.icon} style={{ width: 20, height: 20, tintColor: active ? c.mark : c.fg2 }} />
                 </View>
-                <Text style={{ color: active ? c.brand : c.muted, fontSize: 10, fontFamily: F.uiMedium }}>{it.label}</Text>
+                <Text style={{ color: active ? c.mark : c.muted, fontSize: 10, fontFamily: F.uiMedium }}>{it.label}</Text>
               </Pressable>
             </Animated.View>
           );

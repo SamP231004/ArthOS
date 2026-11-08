@@ -185,7 +185,7 @@ function MonthStory({ d }: { d: Insights; fmt: Fmt }) {
       <ul className="mt-4 grid gap-x-8 gap-y-3 md:grid-cols-2">
         {d.summary.map((s, i) => (
           <li key={i} className="flex gap-3 text-[15px] leading-relaxed text-fg-2">
-            <Sparkles size={14} className="mt-1.5 shrink-0 text-brand" />
+            <Sparkles size={14} className="mt-1.5 shrink-0 text-mark" />
             <span>
               <Highlight text={s} />
             </span>

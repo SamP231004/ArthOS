@@ -70,12 +70,12 @@ export function SpendCurve({
       >
         <defs>
           <linearGradient id={`${id}-a`} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0" stopColor="var(--accent-2)" stopOpacity="0.32" />
-            <stop offset="1" stopColor="var(--accent-2)" stopOpacity="0" />
+            <stop offset="0" stopColor="var(--fg)" stopOpacity="0.14" />
+            <stop offset="1" stopColor="var(--fg)" stopOpacity="0" />
           </linearGradient>
           <linearGradient id={`${id}-l`} x1="0" x2="1">
-            <stop offset="0" stopColor="var(--accent-3)" />
-            <stop offset="1" stopColor="var(--accent-1)" />
+            <stop offset="0" stopColor="var(--fg)" stopOpacity="0.55" />
+            <stop offset="1" stopColor="var(--fg)" />
           </linearGradient>
         </defs>
         {[0.25, 0.5, 0.75].map((f) => (
@@ -91,7 +91,7 @@ export function SpendCurve({
         )}
         {area && <path d={area} fill={`url(#${id}-a)`} />}
         {line && <path d={line} fill="none" stroke={`url(#${id}-l)`} strokeWidth="2.5" strokeLinecap="round" />}
-        {pts.length > 0 && <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="4.5" fill="var(--accent-1)" stroke="var(--bg)" strokeWidth="2" />}
+        {pts.length > 0 && <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="4.5" fill="var(--fg)" stroke="var(--bg)" strokeWidth="2" />}
         {h != null && pts[h] && (
           <>
             <line x1={pts[h][0]} x2={pts[h][0]} y1={P.t} y2={H - P.b} stroke="var(--line-strong)" />
@@ -149,7 +149,7 @@ export function Donut({ data, size = 168, center, colors }: { data: { label: str
   );
 }
 
-export function Sparkline({ values, color = "var(--accent-2)", className = "h-8 w-24" }: { values: number[]; color?: string; className?: string }) {
+export function Sparkline({ values, color = "var(--muted)", className = "h-8 w-24" }: { values: number[]; color?: string; className?: string }) {
   const id = useId();
   if (values.length < 2) return <div className={className} />;
   const max = Math.max(...values, 1);
