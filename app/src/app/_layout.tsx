@@ -78,7 +78,7 @@ function AppStack({ fontsLoaded, queryClient }: { fontsLoaded: boolean; queryCli
 
   // Home-screen widgets follow sign-in/out and the theme, and catch up whenever the app comes back to the foreground.
   useEffect(() => {
-    if (hydrated && ready) scheduleWidgetRefresh(500);
+    if (hydrated && ready) scheduleWidgetRefresh(500, scheme);
   }, [token, scheme, hydrated, ready]);
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => s === 'active' && scheduleWidgetRefresh());

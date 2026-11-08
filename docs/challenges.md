@@ -27,6 +27,8 @@ Each entry follows the same shape: **🐛 Symptom → 🔍 Root cause → 🛠�
 | 16 | [🧵 A virtual-thread deadlock in the price cache](#16--a-virtual-thread-deadlock-in-the-price-cache) | ☕ Backend | ✅ Fixed |
 | 17 | [🫥 Home-screen widgets were completely blank](#17--home-screen-widgets-were-completely-blank) | 📱 App | ✅ Fixed |
 | 18 | [🔔 Alerts vanished with "Clear all"](#18--alerts-vanished-with-clear-all) | 📱 App | ✅ Fixed |
+| 19 | [😴 The sandbox got slow again, and the Google button vanished](#19--the-sandbox-got-slow-again-and-the-google-button-vanished) | ☁️ Infra · 📱 App | ✅ Fixed |
+| 20 | [🧮 Two different "left" numbers on one widget](#20--two-different-left-numbers-on-one-widget) | 📱 App | ✅ Fixed |
 
 ---
 
@@ -126,7 +128,7 @@ A single-query call cost about 0.5 s more than the health check, so **every data
 | ✂️ Older demo months use **fewer, larger entries** with the same totals (287 → 198 expenses) | ~30% fewer writes |
 | 🎲 Each demo month has its **own random stream** | Thinning old months doesn't reshuffle the current one |
 | 🔥 Demo price histories are **preloaded at startup and every 30 min** | No cold fetch for visitors |
-| 🏓 A [keep-alive workflow](../.github/workflows/keep-alive.yml) pings `/api/health` every 10 min | No 30–60 s cold start |
+| 🏓 Keep-alive: first a [GitHub workflow](../.github/workflows/keep-alive.yml), later replaced by a self-ping in the backend (see [#19](#19--the-sandbox-got-slow-again-and-the-google-button-vanished)) | No 30–60 s cold start |
 
 Locally (close to the database), demo creation went from **2.0–2.7 s to 0.8–1.6 s**, and summary and insights to **~0.3 s** each.
 
@@ -320,4 +322,26 @@ APKs use the **v2** signing block. We wrote a small parser that reads the certif
 | 🛠️ **Fix: one line** | The backend now sends a short `brief` with every alert (*"On pace to overspend by ₹4,531"*, *"Broadband ₹999 due tomorrow"*), and notifications show just that line. |
 | 🛠️ **Fix: pinned** | One **ongoing** notification shows the most urgent alert (*"· +1 more"* when there are several). "Clear all" skips ongoing notifications. If it's swiped away (Android 14+ allows that), it **comes back the next time the app opens**, and it **removes itself** once nothing is urgent. It buzzes only when a **new** alert appears; refreshes go through a silent channel. |
 | ⚙️ **Control** | Settings → Notifications → **Pin money alerts** (on by default). Off = each alert notifies once, dismissible. Signing out clears it. Tapping it opens Insights. |
+
+---
+
+## 19. 😴 The sandbox got slow again, and the Google button vanished
+
+| | |
+|---|---|
+| 🐛 **Symptom** | A day after the speed fixes, "Try the demo" was slow again, and the **Continue with Google** button was missing from the app's login screen. |
+| 🔍 **Root cause** | One cause for both: **the backend was asleep.** The GitHub Actions keep-alive (every 10 min) wasn't running every 10 minutes: GitHub **throttles scheduled workflows**, and the runs landed hours apart (23:40, 02:44, 09:32), each taking 2 minutes because it had to wake the server. Render then took 30–60 s to wake up. The app asks the backend whether Google sign-in is available; that request timed out, so the app hid the button. |
+| 🛠️ **Fix** | **[`KeepAwakeJob`](../backend/src/main/java/com/arthos/common/KeepAwakeJob.java):** the backend pings its own public URL (`RENDER_EXTERNAL_URL`) every 10 minutes. The request goes out and back in through Render's proxy, so it counts as traffic and the service never idles. The GitHub workflow stays as a backup. **Google fallback:** builds carry the public web client ID (`EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`), so the button shows even if the server is slow. **Honest waiting:** after 4 s the login screen says *"Waking up the server…"* instead of looking frozen. |
+| 💡 **Lesson** | Don't rely on GitHub's cron for anything time-sensitive. And don't let a UI element depend on a network call that can fail when there's a safe local default. |
+
+---
+
+## 20. 🧮 Two different "left" numbers on one widget
+
+| | |
+|---|---|
+| 🐛 **Symptom** | The month widget said *"Spent ₹35,281 of ₹40,000 budget"* with a bar at **22%**, *"Left to spend ₹32,131"*, and *"Safe today ₹725"*. The numbers didn't add up. |
+| 🔍 **Root cause** | It mixed two views of the month. *Spent* was **all** spending (rent and EMIs included), while the budget bar counted only spending **against the budget** (rent and EMIs excluded). *Left to spend* came from the save-first view (income − saved − spent). |
+| 🛠️ **Fix** | The widget tells **one story**. With a budget, everything is the budget's view: *"₹31,218 left of ₹40,000"*, a bar with a **today marker**, *"₹8,782 spent · ₹1,357/day for 23 days"*. Without a budget, it's the save-first view only. The Insights page got the same treatment: its header no longer shows a figure that disagrees with the sentence below it. |
+| 💡 **Lesson** | Every number on one card should come from the same definition, or it looks like a bug even when each number is right. |
 

@@ -61,3 +61,13 @@ export function dayLabel(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(y, m - 1, d).toLocaleDateString("en-IN", { day: "numeric", month: "short", weekday: "short" });
 }
+
+/** Short amounts that still move: ₹8.07L, ₹1.23Cr, ₹12.5k, ₹950 — for chart axes, where "₹8L" vs "₹8L" looks flat. */
+export function shortMoney(n: number): string {
+  const v = Math.abs(n);
+  const sign = n < 0 ? "−" : "";
+  if (v >= 1e7) return `${sign}₹${(v / 1e7).toFixed(2)}Cr`;
+  if (v >= 1e5) return `${sign}₹${(v / 1e5).toFixed(2)}L`;
+  if (v >= 1e3) return `${sign}₹${(v / 1e3).toFixed(v >= 1e4 ? 0 : 1)}k`;
+  return `${sign}₹${Math.round(v)}`;
+}

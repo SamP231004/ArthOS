@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
-import { ValueChart } from '@/components/charts';
+import { FlowChart, ValueChart } from '@/components/charts';
 import { AppHeader } from '@/components/app-header';
 import { Screen } from '@/components/screen';
 import { Button, Card, Chip, ErrorNote, Loading, Segmented, T } from '@/components/ui';
@@ -240,7 +240,6 @@ function Analysis({ p, range, setRange }: { p: Portfolio; range: PortfolioRange;
     }
     return out.slice(-14);
   }, [hs, period]);
-  const max = Math.max(...flows.map((f) => Math.abs(f.amount)), 1);
 
   return (
     <>
@@ -258,19 +257,8 @@ function Analysis({ p, range, setRange }: { p: Portfolio; range: PortfolioRange;
           </View>
           <Segmented value={period} onChange={setPeriod} options={[{ value: 'month', label: 'Monthly' }, { value: 'year', label: 'Yearly' }]} />
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 140, gap: 3 }}>
-          {flows.map((f, i) => (
-            <View key={i} style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
-              <View style={{ width: '100%', height: `${Math.max(f.amount === 0 ? 0 : 3, (Math.abs(f.amount) / max) * 100)}%`, backgroundColor: f.amount < 0 ? c.expense : alpha(c.income, 0.7), borderTopLeftRadius: 4, borderTopRightRadius: 4 }} />
-            </View>
-          ))}
-        </View>
-        <View style={{ flexDirection: 'row', gap: 3 }}>
-          {flows.map((f, i) => (
-            <Text key={i} style={{ flex: 1, textAlign: 'center', color: c.subtle, fontSize: 9, fontFamily: F.ui }}>{i % 2 === 0 ? f.label : ''}</Text>
-          ))}
-        </View>
-        <T variant="small">Net {money(flows.reduce((x, f) => x + f.amount, 0), 'INR', true)} put in · purchases minus withdrawals</T>
+        <FlowChart data={flows} width={width - S.lg * 2 - S.lg * 2 - 2} />
+        <T variant="small">Purchases minus withdrawals in each period.</T>
       </Card>
 
       <Card style={{ gap: S.md }}>

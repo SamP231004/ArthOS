@@ -59,7 +59,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/android-icon-monochrome.png",
+          "icon": "./assets/images/notification-icon.png",
           "color": "#a31c1b"
         }
       ],
@@ -90,7 +90,7 @@
             {
               "name": "MonthSnapshot",
               "label": "Month snapshot",
-              "description": "Spent vs budget, left to spend and saved first",
+              "description": "Budget left, spent and per-day for the rest of the month",
               "minWidth": "250dp",
               "minHeight": "110dp",
               "targetCellWidth": 4,
@@ -105,10 +105,10 @@
             {
               "name": "Portfolio",
               "label": "Portfolio",
-              "description": "Portfolio value, today's move and overall gain",
-              "minWidth": "110dp",
+              "description": "Value, 1-day and total returns, with a hide button",
+              "minWidth": "180dp",
               "minHeight": "110dp",
-              "targetCellWidth": 2,
+              "targetCellWidth": 4,
               "targetCellHeight": 2,
               "maxResizeWidth": "400dp",
               "maxResizeHeight": "220dp",

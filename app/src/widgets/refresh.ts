@@ -7,8 +7,16 @@ import { Platform } from 'react-native';
  */
 let timer: ReturnType<typeof setTimeout> | null = null;
 
-export function scheduleWidgetRefresh(delayMs = 1500) {
+export function scheduleWidgetRefresh(delayMs = 1500, appScheme?: 'dark' | 'light') {
   if (Platform.OS !== 'android') return;
+  if (appScheme) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      (require('./data') as typeof import('./data')).setAppScheme(appScheme);
+    } catch {
+      // ignore
+    }
+  }
   if (timer) clearTimeout(timer);
   timer = setTimeout(() => {
     timer = null;

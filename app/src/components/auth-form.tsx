@@ -11,7 +11,7 @@ import { ThemeToggle } from './theme-toggle';
 import { Button, ErrorNote, Input, T } from './ui';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
-import { googleClientId, signInWithGoogle } from '@/lib/google';
+import { GOOGLE_FALLBACK_ID, googleClientId, signInWithGoogle } from '@/lib/google';
 import type { AuthResponse } from '@/lib/types';
 import { alpha, F, R, S, useTheme } from '@/theme';
 
@@ -36,7 +36,8 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<'form' | 'google' | 'demo' | null>(null);
-  const [googleId, setGoogleId] = useState<string | null | undefined>(undefined);
+  const [googleId, setGoogleId] = useState<string | null | undefined>(GOOGLE_FALLBACK_ID ?? undefined);
+  const [slow, setSlow] = useState(false);
   const [point, setPoint] = useState(0);
   const [enter] = useState(() => new Animated.Value(0));
   const [fade] = useState(() => new Animated.Value(1));
@@ -49,7 +50,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
 
   useEffect(() => {
     let live = true;
-    googleClientId().then((id) => live && setGoogleId(id));
+    googleClientId().then((id) => live && setGoogleId(id ?? GOOGLE_FALLBACK_ID));
     Animated.timing(enter, { toValue: 1, duration: 520, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
     return () => {
       live = false;
@@ -71,6 +72,8 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
     setBusy(kind);
     setError(null);
     setFields({});
+    // the free server sleeps when idle; if it's waking up, say so instead of looking frozen
+    const slowTimer = setTimeout(() => setSlow(true), 4000);
     try {
       const res = await fn();
       if (res) setSession(res.token, res.user); // Stack.Protected routes onward automatically
@@ -80,6 +83,8 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
         setFields(e.fieldErrors ?? {});
       } else setError(e instanceof Error ? e.message : 'Something went wrong');
     } finally {
+      clearTimeout(slowTimer);
+      setSlow(false);
       setBusy(null);
     }
   }
@@ -207,6 +212,11 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
               }
             />
             <ErrorNote message={error} />
+            {slow && busy && (
+              <T variant="small" style={{ textAlign: 'center' }}>
+                Waking up the server — after a quiet spell the first sign-in can take up to a minute.
+              </T>
+            )}
             <Button title={login ? 'Sign in  →' : 'Create account  →'} size="lg" onPress={submit} loading={busy === 'form'} disabled={!valid || (other && busy !== 'form')} />
 
             <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6 }}>

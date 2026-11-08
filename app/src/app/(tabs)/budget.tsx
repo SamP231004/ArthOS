@@ -184,6 +184,14 @@ function ModeSwitch({ b, fmt, month }: { b: BudgetStatus; fmt: (n: number) => st
   );
 }
 
+/** ₹661 · ₹1.2k · ₹1.4L — fits a calendar cell. */
+function tiny(n: number) {
+  const v = Math.round(n);
+  if (v >= 100000) return `₹${(v / 100000).toFixed(v >= 1000000 ? 0 : 1)}L`;
+  if (v >= 1000) return `₹${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k`;
+  return `₹${v}`;
+}
+
 function Calendar({ b, fmt }: { b: BudgetStatus; fmt: (n: number) => string }) {
   const { c } = useTheme();
   const s = useStyles(make);
@@ -208,13 +216,18 @@ function Calendar({ b, fmt }: { b: BudgetStatus; fmt: (n: number) => string }) {
                 accessibilityLabel={`Day ${i + 1}`}
                 style={[s.day, { borderColor: b.days[i].status === 'FUTURE' ? c.line : alpha(color[b.days[i].status], 0.5), backgroundColor: b.days[i].status === 'FUTURE' ? 'transparent' : alpha(color[b.days[i].status], 0.1) }, sel === i && { borderColor: c.brand, borderWidth: 2 }]}>
                 <Text style={{ color: c.fg, fontSize: 12, fontFamily: b.days[i].status === 'TODAY' ? F.uiBold : F.uiMedium }}>{i + 1}</Text>
+                {b.days[i].status !== 'FUTURE' && (
+                  <Text numberOfLines={1} style={{ color: b.days[i].spent > 0 ? color[b.days[i].status] === c.fg ? c.fg2 : color[b.days[i].status] : c.subtle, fontSize: 9, fontFamily: F.uiSemibold, marginTop: 1 }}>
+                    {b.days[i].spent > 0 ? tiny(b.days[i].spent) : '—'}
+                  </Text>
+                )}
               </Pressable>
             </View>
           ),
         )}
       </View>
       <T variant="small" style={{ textAlign: 'center' }}>
-        {picked ? `Day ${sel! + 1}: ${picked.status === 'FUTURE' ? `allowance ${fmt(picked.allowance)}` : `${fmt(picked.spent)} of ${fmt(picked.allowance)}`}` : 'Tap a day · green under · amber close · red over'}
+        {picked ? `Day ${sel! + 1}: ${picked.status === 'FUTURE' ? `allowance ${fmt(picked.allowance)}` : `${fmt(picked.spent)} of ${fmt(picked.allowance)}`}` : 'Spent each day · tap for details · green under · amber close · red over'}
       </T>
     </View>
   );

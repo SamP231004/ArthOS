@@ -21,6 +21,12 @@ function lib(): GoogleModule {
 
 let configuredFor: string | null = null;
 
+/**
+ * The web OAuth client ID is public (it's in every sign-in request), so builds also carry it as a fallback: if the
+ * backend is still waking up when the login screen opens, the Google button shows anyway instead of disappearing.
+ */
+export const GOOGLE_FALLBACK_ID: string | null = googleAvailable ? (process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? null) : null;
+
 /** The web OAuth client ID the backend accepts (null when Google sign-in isn't available here or on the backend). */
 export async function googleClientId(): Promise<string | null> {
   if (!googleAvailable) return null;
@@ -28,7 +34,7 @@ export async function googleClientId(): Promise<string | null> {
     const p = await api<Providers>('/api/auth/providers', { auth: false });
     return p.google?.clientId ?? null;
   } catch {
-    return null;
+    return GOOGLE_FALLBACK_ID; // server unreachable or waking up: trust the build's ID
   }
 }
 

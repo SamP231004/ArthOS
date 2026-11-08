@@ -166,7 +166,7 @@ function Configured({ b, fmt, month }: { b: BudgetStatus; fmt: (n: number) => st
         </div>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
+      <section className="grid items-start gap-6 lg:grid-cols-[1fr_1.4fr]">
         {/* Transparency */}
         <div className="panel p-6">
           <h2 className="flex items-center gap-2 font-medium">

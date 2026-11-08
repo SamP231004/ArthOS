@@ -13,6 +13,8 @@ export type WidgetSnapshot = {
   month: string;
   currency: string;
   today: string;
+  dayOfMonth: number;
+  daysInMonth: number;
   budget: {
     configured: boolean;
     todayRemaining?: number;
@@ -27,7 +29,7 @@ export type WidgetSnapshot = {
     mode?: string;
     daysRemaining: number;
   };
-  money: { income: number; spent: number; savedFirst: number; leftToSpend: number; perDayLeft?: number; savingsBalance?: number };
+  money: { income: number; spent: number; savedFirst: number; spendable: number; leftToSpend: number; perDayLeft?: number; savingsBalance?: number };
   portfolio?: { value: number; invested: number; gain: number; gainPct?: number; dayChange: number; dayChangePct?: number; holdingsCount: number };
   generatedAt: string;
 };
@@ -106,9 +108,16 @@ export async function deletePrefs(widgetId: number): Promise<void> {
   await SecureStore.deleteItemAsync(prefsKey(widgetId)).catch(() => {});
 }
 
+/** The app's current theme, when the app itself triggers a refresh (fresher than storage mid-switch). */
+let appScheme: 'dark' | 'light' | null = null;
+export function setAppScheme(s: 'dark' | 'light') {
+  appScheme = s;
+}
+
 /** 'app' follows the theme chosen in the app (Forest by default). */
 export async function resolveScheme(theme: WidgetTheme): Promise<'dark' | 'light'> {
   if (theme !== 'app') return theme;
+  if (appScheme) return appScheme;
   try {
     return (await SecureStore.getItemAsync(THEME_KEY)) === 'light' ? 'light' : 'dark';
   } catch {

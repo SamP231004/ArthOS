@@ -118,7 +118,7 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
 
             <div className="mt-6 space-y-3">
               <Meter label="Spendable used" value={spentPct} tone={spentPct >= 90 ? "expense" : spentPct >= 70 ? "gold" : "income"} />
-              <Meter label="Month elapsed" value={monthPct} tone="neutral" />
+              <Meter label="Month elapsed" value={monthPct} tone="neutral" display={`${s.daysElapsed} of ${s.daysInMonth} days`} />
             </div>
             <p className="mt-3 text-xs text-subtle">
               {spentPct > monthPct + 5
@@ -323,18 +323,18 @@ function RecentActivity({ s, fmt }: { s: MonthSummary; fmt: (n: number) => strin
   );
 }
 
-function Meter({ label, value, tone }: { label: string; value: number; tone: "income" | "expense" | "gold" | "neutral" }) {
+function Meter({ label, value, tone, display }: { label: string; value: number; tone: "income" | "expense" | "gold" | "neutral"; display?: string }) {
   const bg = {
     income: "linear-gradient(90deg, var(--income-2), var(--income))",
     expense: "linear-gradient(90deg, var(--expense-2), var(--expense))",
     gold: "linear-gradient(90deg, var(--accent-3), var(--accent-1))",
-    neutral: "rgb(255 255 255 / 0.25)",
+    neutral: "color-mix(in oklab, var(--fg) 30%, transparent)",
   }[tone];
   return (
     <div>
       <div className="mb-1.5 flex justify-between text-xs">
         <span className="text-muted">{label}</span>
-        <span className="tabular text-fg-2">{value.toFixed(0)}%</span>
+        <span className="tabular text-fg-2">{display ?? `${value.toFixed(0)}%`}</span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-fg/[0.06]">
         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${value}%`, background: bg }} />

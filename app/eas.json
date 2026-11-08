@@ -6,12 +6,20 @@
   "build": {
     "preview": {
       "distribution": "internal",
-      "android": { "buildType": "apk" },
-      "env": { "EXPO_PUBLIC_API_URL": "https://arthos-9tro.onrender.com" }
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://arthos-9tro.onrender.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "754508834104-e9ag69is2fpqf9gtet789k416vsm7g51.apps.googleusercontent.com"
+      }
     },
     "production": {
       "autoIncrement": true,
-      "env": { "EXPO_PUBLIC_API_URL": "https://arthos-9tro.onrender.com" }
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://arthos-9tro.onrender.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "754508834104-e9ag69is2fpqf9gtet789k416vsm7g51.apps.googleusercontent.com"
+      }
     }
   },
   "submit": {

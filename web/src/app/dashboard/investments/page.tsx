@@ -11,7 +11,7 @@ import { CLASS_META, fmtQty, signedPct, tone } from "@/components/invest/meta";
 import { ValueChart } from "@/components/invest/value-chart";
 import { PageHeader } from "@/components/page-header";
 import { Button, ErrorNote, Modal, Skeleton } from "@/components/ui";
-import { money } from "@/lib/format";
+import { money, shortMoney } from "@/lib/format";
 import { indianMarketStatus } from "@/lib/market";
 import { useDeleteHolding, usePortfolio, useSummary } from "@/lib/queries";
 import { useMonth } from "@/lib/ui-store";
@@ -262,7 +262,7 @@ function NetHoldings({ p }: { p: Portfolio }) {
         <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand/10 text-brand"><Wallet size={16} /></span>
       </div>
       <p className="tabular mt-2 text-3xl font-semibold tracking-tight">{money(t.value, "INR", false).split(".")[0]}</p>
-      <p className="mt-1 text-xs text-muted">Current value across all categories · {money(t.invested, "INR", true)} invested</p>
+      <p className="tabular mt-1 text-xs text-muted">{money(Math.round(t.invested))} invested</p>
       <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
         <div className="rounded-xl bg-fg/[0.03] p-2.5">
           <p className="text-subtle">All-time</p>
@@ -369,13 +369,13 @@ function AnalysisView({ p, range, setRange }: { p: Portfolio; range: PortfolioRa
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+      <div className="grid items-start gap-6 lg:grid-cols-[1.5fr_1fr]">
         <section className="panel p-6">
           <p className="eyebrow">Invested amount</p>
           <h2 className="mt-1 font-display text-3xl tracking-tight">Trend over time</h2>
           <p className="mt-1 text-sm text-muted">Money put in each {period === "month" ? "month" : "year"} (purchases minus withdrawals).</p>
           <div className="mt-6">
-            <ContributionChart data={flows} format={(n) => money(n, "INR", true)} />
+            <ContributionChart data={flows} format={(n) => shortMoney(n)} />
           </div>
         </section>
 
@@ -390,7 +390,7 @@ function AnalysisView({ p, range, setRange }: { p: Portfolio; range: PortfolioRa
               center={
                 <div>
                   <p className="text-[10px] uppercase tracking-widest text-subtle">Total invested</p>
-                  <p className="tabular text-base font-semibold">{money(p.totals.invested, "INR", true)}</p>
+                  <p className="tabular text-base font-semibold">{shortMoney(p.totals.invested)}</p>
                 </div>
               }
             />

@@ -10,14 +10,17 @@ Check your money without opening the app. Long-press the home screen → **Widge
 
 ## 🧱 The four widgets
 
-| Widget | Default size | Shows | Tap opens |
-|---|---|---|---|
-| 🎯 **Safe to spend** | 2 × 2 | Today's safe-to-spend in the status colour, today's allowance, days left, a month-used bar | Budget |
-| 📊 **Month snapshot** | 4 × 2 | Spent vs budget with a bar, **left to spend** (and per day), **saved first**, safe today | Home |
-| 📈 **Portfolio** | 2 × 2 | Portfolio value, **today's move** ▲/▼, overall gain, number of holdings | Invest |
-| ⚡ **Quick add** | 2 × 1 | **+ Expense** and **Scan** buttons (**+ Income** too when made taller) | That screen |
+| Widget | Default size | Shows | Buttons | Tap opens |
+|---|---|---|---|---|
+| 🎯 **Safe to spend** | 2 × 2 | Today's safe-to-spend in the status colour, today's allowance, days left, a budget bar with a **today marker** | 👁️ | Budget |
+| 📊 **Month** | 4 × 2 | *"₹31,218 left of ₹40,000"*, the budget bar with a today marker, *"₹8,782 spent · ₹1,357/day for 23 days"*; safe today and saved first when there's room. Without a budget, the save-first view | 👁️ 🔄 | Budget |
+| 📈 **Portfolio** | 4 × 2 | Groww-style: full value (₹8,34,076), **1D returns** and **Total returns** side by side; compact two-line layout when small | 👁️ 🔄 | Invest |
+| ⚡ **Quick add** | 2 × 1 | **+ Expense** and **Scan** (plus **+ Income** when made taller) | — | That screen |
 
-The widget picker shows a **preview image** of each one. All widgets are **resizable**, and they all have loading, error, empty and signed-out states: *"Set a budget"*, *"No investments yet"*, *"Sign in to ArthOS"*.
+- 👁️ **Eye:** hides the amounts on that widget (percentages stay) and shows them again. No need to open settings.
+- 🔄 **Refresh:** fetches fresh numbers now.
+- Every widget header shows the **अर्थ** logo, the same as the app icon. Layouts read the widget's real size and drop secondary rows instead of letting text get cut off.
+- The widget picker shows a **preview image** of each one. All widgets are **resizable**, and they all have loading, error, empty and signed-out states.
 
 ### 🚦 Colours
 

@@ -45,15 +45,15 @@ import java.util.Optional;
 @RequestMapping("/api/widget")
 public class WidgetController {
 
-    public record Snapshot(String month, String currency, LocalDate today, BudgetPart budget, MoneyPart money,
-                           PortfolioPart portfolio, Instant generatedAt) {}
+    public record Snapshot(String month, String currency, LocalDate today, int dayOfMonth, int daysInMonth, BudgetPart budget,
+                           MoneyPart money, PortfolioPart portfolio, Instant generatedAt) {}
 
     /** Safe-to-spend figures; everything but {@code configured} is null when no budget is set. */
     public record BudgetPart(boolean configured, BigDecimal todayRemaining, BigDecimal todayAllowance, BigDecimal spentToday,
                              BigDecimal spentMonth, BigDecimal limit, BigDecimal remainingMonth, BigDecimal usedPct,
                              BigDecimal elapsedPct, BudgetStatus.Status status, BudgetMode mode, int daysRemaining) {}
 
-    public record MoneyPart(BigDecimal income, BigDecimal spent, BigDecimal savedFirst, BigDecimal leftToSpend,
+    public record MoneyPart(BigDecimal income, BigDecimal spent, BigDecimal savedFirst, BigDecimal spendable, BigDecimal leftToSpend,
                             /** leftToSpend spread over the days left (today included); null for a past month. */
                             BigDecimal perDayLeft, BigDecimal savingsBalance) {}
 
@@ -106,7 +106,7 @@ public class WidgetController {
         int daysLeft = Math.max(1, ym.lengthOfMonth() - today.getDayOfMonth() + 1);
         BigDecimal perDay = s.leftToSpend() == null ? null
                 : s.leftToSpend().max(BigDecimal.ZERO).divide(BigDecimal.valueOf(daysLeft), 0, RoundingMode.DOWN);
-        MoneyPart money = new MoneyPart(s.totalIncome(), s.totalExpense(), s.savedFirst(), s.leftToSpend(), perDay,
+        MoneyPart money = new MoneyPart(s.totalIncome(), s.totalExpense(), s.savedFirst(), s.spendable(), s.leftToSpend(), perDay,
                 s.savings() == null ? null : s.savings().closing());
 
         BudgetPart budget = b.configured()
@@ -114,7 +114,8 @@ public class WidgetController {
                         b.usedPct(), b.elapsedPct(), b.status(), b.mode(), b.daysRemaining())
                 : new BudgetPart(false, null, null, null, null, null, null, null, null, null, null, daysLeft);
 
-        return new Snapshot(key, user.getCurrency(), today, budget, money, portfolio(allHoldings, today), Instant.now());
+        return new Snapshot(key, user.getCurrency(), today, today.getDayOfMonth(), ym.lengthOfMonth(), budget, money,
+                portfolio(allHoldings, today), Instant.now());
     }
 
     private static BudgetStatus budget(YearMonth ym, LocalDate today, List<Expense> monthExpenses, Optional<Budget> own, Optional<Budget> earlier) {

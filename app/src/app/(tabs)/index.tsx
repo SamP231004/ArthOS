@@ -74,7 +74,7 @@ function Summary({ s }: { s: MonthSummary }) {
         <FlowBar s={s} fmt={fmt} />
         <T style={{ color: c.fg2, fontSize: 14 }}>✦ {insight(s, fmt)}</T>
         <Meter label="Spendable used" value={spentPct} color={spentPct >= 90 ? c.expense : spentPct >= 70 ? c.warn : c.income} />
-        <Meter label="Month elapsed" value={monthPct} color={alpha(c.fg, 0.3)} />
+        <Meter label="Month elapsed" value={monthPct} color={alpha(c.fg, 0.3)} display={`${s.daysElapsed} of ${s.daysInMonth} days`} />
       </Card>
 
       <View style={{ flexDirection: 'row', gap: S.md }}>
@@ -270,13 +270,13 @@ function PortfolioMini() {
   );
 }
 
-function Meter({ label: l, value, color }: { label: string; value: number; color: string }) {
+function Meter({ label: l, value, color, display }: { label: string; value: number; color: string; display?: string }) {
   const st = useStyles(make);
   return (
     <View style={{ gap: 6, marginTop: S.xs }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <T variant="small">{l}</T>
-        <T variant="small" style={{ fontVariant: ['tabular-nums'] }}>{value.toFixed(0)}%</T>
+        <T variant="small" style={{ fontVariant: ['tabular-nums'] }}>{display ?? `${value.toFixed(0)}%`}</T>
       </View>
       <View style={st.track}>
         <View style={[st.fill, { width: `${value}%`, backgroundColor: color }]} />
