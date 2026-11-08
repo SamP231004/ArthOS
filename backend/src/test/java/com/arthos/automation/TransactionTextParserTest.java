@@ -51,6 +51,41 @@ class TransactionTextParserTest {
         assertEquals(ExpenseCategory.FOOD, CategoryRules.expense(p.merchant(), "").orElseThrow());
     }
 
+    /** Real Google Pay layout (UPI Lite) shared by the user: amount with paise, "To <merchant>" header, a bank tail number. */
+    @Test
+    void googlePayUpiLiteZomato() {
+        String screen = """
+                To Zomato
+                ₹159.44
+                Zomato Payment
+                Completed
+                6 Nov 2026, 1:04 pm
+                UPI Lite - State Bank of India 3960
+                Payment of ₹159.44 completed
+                Receiver's bank has confirmed deposit of money to Zomato's bank account
+                UPI transaction ID
+                667681687656
+                To: ZOMATO LIMITED
+                ••••rder@ptybl
+                From: SAMARTH PATEL (UPI Lite)
+                ••••04-2@okaxis on Google Pay
+                Google transaction ID
+                CICAgPiVzt2cPA
+                Google Pay
+                """;
+        // second pass: OCR misreads the ₹ as %
+        for (String text : new String[] {screen, screen.replace("₹159.44\n", "%159.44\n")}) {
+            Parsed p = parse(text);
+            assertEquals(Kind.EXPENSE, p.kind());
+            amount("159.44", p);
+            assertEquals("Zomato", p.merchant());
+            assertEquals(LocalDate.of(2026, 11, 6), p.date());
+            assertEquals("667681687656", p.reference());
+            assertEquals(PaymentSource.UPI, p.paymentSource());
+            assertEquals(ExpenseCategory.FOOD, CategoryRules.expense(p.merchant(), "").orElseThrow());
+        }
+    }
+
     @Test
     void phonePeWithMisreadRupeeSign() {
         Parsed p = parse("""

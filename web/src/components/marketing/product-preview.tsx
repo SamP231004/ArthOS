@@ -30,7 +30,7 @@ export function ProductPreview() {
           <div className="hidden w-14 shrink-0 flex-col items-center gap-4 border-r border-line py-5 sm:flex">
             <LogoMark size={28} />
             {[LayoutDashboard, ArrowDownLeft, ArrowUpRight, ChartPie, Settings].map((I, i) => (
-              <span key={i} className={`grid h-8 w-8 place-items-center rounded-lg ${i === 0 ? "bg-fg/[0.07] text-brand" : "text-subtle"}`}>
+              <span key={i} className={`grid h-8 w-8 place-items-center rounded-lg ${i === 0 ? "bg-fg/[0.07] text-mark" : "text-subtle"}`}>
                 <I size={15} />
               </span>
             ))}
@@ -58,14 +58,14 @@ export function ProductPreview() {
                 <svg viewBox="0 0 300 90" className="mt-3 h-24 w-full" aria-hidden>
                   <defs>
                     <linearGradient id="pp-a" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0" stopColor="var(--c1)" stopOpacity=".35" />
-                      <stop offset="1" stopColor="var(--c1)" stopOpacity="0" />
+                      <stop offset="0" stopColor="var(--fg)" stopOpacity=".14" />
+                      <stop offset="1" stopColor="var(--fg)" stopOpacity="0" />
                     </linearGradient>
                   </defs>
                   <line x1="0" y1="88" x2="300" y2="6" stroke="var(--c2)" strokeOpacity=".45" strokeDasharray="4 5" />
-                  <path d="M0,86 C20,70 30,66 50,64 S80,60 100,55 S130,52 150,46 S180,41 200,38" fill="none" stroke="var(--c1)" strokeWidth="2.2" />
+                  <path d="M0,86 C20,70 30,66 50,64 S80,60 100,55 S130,52 150,46 S180,41 200,38" fill="none" stroke="var(--fg)" strokeWidth="2.2" />
                   <path d="M0,86 C20,70 30,66 50,64 S80,60 100,55 S130,52 150,46 S180,41 200,38 L200,90 L0,90Z" fill="url(#pp-a)" />
-                  <circle cx="200" cy="38" r="4" fill="var(--accent-1)" stroke="var(--bg)" strokeWidth="2" />
+                  <circle cx="200" cy="38" r="4" fill="var(--fg)" stroke="var(--bg)" strokeWidth="2" />
                 </svg>
               </div>
 
@@ -95,7 +95,7 @@ export function ProductPreview() {
                 [Wallet, "Income", "₹92,412", "text-income"],
                 [Receipt, "Spent", "₹53,991", "text-fg"],
                 [ArrowUpRight, "Today", "₹1,126", "text-fg"],
-                [Sparkles, "Savings", "41.8%", "text-brand"],
+                [Sparkles, "Savings", "41.8%", "text-income"],
               ].map(([I, l, v, c]) => {
                 const Icon = I as typeof Wallet;
                 return (

@@ -34,8 +34,8 @@ export function BudgetSimulator() {
           <p className="mt-2 text-xs leading-relaxed text-muted">Same number every day, no matter what happened yesterday.</p>
         </div>
         <div className="panel-glow p-5">
-          <p className="text-xs text-brand">Adaptive daily · ArthOS</p>
-          <p className="tabular mt-2 text-3xl font-semibold tracking-tight text-accent">{inr(adaptive)}</p>
+          <p className="text-xs text-mark">Adaptive daily · ArthOS</p>
+          <p className="tabular mt-2 text-3xl font-semibold tracking-tight">{inr(adaptive)}</p>
           <p className={`mt-2 text-xs ${delta >= 0 ? "text-income" : "text-expense"}`}>
             {delta >= 0 ? "+" : "−"}
             {inr(Math.abs(delta))} vs fixed
@@ -56,7 +56,7 @@ export function BudgetSimulator() {
             )}
           </p>
           <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-fg/5">
-            <div className="h-full rounded-full bg-gradient-to-r from-accent-3 to-accent-1 transition-all" style={{ width: `${Math.min(100, spentPct)}%` }} />
+            <div className="h-full rounded-full bg-fg/70 transition-all" style={{ width: `${Math.min(100, spentPct)}%` }} />
           </div>
           <div className="mt-1.5 flex justify-between text-[11px] text-subtle">
             <span>Spent {spentPct}%</span>

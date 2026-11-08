@@ -4,9 +4,10 @@ import { buttonClass } from "@/lib/button";
 import { ThemeToggle } from "../theme-toggle";
 
 const links = [
-  ["Product", "#product"],
-  ["Budget engine", "#budget"],
-  ["Roadmap", "#roadmap"],
+  ["Features", "#features"],
+  ["Android app", "#app"],
+  ["Web vs app", "#platforms"],
+  ["Privacy", "#privacy"],
   ["FAQ", "#faq"],
 ];
 

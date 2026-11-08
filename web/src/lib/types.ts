@@ -272,17 +272,21 @@ export type WidgetSnapshot = {
   month: string;
   currency: string;
   today: string;
+  dayOfMonth: number;
+  daysInMonth: number;
   budget: {
     configured: boolean;
     todayRemaining?: number;
     todayAllowance?: number;
     spentMonth?: number;
     limit?: number;
+    remainingMonth?: number;
     usedPct?: number;
+    elapsedPct?: number;
     status?: "ON_TRACK" | "CAUTION" | "OVER" | "OVER_MONTH" | "UPCOMING" | "COMPLETED";
     daysRemaining: number;
   };
-  money: { income: number; spent: number; savedFirst: number; leftToSpend: number; perDayLeft?: number; savingsBalance?: number };
+  money: { income: number; spent: number; savedFirst: number; spendable: number; leftToSpend: number; perDayLeft?: number; savingsBalance?: number };
   portfolio?: { value: number; invested: number; gain: number; gainPct?: number; dayChange: number; dayChangePct?: number; holdingsCount: number };
   generatedAt: string;
 };

@@ -403,7 +403,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 input[type="range"] {
-  accent-color: var(--accent-2);
+  accent-color: var(--brand);
 }
 
 input[type="number"]::-webkit-inner-spin-button,
