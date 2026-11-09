@@ -155,25 +155,6 @@ All screenshots use the **private demo** account (sample data). More in [`docs/i
 
 ---
 
-## ⚡ Quick start
-
-```bash
-# 1️⃣ Backend: needs MongoDB (local, Docker, or a free Atlas cluster)
-cd backend && mvn spring-boot:run              # → http://localhost:8080/api/health
-
-# 2️⃣ Website
-cd web && cp .env.example .env.local           # NEXT_PUBLIC_API_URL=http://localhost:8080
-npm install && npm run dev                     # → http://localhost:3000
-
-# 3️⃣ App
-cd app && cp .env.example .env                 # EXPO_PUBLIC_API_URL=http://10.0.2.2:8080 (emulator)
-npm install && npx expo run:android            # dev build (the app has native modules)
-```
-
-Full details, environment variables and deployment: [docs/deployment.md](docs/deployment.md).
-
----
-
 ## 🗺️ Roadmap
 
 | Phase | Theme | Status |
@@ -195,6 +176,6 @@ Details in [docs/roadmap.md](docs/roadmap.md).
 
 <img src="docs/images/logo.svg" alt="अर्थ" width="40" height="40" />
 
-Built by **Samarth Patel** · *Understand every rupee in motion.*
+Forged by **Samarth** · *Take control of your अर्थ.*
 
 </div>
