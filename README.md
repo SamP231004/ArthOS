@@ -166,9 +166,9 @@ Details in [docs/roadmap.md](docs/roadmap.md).
 
 ## 👋 About me
 
-I'm **Samarth Patel**, a full-stack developer (Java · Spring Boot · Next.js · React Native) and a Computer Science student at VIT.
-I build web and mobile products end to end, from the backend and data model to the UI, and ArthOS is one of them:
-designed, built and shipped on the web and Android by me.
+I'm **Samarth Patel**. I love turning ideas into real products that people actually use, and taking them all the way from a
+rough thought to something live, polished and useful. ArthOS started as a simple question, *"how much can I spend today?"*,
+and grew into the product you see here.
 
 [🌐 Portfolio](https://samp231004.github.io/Portfolio/) · [💻 GitHub](https://github.com/SamP231004) · [💼 LinkedIn](https://www.linkedin.com/in/samp231004/)
 
