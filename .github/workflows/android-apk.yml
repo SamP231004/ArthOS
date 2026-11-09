@@ -61,7 +61,17 @@ jobs:
           GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.workers.max=2
           # arm64 only: what virtually every Android phone from the last ~8 years runs; halves the APK and build time
           ORG_GRADLE_PROJECT_reactNativeArchitectures: arm64-v8a
-        run: npx --yes eas-cli@latest build --platform android --profile preview --local --non-interactive --output "$GITHUB_WORKSPACE/ArthOS.apk"
+        # One automatic retry: the runner sometimes times out downloading Gradle or Maven artifacts before any of
+        # our code compiles. A real compile error fails both attempts the same way.
+        run: |
+          for attempt in 1 2; do
+            if npx --yes eas-cli@latest build --platform android --profile preview --local --non-interactive --output "$GITHUB_WORKSPACE/ArthOS.apk"; then
+              exit 0
+            fi
+            echo "::warning::Build attempt $attempt failed"
+            [ "$attempt" = 1 ] && sleep 30
+          done
+          exit 1
 
       - name: Publish "Android app (latest)" release
         uses: softprops/action-gh-release@v2
