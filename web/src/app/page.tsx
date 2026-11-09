@@ -402,6 +402,8 @@ export default function Home() {
             <a href={DOCS_URL} target="_blank" rel="noreferrer" className="text-muted hover:text-fg">Documentation</a>
             <a href="#roadmap" className="text-muted hover:text-fg">Roadmap</a>
             <Link href="/login" className="text-muted hover:text-fg">Sign in</Link>
+            <Link href="/privacy" className="text-muted hover:text-fg">Privacy policy</Link>
+            <Link href="/delete-account" className="text-muted hover:text-fg">Delete account</Link>
           </div>
           <div className="md:text-right">
             <p className="mb-3 text-xs text-subtle">

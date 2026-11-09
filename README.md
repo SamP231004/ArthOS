@@ -110,6 +110,7 @@ Each folder is independent, with its own dependencies, env file and deploy targe
 | 🔌 [API reference](docs/api.md) | Every endpoint, with request and response notes. |
 | 🚀 [Running & deploying](docs/deployment.md) | Local setup, environment variables, Render, Vercel, and the Android build pipeline. |
 | 🗺️ [Roadmap](docs/roadmap.md) | What's shipped (Phases 1–6) and what's next (AI assistant, scale). |
+| 🏪 [Google Play listing kit](docs/play-store/README.md) | Store text, graphics, Data safety answers and release steps. |
 | 🧗 [Challenges & fixes](docs/challenges.md) | The hardest bugs we hit (sharing, OCR, demo speed…), what caused them and how we fixed them. |
 
 ---

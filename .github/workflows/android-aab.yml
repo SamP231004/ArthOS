@@ -1,0 +1,113 @@
+# Builds the Google Play bundle (.aab) with the production profile. Run it by pushing a version tag
+# (git tag v1.0.0 && git push origin v1.0.0) or from GitHub → Actions → "Android AAB (Play Store)" → Run workflow.
+# The .aab is attached to the run as an artifact (download it from the run page) and uploaded to Play Console by hand.
+# Version code is incremented by EAS (appVersionSource: remote); the version name comes from app.json.
+name: Android AAB (Play Store)
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: android-aab
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  GRADLE_VERSION: "9.4.1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # ubuntu-latest already ships the Android SDK (ANDROID_HOME); the setup-android action fails on its retired
+      # "tools" package, so it isn't used.
+      - name: Check EXPO_TOKEN
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Add the EXPO_TOKEN repository secret (expo.dev → Account settings → Access tokens), then re-run this workflow."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      # services.gradle.org sometimes answers 504 / times out. Fetch the Gradle distribution once with patient retries,
+      # check its official checksum, cache it, and point the build at the local file (app/plugins/with-local-gradle.js).
+      - name: Cache Gradle distribution
+        uses: actions/cache@v4
+        with:
+          path: ~/gradle-dist
+          key: gradle-dist-${{ env.GRADLE_VERSION }}
+
+      # Gradle's downloaded libraries (Kotlin compiler, AndroidX, ML Kit, PDFBox…): reused between builds, so an
+      # outage at Maven Central / GitHub release downloads doesn't fail a build that has nothing new to fetch.
+      - name: Cache Gradle libraries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/caches/jars-9
+            ~/.gradle/caches/transforms-4
+          key: gradle-libs-${{ hashFiles('app/package-lock.json', 'app/modules/**/build.gradle') }}
+          restore-keys: gradle-libs-
+
+      - name: Fetch Gradle distribution (with retries)
+        continue-on-error: true
+        run: |
+          f="$HOME/gradle-dist/gradle-${GRADLE_VERSION}-bin.zip"
+          if [ ! -f "$f" ]; then
+            mkdir -p "$HOME/gradle-dist"
+            base="https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
+            curl -fL --retry 10 --retry-delay 20 --retry-all-errors --connect-timeout 20 -o "$f" "$base"
+            sum=$(curl -fsL --retry 10 --retry-delay 20 --retry-all-errors "$base.sha256")
+            echo "$sum  $f" | sha256sum -c - || { rm -f "$f"; exit 1; }
+          fi
+          echo "GRADLE_DIST_FILE=$f" >> "$GITHUB_ENV"
+
+      - name: Build APK (EAS, on this runner)
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.workers.max=2
+          # all CPU types: Play delivers only the right one to each phone
+          ORG_GRADLE_PROJECT_reactNativeArchitectures: armeabi-v7a,arm64-v8a,x86_64
+        # One automatic retry: the runner sometimes times out downloading Gradle or Maven artifacts before any of
+        # our code compiles. A real compile error fails both attempts the same way.
+        run: |
+          for attempt in 1 2; do
+            if npx --yes eas-cli@latest build --platform android --profile production --local --non-interactive --output "$GITHUB_WORKSPACE/ArthOS.aab"; then
+              exit 0
+            fi
+            echo "::warning::Build attempt $attempt failed"
+            [ "$attempt" = 1 ] && sleep 30
+          done
+          exit 1
+
+      - name: Upload the Play Store bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: ArthOS-${{ github.ref_name }}-aab
+          path: ArthOS.aab
+          retention-days: 30

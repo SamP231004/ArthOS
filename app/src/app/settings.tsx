@@ -2,14 +2,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, Switch, Text, View } from 'react-native';
+import { Linking, Pressable, Switch, Text, View } from 'react-native';
 
 import { Logo } from '@/components/logo';
 import { SavingsRuleField } from '@/components/savings-rule';
 import { confirm } from '@/components/confirm';
 import { Screen } from '@/components/screen';
 import { Button, Card, Chip, ErrorNote, Input, T } from '@/components/ui';
-import { API_URL } from '@/lib/api';
+import { api, API_URL } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 import { currentMonth, money } from '@/lib/format';
 import { pinAlertsEnabled, setPinAlerts, syncAlertNotifications } from '@/lib/notify';
@@ -197,9 +197,34 @@ export default function SettingsScreen() {
           )
         }
       />
+      <Pressable
+        onPress={async () => {
+          const ok = await confirm({
+            title: 'Delete your account?',
+            body: 'This permanently erases your account and everything in it — income, expenses, budgets, investments and settings — on the app and the web. It can’t be undone.',
+            confirmText: 'Delete forever',
+            tone: 'danger',
+            icon: '✕',
+          });
+          if (!ok) return;
+          try {
+            await api('/api/users/me', { method: 'DELETE' });
+            signOut();
+          } catch (e) {
+            confirm({ title: 'Couldn’t delete', body: e instanceof Error ? e.message : 'Please try again.', confirmText: 'OK' });
+          }
+        }}
+        accessibilityRole="button"
+        style={{ alignItems: 'center', paddingVertical: S.sm }}
+      >
+        <Text style={{ color: c.subtle, fontFamily: F.uiMedium, fontSize: 13, textDecorationLine: 'underline' }}>Delete account</Text>
+      </Pressable>
       <View style={{ alignItems: 'center', gap: S.sm, marginTop: S.lg }}>
         <Logo size={26} />
         <T variant="small">Take control of your अर्थ · {API_URL.replace(/^https?:\/\//, '')}</T>
+        <Text onPress={() => Linking.openURL('https://os-arth.vercel.app/privacy')} style={{ color: c.subtle, fontFamily: F.ui, fontSize: 12, textDecorationLine: 'underline' }}>
+          Privacy policy
+        </Text>
       </View>
     </Screen>
   );

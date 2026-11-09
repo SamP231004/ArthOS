@@ -1,12 +1,13 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronRight, Globe2, LayoutGrid, LogOut, Palette, PiggyBank, Smartphone, UserRound } from "lucide-react";
+import { Check, ChevronRight, Globe2, LayoutGrid, LogOut, Palette, PiggyBank, Smartphone, Trash2, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { SavingsRuleField } from "@/components/savings-rule";
-import { Button, ErrorNote, Field, Input, Select } from "@/components/ui";
+import { Button, ErrorNote, Field, Input, Modal, Select } from "@/components/ui";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-store";
 import { currentMonth, money } from "@/lib/format";
 import { useSummary, useUpdateProfile } from "@/lib/queries";
@@ -35,6 +36,9 @@ export default function SettingsPage() {
   };
   const [f, setF] = useState(initial);
   const [saved, setSaved] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [delBusy, setDelBusy] = useState(false);
+  const [delError, setDelError] = useState<string | null>(null);
   const dirty = JSON.stringify(f) !== JSON.stringify(initial);
 
   async function save() {
@@ -51,6 +55,20 @@ export default function SettingsPage() {
       setSaved(true);
     } catch {
       /* shown via update.error */
+    }
+  }
+
+  async function deleteAccount() {
+    setDelBusy(true);
+    setDelError(null);
+    try {
+      await api<void>("/api/users/me", { method: "DELETE" });
+      signOut();
+      qc.clear();
+      window.location.replace("/");
+    } catch (e) {
+      setDelError(e instanceof Error ? e.message : "Couldn't delete the account");
+      setDelBusy(false);
     }
   }
 
@@ -147,8 +165,29 @@ export default function SettingsPage() {
               <ChevronRight size={16} className="text-subtle" />
             </a>
           </Card>
+
+          <Card icon={Trash2} title="Account" desc="Your data, your call.">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted">Permanently erase your account and everything in it, on the web and the app.</p>
+              <Button type="button" variant="danger" onClick={() => setDeleting(true)}>Delete account</Button>
+            </div>
+            <p className="text-xs text-subtle"><Link href="/privacy" className="underline hover:text-fg">Privacy policy</Link></p>
+          </Card>
         </div>
       </div>
+
+      <Modal open={deleting} onClose={() => !delBusy && setDeleting(false)} title="Delete your account?" subtitle="This can't be undone.">
+        <div className="space-y-4">
+          <p className="text-sm leading-relaxed text-fg-2">
+            Your account and everything in it — income, expenses, budgets, savings history, investments and settings — will be <strong className="text-fg">permanently erased</strong> on the website and the Android app.
+          </p>
+          <ErrorNote message={delError} />
+          <div className="flex gap-3">
+            <Button type="button" variant="secondary" className="flex-1" onClick={() => setDeleting(false)} disabled={delBusy}>Cancel</Button>
+            <Button type="button" variant="danger" className="flex-1" loading={delBusy} onClick={deleteAccount}>Delete forever</Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* save bar: only when something changed */}
       {(dirty || saved || update.error) && (

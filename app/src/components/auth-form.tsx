@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, KeyboardAvoidingView, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Animated, Easing, KeyboardAvoidingView, Linking, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -232,6 +232,13 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
               </View>
               <Text style={{ color: c.brand, fontSize: 18, fontFamily: F.ui }}>›</Text>
             </Pressable>
+            <Text style={{ color: c.subtle, fontFamily: F.ui, fontSize: 11.5, textAlign: 'center', marginTop: 2 }}>
+              By continuing you agree to the{' '}
+              <Text onPress={() => Linking.openURL('https://os-arth.vercel.app/privacy')} style={{ textDecorationLine: 'underline' }}>
+                privacy policy
+              </Text>
+              .
+            </Text>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>

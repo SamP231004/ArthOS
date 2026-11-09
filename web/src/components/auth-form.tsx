@@ -180,6 +180,9 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               <>Already have an account? <Link href="/login" className="text-brand hover:underline">Sign in</Link></>
             )}
           </p>
+          <p className="mt-4 text-center text-xs text-subtle">
+            By continuing you agree to how we handle your data in the <Link href="/privacy" className="underline hover:text-fg">privacy policy</Link>.
+          </p>
         </div>
       </div>
     </div>

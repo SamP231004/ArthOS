@@ -14,14 +14,33 @@ import java.time.ZoneId;
 public class UserController {
 
     private final UserRepository users;
+    private final org.springframework.data.mongodb.core.MongoTemplate mongo;
 
-    public UserController(UserRepository users) {
+    public UserController(UserRepository users, org.springframework.data.mongodb.core.MongoTemplate mongo) {
         this.users = users;
+        this.mongo = mongo;
     }
 
     @GetMapping("/me")
     UserResponse me() {
         return UserResponse.from(load());
+    }
+
+    /**
+     * Delete the account and everything in it: incomes, expenses, budgets, investments and learned category rules.
+     * Irreversible (Google Play requires in-app account deletion). The client signs out afterwards.
+     */
+    @DeleteMapping("/me")
+    @ResponseStatus(org.springframework.http.HttpStatus.NO_CONTENT)
+    void deleteAccount() {
+        User u = load();
+        org.springframework.data.mongodb.core.query.Query mine =
+                org.springframework.data.mongodb.core.query.Query.query(org.springframework.data.mongodb.core.query.Criteria.where("userId").is(u.getId()));
+        for (Class<?> c : new Class<?>[] {com.arthos.income.Income.class, com.arthos.expense.Expense.class, com.arthos.budget.Budget.class,
+                com.arthos.portfolio.Holding.class, com.arthos.automation.MerchantRule.class}) {
+            mongo.remove(mine, c);
+        }
+        users.delete(u);
     }
 
     @PatchMapping("/me")
