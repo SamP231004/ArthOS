@@ -133,7 +133,8 @@
             }
           ]
         }
-      ]
+      ],
+      "./plugins/with-local-gradle"
     ],
     "experiments": {
       "typedRoutes": true,

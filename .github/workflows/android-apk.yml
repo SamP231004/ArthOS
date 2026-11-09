@@ -20,6 +20,10 @@ concurrency:
 permissions:
   contents: write # to create/update the release
 
+env:
+  # Gradle version used by the Expo SDK's Android template (see android/gradle/wrapper after prebuild)
+  GRADLE_VERSION: "9.4.1"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -54,6 +58,27 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # services.gradle.org sometimes answers 504 / times out. Fetch the Gradle distribution once with patient retries,
+      # check its official checksum, cache it, and point the build at the local file (app/plugins/with-local-gradle.js).
+      - name: Cache Gradle distribution
+        uses: actions/cache@v4
+        with:
+          path: ~/gradle-dist
+          key: gradle-dist-${{ env.GRADLE_VERSION }}
+
+      - name: Fetch Gradle distribution (with retries)
+        continue-on-error: true
+        run: |
+          f="$HOME/gradle-dist/gradle-${GRADLE_VERSION}-bin.zip"
+          if [ ! -f "$f" ]; then
+            mkdir -p "$HOME/gradle-dist"
+            base="https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
+            curl -fL --retry 10 --retry-delay 20 --retry-all-errors --connect-timeout 20 -o "$f" "$base"
+            sum=$(curl -fsL --retry 10 --retry-delay 20 --retry-all-errors "$base.sha256")
+            echo "$sum  $f" | sha256sum -c - || { rm -f "$f"; exit 1; }
+          fi
+          echo "GRADLE_DIST_FILE=$f" >> "$GITHUB_ENV"
 
       - name: Build APK (EAS, on this runner)
         env:
