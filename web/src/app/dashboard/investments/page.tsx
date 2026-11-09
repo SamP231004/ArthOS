@@ -1,9 +1,10 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ChartPie, ChevronDown, ChevronsUpDown, LayoutGrid, Minus, Pencil, PiggyBank, Plus, RefreshCw, Trash2, TrendingUp, Wallet } from "lucide-react";
+import { ArrowDown, ArrowUp, ChartPie, ChevronDown, ChevronsUpDown, LayoutGrid, Minus, Pencil, PiggyBank, Plus, RefreshCw, Trash2, TrendingUp, Upload, Wallet } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Donut } from "@/components/charts";
 import { AddHoldingModal } from "@/components/invest/add-holding";
+import { ImportHoldingsModal } from "@/components/invest/import-holdings";
 import { ContributionChart } from "@/components/invest/contribution-chart";
 import { GoalHorizon } from "@/components/invest/goal-horizon";
 import { HoldingModal, type DetailTab } from "@/components/invest/holding-detail";
@@ -30,6 +31,7 @@ export default function InvestmentsPage() {
   const [view, setView] = useState<View>("holdings");
   const [adding, setAdding] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [open, setOpen] = useState<{ id: string; tab: DetailTab } | null>(null);
   const selected = p?.holdings.find((h) => h.id === open?.id) ?? null;
 
@@ -52,6 +54,9 @@ export default function InvestmentsPage() {
             </button>
           ))}
         </div>
+        <Button variant="secondary" onClick={() => setImporting(true)}>
+          <Upload size={15} /> Import
+        </Button>
         <Button variant="secondary" onClick={() => setWithdrawing(true)} disabled={!p?.holdings.length}>
           <Minus size={15} /> Withdraw
         </Button>
@@ -68,7 +73,7 @@ export default function InvestmentsPage() {
       ) : error ? (
         <ErrorNote message={error.message} />
       ) : p && p.holdings.length === 0 ? (
-        <Empty onAdd={() => setAdding(true)} />
+        <Empty onAdd={() => setAdding(true)} onImport={() => setImporting(true)} />
       ) : p && view === "holdings" ? (
         <HoldingsView p={p} refresh={() => refetch()} refreshing={isFetching} onOpen={(id, tab) => setOpen({ id, tab })} />
       ) : (
@@ -76,6 +81,7 @@ export default function InvestmentsPage() {
       )}
 
       <AddHoldingModal open={adding} onClose={() => setAdding(false)} />
+      <ImportHoldingsModal open={importing} onClose={() => setImporting(false)} />
       <WithdrawPicker open={withdrawing} holdings={p?.holdings ?? []} onClose={() => setWithdrawing(false)} onPick={(id) => { setWithdrawing(false); setOpen({ id, tab: "withdraw" }); }} />
       <HoldingModal holding={selected} initialTab={open?.tab} onClose={() => setOpen(null)} />
     </div>
@@ -494,14 +500,19 @@ function WithdrawPicker({ open, holdings, onClose, onPick }: { open: boolean; ho
   );
 }
 
-function Empty({ onAdd }: { onAdd: () => void }) {
+function Empty({ onAdd, onImport }: { onAdd: () => void; onImport: () => void }) {
   return (
     <div className="panel-glow p-8 sm:p-12">
       <h2 className="font-display text-4xl tracking-tight">Bring your wealth into one view</h2>
-      <p className="mt-3 max-w-xl text-muted">Add what you own — ArthOS prices it live, tracks P&amp;L and XIRR, and shows how it all adds up.</p>
-      <Button size="lg" className="mt-8" onClick={onAdd}>
-        <Plus size={16} /> Add your first investment
-      </Button>
+      <p className="mt-3 max-w-xl text-muted">Import from Zerodha, Groww, any broker or your mutual-fund CAS — read on your device, never uploaded — or add holdings by hand.</p>
+      <div className="mt-8 flex flex-wrap gap-3">
+        <Button size="lg" onClick={onImport}>
+          <Upload size={16} /> Import from your broker
+        </Button>
+        <Button size="lg" variant="secondary" onClick={onAdd}>
+          <Plus size={16} /> Add by hand
+        </Button>
+      </div>
       <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {(Object.keys(CLASS_META) as AssetClass[]).map((c) => {
           const M = CLASS_META[c];

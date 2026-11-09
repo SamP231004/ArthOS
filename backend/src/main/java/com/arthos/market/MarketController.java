@@ -17,9 +17,22 @@ import java.util.List;
 public class MarketController {
 
     private final MarketDataService market;
+    private final ReferenceIndex reference;
 
-    public MarketController(MarketDataService market) {
+    public MarketController(MarketDataService market, ReferenceIndex reference) {
         this.market = market;
+        this.reference = reference;
+    }
+
+    /**
+     * Public ISIN reference data (NSE symbols, AMFI scheme codes) for importing broker files on the device: the client
+     * matches its file against this locally, so no part of the file is sent before the user confirms the import.
+     */
+    @GetMapping("/isin-index")
+    org.springframework.http.ResponseEntity<ReferenceIndex.Index> isinIndex() {
+        return org.springframework.http.ResponseEntity.ok()
+                .cacheControl(org.springframework.http.CacheControl.maxAge(java.time.Duration.ofHours(12)).cachePrivate())
+                .body(reference.get());
     }
 
     @GetMapping("/search")

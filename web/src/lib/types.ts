@@ -177,7 +177,7 @@ export type HoldingView = {
   gold?: { form: GoldForm; purity: GoldPurity; grams: number; pricePerGram24k: number };
   bond?: { faceValue: number; couponRate: number; maturityDate: string; bondType: BondType; annualCoupon: number; nextCouponDate?: string; yearsToMaturity?: number; currentYield?: number };
   spark: number[];
-  lots: { id: string; type: LotType; date: string; quantity: number; price: number; amount: number; note?: string; fundedFrom?: FundingSource; fromSavings?: number; fromSpending?: number }[];
+  lots: { id: string; type: LotType; date: string; quantity: number; price: number; amount: number; note?: string; fundedFrom?: FundingSource; fromSavings?: number; fromSpending?: number; importedFrom?: string }[];
 };
 
 export type Portfolio = {

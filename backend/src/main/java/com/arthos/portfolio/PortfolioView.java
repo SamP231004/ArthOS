@@ -39,7 +39,9 @@ public record PortfolioView(
 
     /** One buy/sell. For buys, fromSavings + fromSpending = amount (how the purchase was paid for). */
     public record LotView(String id, LotType type, LocalDate date, BigDecimal quantity, BigDecimal price, BigDecimal amount, String note,
-                          Holding.FundingSource fundedFrom, BigDecimal fromSavings, BigDecimal fromSpending) {}
+                          Holding.FundingSource fundedFrom, BigDecimal fromSavings, BigDecimal fromSpending,
+                          /** Broker/CAS import source when the transaction was imported (held before ArthOS). */
+                          String importedFrom) {}
 
     public record GoldInfo(GoldForm form, GoldPurity purity, BigDecimal grams, BigDecimal pricePerGram24k) {}
 

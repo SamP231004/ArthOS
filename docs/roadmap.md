@@ -60,6 +60,10 @@ alerts · suggestions · phone notifications for budget overages and bill due da
 
 ---
 
+## 📥 Broker import (added)
+
+Import holdings and tradebooks from Zerodha, Groww and other brokers, and every mutual fund from a CAS. Files are read on the device and never uploaded. → [investments.md](investments.md#-import-from-your-broker)
+
 ## 🧪 Phase 6: Widgets → [widgets.md](widgets.md)
 
 > *Blueprint: "Deliver small and medium widgets with budget and portfolio information. Allow widget configuration per user preference. Ensure widget values refresh reliably."*

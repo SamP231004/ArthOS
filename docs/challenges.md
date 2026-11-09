@@ -29,6 +29,8 @@ Each entry follows the same shape: **🐛 Symptom → 🔍 Root cause → 🛠�
 | 18 | [🔔 Alerts vanished with "Clear all"](#18--alerts-vanished-with-clear-all) | 📱 App | ✅ Fixed |
 | 19 | [😴 The sandbox got slow again, and the Google button vanished](#19--the-sandbox-got-slow-again-and-the-google-button-vanished) | ☁️ Infra · 📱 App | ✅ Fixed |
 | 20 | [🧮 Two different "left" numbers on one widget](#20--two-different-left-numbers-on-one-widget) | 📱 App | ✅ Fixed |
+| 21 | [🔐 Java didn't trust AMFI's certificate](#21--java-didnt-trust-amfis-certificate) | ☕ Backend | ✅ Fixed |
+| 22 | [👯 Importing could count a holding twice](#22--importing-could-count-a-holding-twice) | 📈 Investments | ✅ Fixed |
 
 ---
 
@@ -344,4 +346,26 @@ APKs use the **v2** signing block. We wrote a small parser that reads the certif
 | 🔍 **Root cause** | It mixed two views of the month. *Spent* was **all** spending (rent and EMIs included), while the budget bar counted only spending **against the budget** (rent and EMIs excluded). *Left to spend* came from the save-first view (income − saved − spent). |
 | 🛠️ **Fix** | The widget tells **one story**. With a budget, everything is the budget's view: *"₹31,218 left of ₹40,000"*, a bar with a **today marker**, *"₹8,782 spent · ₹1,357/day for 23 days"*. Without a budget, it's the save-first view only. The Insights page got the same treatment: its header no longer shows a figure that disagrees with the sentence below it. |
 | 💡 **Lesson** | Every number on one card should come from the same definition, or it looks like a bug even when each number is right. |
+
+---
+
+## 21. 🔐 Java didn't trust AMFI's certificate
+
+| | |
+|---|---|
+| 🐛 **Symptom** | Broker import matched stocks but **no mutual funds**: the fund list came back empty. |
+| 🔍 **Root cause** | AMFI serves its NAV file from `portal.amfiindia.com`, whose certificate chains to **Sectigo Public Server Authentication Root R46**, a newer root that the local Java's trust store didn't include (`PKIX path building failed`). `curl` worked because it uses the operating system's certificate store. AMFI's plain-HTTP address only redirects to HTTPS. |
+| 🛠️ **Fix** | AMFI stays the primary source (18k+ ISINs); if it fails, the index falls back to **mfapi.in's scheme list**, which carries ISINs for the actively used funds. The index is also built in the background at startup, so the first import never waits on slow sources. |
+| 💡 **Lesson** | Test external data sources from the same runtime that will call them in production, not just with curl. |
+
+---
+
+## 22. 👯 Importing could count a holding twice
+
+| | |
+|---|---|
+| 🐛 **Symptom** | In testing, importing a Zerodha holdings file **added** 10 RELIANCE shares on top of the RELIANCE already entered by hand. |
+| 🔍 **Root cause** | A holdings file describes your **whole** position, but the import merged it into the existing holding like a new purchase. |
+| 🛠️ **Fix** | Hand-entered holdings are **skipped** with a clear note. A fresh file from the same broker **replaces** that broker's earlier import (Zerodha holdings ↔ tradebook, Groww MF ↔ CAS). Different brokers still add up, because they hold different shares. Imported lots never touch the savings account. |
+| 💡 **Lesson** | "Import" and "add" mean different things. Decide which source is the truth for each holding. |
 

@@ -34,4 +34,6 @@ android {
 dependencies {
   // Bundled model: shipped inside the APK, works offline and without waiting for Google Play services to download it.
   implementation 'com.google.mlkit:text-recognition:16.0.1'
+  // On-device PDF text (password-protected CAS statements) for broker/CAS import
+  implementation 'com.tom-roush:pdfbox-android:2.0.27.0'
 }

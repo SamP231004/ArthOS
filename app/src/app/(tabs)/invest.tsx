@@ -34,7 +34,10 @@ export default function InvestTab() {
       <SavingsBalance />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Segmented value={view} onChange={setView} options={[{ value: 'holdings', label: 'Holdings' }, { value: 'analysis', label: 'Analysis' }]} />
-        <Button title="+ Add" onPress={() => router.push('/add-holding')} />
+        <View style={{ flexDirection: 'row', gap: S.sm }}>
+          <Button title="Import" variant="secondary" onPress={() => router.push('/import')} />
+          <Button title="+ Add" onPress={() => router.push('/add-holding')} />
+        </View>
       </View>
 
       {isLoading ? (
@@ -44,8 +47,9 @@ export default function InvestTab() {
       ) : !p ? null : p.holdings.length === 0 ? (
         <Card glow style={{ gap: S.md }}>
           <T variant="title" style={{ fontSize: 26 }}>Bring your wealth into one view</T>
-          <T variant="muted">Add what you own — ArthOS prices it live and tracks P&amp;L and XIRR.</T>
-          <Button title="Add your first investment" size="lg" onPress={() => router.push('/add-holding')} />
+          <T variant="muted">Import from Zerodha, Groww, any broker or your mutual-fund CAS — read on your phone, never uploaded — or add holdings by hand.</T>
+          <Button title="Import from your broker" size="lg" onPress={() => router.push('/import')} />
+          <Button title="Add by hand" variant="secondary" onPress={() => router.push('/add-holding')} />
         </Card>
       ) : view === 'holdings' ? (
         <Holdings p={p} />

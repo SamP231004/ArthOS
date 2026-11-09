@@ -151,6 +151,7 @@ erDiagram
 | CORS | Only origins in `CORS_ALLOWED_ORIGINS`. |
 | Demo abuse | At most 10 demo accounts per IP per hour (sliding window). |
 | Receipts & screenshots | **Never uploaded.** OCR runs on the device, and only the extracted text is sent for parsing. |
+| Broker files & CAS | **Never uploaded.** Read and matched on the device (pdf.js / PDFBox for PDFs); only the holdings you confirm are saved. |
 | Secrets | `.env` files are gitignored; production secrets live in Render/Vercel/GitHub settings. |
 
 ---
@@ -160,6 +161,6 @@ erDiagram
 1. **🧮 Pure maths, tested.** Every number on screen comes from a calculator that can be unit-tested without a server.
 2. **🔁 One source of truth.** Clients never recalculate money; the backend decides and both clients display it.
 3. **🗣️ Explain, don't just show.** Budget and health screens explain how each number was reached.
-4. **🔒 Private by default.** On-device OCR, no external AI, no third-party analytics.
+4. **🔒 Private by default.** On-device OCR and broker-file import, no external AI, no third-party analytics.
 5. **🔌 Swappable providers.** Price sources sit behind `PriceProvider`, so a licensed feed can replace free sources without touching the engine.
 6. **📱 Mirror the web.** The app uses the same palette, wording and layout as the website.

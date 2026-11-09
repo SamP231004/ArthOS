@@ -164,7 +164,7 @@ export default function SettingsScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <T style={{ fontSize: 15 }}>Take the tour</T>
-            <T variant="small">Everything ArthOS can do, in seven screens.</T>
+            <T variant="small">Everything ArthOS can do, in eight screens.</T>
           </View>
           <Text style={{ color: c.subtle, fontSize: 20 }}>›</Text>
         </Card>

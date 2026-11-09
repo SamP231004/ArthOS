@@ -1,6 +1,10 @@
 server:
   port: ${PORT:8080}
   forward-headers-strategy: framework
+  compression:
+    enabled: true
+    mime-types: application/json,text/plain
+    min-response-size: 2048
 
 spring:
   application:

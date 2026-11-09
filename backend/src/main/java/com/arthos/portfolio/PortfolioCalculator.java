@@ -96,7 +96,7 @@ public final class PortfolioCalculator {
                     lots.isEmpty() ? null : lots.getFirst().getDate(), gold(), bond(), spark,
                     lots.stream().map(l -> new LotView(l.getId(), l.getType(), l.getDate(), l.getQuantity().stripTrailingZeros(), l.getPrice(),
                             m(l.getQuantity().multiply(l.getPrice())), l.getNote(), l.fundedFrom(),
-                            l.getType() == LotType.SELL ? null : m(l.fromSavings()), l.getType() == LotType.SELL ? null : m(l.fromSpending()))).toList());
+                            l.getType() == LotType.SELL ? null : m(l.fromSavings()), l.getType() == LotType.SELL ? null : m(l.fromSpending()), l.getImportSource())).toList());
         }
 
         GoldInfo gold() {

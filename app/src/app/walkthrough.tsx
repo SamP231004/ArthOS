@@ -43,6 +43,7 @@ const SLIDES: Slide[] = [
   { eyebrow: 'Save first', title: 'Pay yourself first. Automatically.', body: 'A share of every income goes into savings the moment it arrives, and carries forward. What’s left is yours to spend.', Visual: SaveVisual },
   { eyebrow: 'Budget', title: 'One number for today', body: 'Your monthly limit becomes a single daily number that adapts when life happens. Rent and EMIs stay out of it.', Visual: BudgetVisual },
   { eyebrow: 'Investments', title: 'Every rupee that grows', body: 'Stocks, mutual funds, gold and bonds at live prices — with 1-day and total returns, XIRR and allocation.', Visual: PortfolioVisual },
+  { eyebrow: 'Import', title: 'Years of investing, in one upload', body: 'Download your holdings or tradebook from Zerodha, Groww or any broker — or your CAS for every mutual fund — and import it. The file is read on your phone and never uploaded.', Visual: ImportVisual },
   { eyebrow: 'Scan & Share', title: 'Share a screenshot. That’s the entry.', body: 'From GPay, PhonePe or your bank app, tap Share → ArthOS. Amount, merchant, date and category fill themselves in. Read on your phone — never uploaded.', Visual: ScanVisual },
   { eyebrow: 'Insights', title: 'A score that explains itself', body: 'Your month in plain words, a 100-point health score, unusual spending and subscriptions that add up — no AI, just clear rules.', Visual: InsightsVisual },
   { eyebrow: 'On your phone', title: 'Your money on your home screen', body: 'Widgets you can glance at (tap the eye to hide amounts), a pinned alert when you’re over budget, and bill reminders on the due date.', Visual: PhoneVisual },
@@ -166,7 +167,7 @@ function WelcomeVisual() {
         <LogoMark size={96} />
       </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, maxWidth: 320 }}>
-        {['Save first', 'Daily budget', 'Investments', 'Scan & Share', 'Insights', 'Widgets', 'Alerts'].map((t) => (
+        {['Save first', 'Daily budget', 'Investments', 'Broker import', 'Scan & Share', 'Insights', 'Widgets', 'Alerts'].map((t) => (
           <Text key={t} style={{ color: K.fg2, fontFamily: F.uiMedium, fontSize: 12.5, borderWidth: 1, borderColor: K.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>{t}</Text>
         ))}
       </View>
@@ -236,6 +237,41 @@ function PortfolioVisual() {
         <View style={{ flex: 5, backgroundColor: '#e8946a' }} />
       </View>
       <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 11.5 }}>Mutual funds · Stocks · Gold · Bonds   ·   XIRR +18.4%</Text>
+    </Card>
+  );
+}
+
+function ImportVisual() {
+  const rows: [string, string, string][] = [
+    ['Reliance Industries', 'Stock · 10 shares', '₹24,105'],
+    ['NIFTYBEES · Nifty 50 ETF', 'ETF · 50 units', '₹10,513'],
+    ['Parag Parikh Flexi Cap', 'Fund · 55.23 units', '₹3,240'],
+  ];
+  return (
+    <Card>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        {['Zerodha', 'Groww', 'Upstox', 'CAS'].map((b) => (
+          <Text key={b} style={{ color: K.fg2, fontFamily: F.uiMedium, fontSize: 11, borderWidth: 1, borderColor: K.line, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>{b}</Text>
+        ))}
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderStyle: 'dashed', borderColor: 'rgba(242,239,232,0.2)', borderRadius: 12, padding: 10 }}>
+        <Text style={{ fontSize: 14 }}>📄</Text>
+        <Text style={{ flex: 1, color: K.fg2, fontFamily: F.ui, fontSize: 12 }} numberOfLines={1}>holdings-zerodha.xlsx</Text>
+        <Text style={{ color: K.income, fontFamily: F.uiSemibold, fontSize: 10.5 }}>🔒 on this phone</Text>
+      </View>
+      {rows.map(([n, d, v]) => (
+        <View key={n} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ width: 16, height: 16, borderRadius: 4, backgroundColor: K.ink, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: K.inkFg, fontSize: 10, fontFamily: F.uiSemibold }}>✓</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: K.fg, fontFamily: F.uiMedium, fontSize: 12.5 }} numberOfLines={1}>{n}</Text>
+            <Text style={{ color: K.subtle, fontFamily: F.ui, fontSize: 10.5 }}>{d}</Text>
+          </View>
+          <Text style={{ color: K.fg2, fontFamily: F.uiSemibold, fontSize: 12.5 }}>{v}</Text>
+        </View>
+      ))}
+      <Text style={{ color: K.inkFg, backgroundColor: K.ink, borderRadius: 12, overflow: 'hidden', textAlign: 'center', fontFamily: F.uiSemibold, fontSize: 13, paddingVertical: 9 }}>Import 3 holdings</Text>
     </Card>
   );
 }

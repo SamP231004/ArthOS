@@ -262,3 +262,41 @@ export function PhoneVisual() {
     </div>
   );
 }
+
+// ───────────────────────────────────────── import from your broker
+
+export function ImportVisual() {
+  const rows = [
+    ["Reliance Industries", "Stock · 10 shares", "₹24,105"],
+    ["NIFTYBEES · Nifty 50 ETF", "ETF · 50 units", "₹10,513"],
+    ["Parag Parikh Flexi Cap", "Mutual fund · 55.23 units", "₹3,240"],
+    ["Titan Company", "Stock · 15 shares", "₹52,701"],
+  ];
+  return (
+    <div className="panel p-6">
+      <div className="flex flex-wrap gap-2">
+        {["Zerodha", "Groww", "Upstox", "Angel One", "CAS (all funds)"].map((b) => (
+          <span key={b} className="rounded-full border border-line px-3 py-1 text-xs text-fg-2">{b}</span>
+        ))}
+      </div>
+      <div className="mt-5 flex items-center gap-3 rounded-xl border-2 border-dashed border-line-strong px-4 py-3 text-sm">
+        <span className="text-lg">📄</span>
+        <span className="min-w-0 flex-1 truncate">holdings-zerodha.xlsx</span>
+        <span className="flex items-center gap-1 text-xs text-income"><Check size={13} /> read on this device</span>
+      </div>
+      <ul className="mt-4 divide-y divide-line rounded-xl border border-line">
+        {rows.map(([n, d, v]) => (
+          <li key={n} className="flex items-center gap-3 px-3.5 py-2.5 text-sm">
+            <span className="grid h-4 w-4 place-items-center rounded bg-brand text-brand-fg"><Check size={11} /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate font-medium">{n}</span>
+              <span className="block text-xs text-subtle">{d}</span>
+            </span>
+            <span className="tabular">{v}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="btn-primary mt-4 grid place-items-center rounded-xl py-2.5 text-sm font-medium">Import 4 holdings · ₹90,559</div>
+    </div>
+  );
+}

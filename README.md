@@ -49,6 +49,7 @@ The same account works on the **🌐 website** and the **📱 Android app**. Bot
 | 🎯 **Budget** | Turns a monthly limit into **one daily number**. Fixed, adaptive or weekly modes, with a calendar history and an explanation of the maths. | [Budget engine](docs/budget.md) |
 | 🏦 **Savings** | Save-first rule (a % of income or a fixed amount). The savings account carries forward and funds your investments. | [Money model](docs/money-model.md) |
 | 📈 **Investments** | Stocks/ETFs (NSE/BSE), mutual funds (AMFI), gold (24K/22K, digital/physical/SGB) and bonds. Live prices, P&L, XIRR, allocation, history. Each purchase can be paid from savings, spending money, or split between them. | [Investments](docs/investments.md) |
+| 📥 **Import from your broker** | Bring in years of investments from Zerodha, Groww, Upstox, Angel One or a CAS (all mutual funds). The file is read **on your device** and never uploaded. | [Investments](docs/investments.md#-import-from-your-broker) |
 | 📸 **Scan to add** | Share a GPay/PhonePe/Paytm screenshot, bank SMS or receipt to ArthOS. The text is read **on your device** and opens a pre-filled form. | [Automation](docs/automation.md) |
 | 🔁 **Recurring detection** | Finds bills and income that repeat monthly but aren't marked recurring yet. | [Automation](docs/automation.md) |
 | 💡 **Insights** | The month summarised in a few lines, a **financial health score out of 100**, unusual spending, subscription leakage, alerts and suggestions. **No external AI.** | [Insights](docs/insights.md) |

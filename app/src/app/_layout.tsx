@@ -129,6 +129,7 @@ function AppStack({ fontsLoaded, queryClient }: { fontsLoaded: boolean; queryCli
           <Stack.Screen name="income-form" options={{ ...modal, title: 'Income' }} />
           <Stack.Screen name="expense-form" options={{ ...modal, title: 'Expense' }} />
           <Stack.Screen name="add-holding" options={{ ...modal, title: 'Add investment' }} />
+          <Stack.Screen name="import" options={{ ...modal, title: 'Import' }} />
           <Stack.Screen name="scan" options={{ ...modal, title: 'Scan a screenshot' }} />
           <Stack.Screen name="holding" options={{ ...modal, title: 'Holding' }} />
           <Stack.Screen name="settings" options={{ ...modal, presentation: 'card', title: 'Settings' }} />

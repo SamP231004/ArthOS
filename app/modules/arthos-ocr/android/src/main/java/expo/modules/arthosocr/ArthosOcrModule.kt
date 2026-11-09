@@ -9,6 +9,10 @@ import com.google.mlkit.common.sdkinternal.MlKitContext
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
+import com.tom_roush.pdfbox.text.PDFTextStripper
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.exception.CodedException
 import expo.modules.kotlin.modules.Module
@@ -56,6 +60,37 @@ class ArthosOcrModule : Module() {
           }
       } catch (e: Throwable) {
         promise.reject(CodedException("OCR_FAILED", describe(e), e))
+      }
+    }
+
+    /**
+     * Text of a (password-protected) PDF, e.g. a CAMS/KFintech CAS, extracted on the device with PDFBox. The file
+     * never leaves the phone; lines are sorted by position so statement rows read left to right.
+     */
+    AsyncFunction("pdfText") { uriString: String, password: String?, promise: Promise ->
+      val context = appContext.reactContext?.applicationContext
+      if (context == null) {
+        promise.reject(CodedException("PDF_NO_CONTEXT", "App context isn't ready yet", null))
+        return@AsyncFunction
+      }
+      try {
+        PDFBoxResourceLoader.init(context)
+        open(context, uriString).use { input ->
+          val doc = try {
+            PDDocument.load(input, password ?: "")
+          } catch (e: InvalidPasswordException) {
+            val code = if (password.isNullOrEmpty()) "PDF_PASSWORD_REQUIRED" else "PDF_PASSWORD_WRONG"
+            promise.reject(CodedException(code, if (password.isNullOrEmpty()) "This PDF is password-protected." else "That password didn't open the PDF.", e))
+            return@AsyncFunction
+          }
+          doc.use {
+            val stripper = PDFTextStripper()
+            stripper.sortByPosition = true
+            promise.resolve(stripper.getText(it))
+          }
+        }
+      } catch (e: Throwable) {
+        promise.reject(CodedException("PDF_FAILED", describe(e), e))
       }
     }
   }

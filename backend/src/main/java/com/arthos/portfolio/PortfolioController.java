@@ -39,6 +39,32 @@ public class PortfolioController {
             @DecimalMin(value = "0", message = "can't be negative") BigDecimal fromSavings) {}
 
     /** Create (with the first purchase) or update a holding. Class-specific fields are validated in code. */
+    /** One transaction from an imported file (already matched to an instrument on the user's device). */
+    public record ImportLot(
+            @NotNull LotType type,
+            @NotNull @PastOrPresent LocalDate date,
+            @NotNull @DecimalMin(value = "0.000001", message = "must be greater than 0") BigDecimal quantity,
+            @NotNull @DecimalMin(value = "0", message = "can't be negative") BigDecimal price) {}
+
+    public record ImportItem(
+            @NotNull AssetClass assetClass,
+            @NotBlank @Size(max = 140) String name,
+            @NotBlank @Size(max = 40) String symbol,
+            @Size(max = 12) String isin,
+            @NotEmpty @Size(max = 2000) List<@Valid ImportLot> lots) {}
+
+    /**
+     * Holdings parsed from a broker export or CAS on the user's device. The file itself never reaches the server: only
+     * these confirmed holdings do, exactly as if they had been added by hand.
+     */
+    public record ImportRequest(
+            @NotBlank @Pattern(regexp = "[A-Z_]{2,40}") String source,
+            @NotEmpty @Size(max = 500) List<@Valid ImportItem> items) {}
+
+    public record ImportResult(int created, int updated, int transactions, List<Skipped> skipped) {
+        public record Skipped(String name, String reason) {}
+    }
+
     public record HoldingRequest(
             @NotNull AssetClass assetClass,
             @NotBlank @Size(max = 140) String name,
@@ -123,6 +149,77 @@ public class PortfolioController {
         h.getLots().add(lot(req));
         checkChronology(h.getLots());
         return single(holdings.save(h));
+    }
+
+    /**
+     * Import holdings matched on the device from a broker export / CAS. Each instrument joins the user's existing
+     * holding of it (or becomes a new one); lots from an earlier import of the same source are replaced, so importing
+     * a fresh file updates rather than duplicates. Imported lots never touch the savings account.
+     */
+    @PostMapping("/holdings/import")
+    ImportResult importHoldings(@Valid @RequestBody ImportRequest req) {
+        String userId = CurrentUser.id();
+        List<Holding> mine = new java.util.ArrayList<>(holdings.findByUserIdOrderByCreatedAtAsc(userId));
+        int created = 0, updated = 0, count = 0;
+        List<ImportResult.Skipped> skipped = new java.util.ArrayList<>();
+        for (ImportItem item : req.items()) {
+            if (item.assetClass() != AssetClass.STOCK && item.assetClass() != AssetClass.MUTUAL_FUND) {
+                skipped.add(new ImportResult.Skipped(item.name(), "Only stocks, ETFs and mutual funds can be imported"));
+                continue;
+            }
+            Holding probe = new Holding();
+            probe.setUserId(userId);
+            probe.setAssetClass(item.assetClass());
+            probe.setName(item.name().trim());
+            probe.setSymbol(item.symbol().trim().toUpperCase(java.util.Locale.ROOT));
+            probe.setExchange(item.assetClass() == AssetClass.STOCK ? "NSE" : null);
+            Optional<Holding> existing = mine.stream().filter(h -> HoldingIdentity.same(h, probe)).findFirst();
+            if (existing.isPresent() && existing.get().getLots().stream().anyMatch(l -> !l.imported())) {
+                skipped.add(new ImportResult.Skipped(item.name(), "Already in ArthOS (added by hand), so it was skipped to avoid counting it twice. Delete it first to replace it with the import."));
+                continue;
+            }
+            Holding target = existing.orElse(probe);
+            List<Holding.Lot> before = new java.util.ArrayList<>(target.getLots());
+            // a fresh file from the same broker (or an overlapping statement) replaces the earlier import
+            String family = importFamily(req.source());
+            target.getLots().removeIf(l -> family.equals(importFamily(l.getImportSource())));
+            for (ImportLot il : item.lots()) {
+                Holding.Lot l = new Holding.Lot(UUID.randomUUID().toString(), il.type(), il.date(), il.quantity(), il.price(), "Imported");
+                l.setImportSource(req.source());
+                target.getLots().add(l);
+            }
+            try {
+                if (target.getLots().isEmpty() || target.getLots().stream().noneMatch(l -> l.getType() == LotType.BUY))
+                    throw ApiException.badRequest("No purchases to import");
+                checkChronology(target.getLots());
+            } catch (ApiException e) {
+                target.getLots().clear();
+                target.getLots().addAll(before);
+                skipped.add(new ImportResult.Skipped(item.name(), e.getMessage()));
+                continue;
+            }
+            if (existing.isEmpty()) {
+                target.setExpiresAt(userCtx.demoExpiry(userId));
+                mine.add(holdings.save(target));
+                created++;
+            } else {
+                holdings.save(target);
+                updated++;
+            }
+            count += item.lots().size();
+        }
+        return new ImportResult(created, updated, count, skipped);
+    }
+
+    /**
+     * Imports that describe the same holdings: Zerodha's holdings and tradebook exports, and a Groww MF statement vs a
+     * CAS (which already includes Groww's funds). Different brokers are separate shares, so they add up.
+     */
+    static String importFamily(String source) {
+        if (source == null) return "";
+        if (source.startsWith("ZERODHA")) return "ZERODHA";
+        if (source.equals("CAS") || source.equals("GROWW_MF")) return "MUTUAL_FUNDS";
+        return source;
     }
 
     /** Edit a transaction: quantity, price/NAV, date, type and how it was paid for. */

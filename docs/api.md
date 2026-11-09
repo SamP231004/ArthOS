@@ -87,6 +87,8 @@ Details: [budget.md](budget.md)
 | PUT · DELETE | `/api/holdings/{id}/lots/{lotId}` | Edit/delete a transaction (chronology is checked) |
 | GET | `/api/market/search?assetClass=&q=` | Symbol / fund search (≥ 2 chars) |
 | GET | `/api/market/quote?assetClass=&symbol=` | Price preview (gold needs no symbol; bonds have no live price) |
+| GET | `/api/market/isin-index` | Public reference data for **on-device** import matching: `{generatedAt, eq: [[isin, symbol, name]…], mf: [[isin, schemeCode, name]…]}` (NSE equity + ETF lists, AMFI ISINs; gzip, cached 12 h) |
+| POST | `/api/holdings/import` | `{source, items: [{assetClass, name, symbol, isin?, lots: [{type, date, quantity, price}]}]}` → `{created, updated, transactions, skipped: [{name, reason}]}`. Holdings already parsed and confirmed on the device; the file itself is never sent. Lots are marked imported (they don't touch savings); same-broker re-imports replace; hand-entered holdings are skipped |
 
 Details: [investments.md](investments.md)
 

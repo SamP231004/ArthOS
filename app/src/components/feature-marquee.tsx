@@ -12,6 +12,7 @@ const ROWS: [string, string][][] = [
     ['#4cc38a', 'Save first, automatically'],
     ['#ece7db', 'One number for today'],
     ['#84b6d8', 'Live investments'],
+    ['#4cc38a', 'Import from Zerodha & Groww'],
     ['#e8706a', 'Scan & Share payments'],
     ['#d9b26f', 'Gold, MFs, stocks, bonds'],
     ['#4cc38a', 'Savings that carry forward'],

@@ -230,3 +230,30 @@ export function useMarkRecurring() {
 export function useInsights(month: string) {
   return useQuery({ queryKey: ["insights", month], queryFn: () => api<Insights>(`/api/insights?month=${month}`), staleTime: 60_000 });
 }
+
+// ---- Import from a broker / CAS (files are read on the device; only confirmed holdings are sent)
+
+/** Public ISIN → NSE symbol / AMFI scheme code reference, downloaded once and used to match files locally. */
+export function useIsinIndex(enabled: boolean) {
+  return useQuery({
+    queryKey: ["isin-index"],
+    queryFn: () => api<import("./import").IsinIndex>("/api/market/isin-index"),
+    enabled,
+    staleTime: 12 * 60 * 60_000,
+    gcTime: 12 * 60 * 60_000,
+  });
+}
+
+export type ImportResult = { created: number; updated: number; transactions: number; skipped: { name: string; reason: string }[] };
+
+export function useImportHoldings() {
+  const invalidate = useInvalidatePortfolio();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { source: string; items: import("./import").ImportItem[] }) => api<ImportResult>("/api/holdings/import", { method: "POST", body }),
+    onSuccess: () => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: ["insights"] });
+    },
+  });
+}

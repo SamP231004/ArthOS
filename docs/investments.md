@@ -139,6 +139,55 @@ ArthOS shows the **simple return** instead.
 
 ---
 
+## 📥 Import from your broker
+
+Nobody wants to type in years of investments. Download your data from your broker (or the CAS that lists every mutual
+fund you own) and import it. On the web it's **Investments → Import**; in the app it's **Invest → Import**.
+
+> ### 🔒 Your file never leaves your device
+> The file is opened, read and matched **on your device**: in the browser on the web, on the phone in the app.
+> Nothing from it is sent anywhere while you look at the preview. When you tap **Import**, only the holdings you ticked
+> are saved to your account, exactly as if you had added them by hand. The file itself is never uploaded or stored.
+
+### 📄 Supported files
+
+| Source | Where to download it | What you get |
+|---|---|---|
+| **Zerodha · Holdings** | Console → Portfolio → Holdings → Download (Excel/CSV) | Current stocks and ETFs at average price |
+| **Zerodha · Tradebook** | Console → Reports → Tradebook → Equity → full date range → Download CSV | ⭐ Every buy and sell with dates: exact P&L and XIRR |
+| **Groww · Stocks** | Reports → Stocks → Holdings statement (Excel) | Current stocks and ETFs |
+| **Groww · Mutual funds** | Reports → Mutual funds → Transactions / Holdings statement (Excel) | ⭐ Funds, with dates in the transactions report |
+| **CAS (CAMS + KFintech)** | camsonline.com → CAS → Detailed, since inception (emailed PDF with your password) | ⭐ **Every** mutual fund across every app, with full history |
+| **Other brokers** | Upstox, Angel One, ICICI, HDFC, Kotak… holdings or tradebook as Excel/CSV | Detected from the column names |
+
+### ⚙️ How it works
+
+```mermaid
+flowchart LR
+    F["📄 Your file<br/>CSV · Excel · PDF"] --> R["Read on the device<br/>CSV parser · Excel (unzip + XML) · PDF (pdf.js / PDFBox)"]
+    R --> D["Find the table<br/>by column names"]
+    IDX["🌐 Public ISIN index<br/>NSE symbols · AMFI codes"] --> M
+    D --> M["Match each row<br/>ISIN → symbol / scheme"]
+    M --> P["👀 Preview<br/>tick what to keep"]
+    P -- "only confirmed holdings" --> API["POST /api/holdings/import"]
+```
+
+| Step | Detail |
+|---|---|
+| 📖 **Read** | CSV parsed in JavaScript; Excel `.xlsx` unzipped and read from its XML (no spreadsheet library); CAS PDFs opened with **pdf.js** in the browser and **PDFBox** on Android, including password-protected files. |
+| 🔎 **Detect** | The header row is found by column names (ISIN, symbol, quantity, average price, trade date, type…), so statements that start with account details work, and so do most brokers without a template. |
+| 🧩 **Match** | By **ISIN** against public reference lists the device downloads from `/api/market/isin-index`: NSE's equity and ETF lists, and AMFI's ISIN → scheme-code file (mfapi.in as a fallback). Symbol, then name, are used when a file has no ISIN. |
+| 📅 **Dates** | Tradebooks and CAS keep real dates. Holdings files have none, so you pick a **held since** date and XIRR is approximate. |
+| 🏦 **Savings** | Imported transactions are **investments you already had**: they never count as money from your savings account or this month's spending, and their sales don't refill savings. |
+| 🔁 **Re-import** | Importing a newer file from the same broker **replaces** the earlier import (Zerodha holdings ↔ tradebook, Groww MF ↔ CAS). Different brokers add up. |
+| 🛡️ **No double counting** | A holding you already added by hand is skipped, with a note, rather than counted twice. |
+
+Files: [`web/src/lib/import`](../web/src/lib/import) (the same code runs in the app: [`app/src/lib/import`](../app/src/lib/import)) ·
+[`ReferenceIndex`](../backend/src/main/java/com/arthos/market/ReferenceIndex.java) ·
+`PortfolioController.importHoldings`.
+
+---
+
 ## 📡 Market data
 
 ```mermaid
@@ -172,6 +221,8 @@ flowchart LR
 | POST | `/api/holdings/{id}/lots` |
 | PUT / DELETE | `/api/holdings/{id}/lots/{lotId}` |
 | GET | `/api/market/search?q=&assetClass=` · `/api/market/quote?...` |
+| GET | `/api/market/isin-index`: public ISIN reference for on-device import matching |
+| POST | `/api/holdings/import`: holdings confirmed after an on-device import |
 
 Full reference: [api.md](api.md#-investments)
 

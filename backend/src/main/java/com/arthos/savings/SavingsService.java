@@ -55,6 +55,7 @@ public class SavingsService {
             if (h.getLots() == null) continue;
             for (Holding.Lot l : h.getLots()) {
                 if (l.getDate() == null || l.getQuantity() == null || l.getPrice() == null) continue;
+                if (l.imported()) continue; // held before ArthOS: not paid from this account, sales don't refill it
                 if (l.getType() == Holding.LotType.SELL) {
                     out.add(new Flow(l.getDate(), l.getQuantity().multiply(l.getPrice()), FlowKind.SALE));
                     continue;

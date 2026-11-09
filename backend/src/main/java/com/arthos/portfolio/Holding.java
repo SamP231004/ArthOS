@@ -69,6 +69,12 @@ public class Holding {
          */
         @Field(targetType = FieldType.DECIMAL128)
         private BigDecimal savingsAmount;
+        /**
+         * Set when the transaction came from a broker/CAS import (e.g. "ZERODHA_HOLDINGS"). Imported transactions are
+         * investments the user already had before ArthOS: they never count as money taken from savings or spending.
+         * Re-importing from the same source replaces that source's lots.
+         */
+        private String importSource;
 
         public Lot() {}
 
@@ -94,6 +100,9 @@ public class Holding {
         public FundingSource fundedFrom() { return type == LotType.SELL ? null : fundedFrom == null ? FundingSource.SAVINGS : fundedFrom; }
         public BigDecimal getSavingsAmount() { return savingsAmount; }
         public void setSavingsAmount(BigDecimal savingsAmount) { this.savingsAmount = savingsAmount; }
+        public String getImportSource() { return importSource; }
+        public void setImportSource(String importSource) { this.importSource = importSource; }
+        public boolean imported() { return importSource != null; }
         public void setType(LotType type) { this.type = type; }
         public void setDate(LocalDate date) { this.date = date; }
         public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
@@ -107,13 +116,14 @@ public class Holding {
         /** Part of a buy paid from the savings account. */
         public BigDecimal fromSavings() {
             BigDecimal cost = cost();
-            if (cost.signum() == 0) return BigDecimal.ZERO;
+            if (cost.signum() == 0 || imported()) return BigDecimal.ZERO;
             if (savingsAmount != null) return savingsAmount.max(BigDecimal.ZERO).min(cost);
             return fundedFrom() == FundingSource.SPENDING ? BigDecimal.ZERO : cost;
         }
 
         /** Part of a buy paid from this month's spending money. */
         public BigDecimal fromSpending() {
+            if (imported()) return BigDecimal.ZERO;
             return cost().subtract(fromSavings());
         }
     }

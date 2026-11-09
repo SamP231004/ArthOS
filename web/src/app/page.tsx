@@ -26,7 +26,7 @@ import Link from "next/link";
 import { DemoButton } from "@/components/demo-button";
 import { Logo } from "@/components/logo";
 import { BudgetSimulator } from "@/components/marketing/budget-simulator";
-import { InsightsVisual, MoneyFlowVisual, PhoneVisual, PortfolioVisual, ScanVisual } from "@/components/marketing/feature-visuals";
+import { ImportVisual, InsightsVisual, MoneyFlowVisual, PhoneVisual, PortfolioVisual, ScanVisual } from "@/components/marketing/feature-visuals";
 import { ProductPreview } from "@/components/marketing/product-preview";
 import { SiteNav } from "@/components/marketing/site-nav";
 import { SocialLinks } from "@/components/social-links";
@@ -58,6 +58,7 @@ const platforms: [string, boolean | string, boolean | string][] = [
   ["Save-first savings account", true, true],
   ["Daily budget, calendar & explanations", true, true],
   ["Investments with live prices, XIRR, analysis", true, true],
+  ["Import from Zerodha, Groww, other brokers or a CAS", true, true],
   ["Insights & financial health score", true, true],
   ["Scan a payment screenshot or receipt", "Upload", "Share → ArthOS"],
   ["Paste a bank SMS", true, true],
@@ -80,6 +81,7 @@ const roadmap = [
 const faqs = [
   ["Do I need to connect my bank account?", "No. ArthOS never asks for bank credentials. You add transactions yourself — typed, pasted from a bank SMS, or scanned from a payment screenshot."],
   ["Do my screenshots get uploaded?", "No. Text is read on your device (Google ML Kit on Android, Tesseract in the browser). Only the extracted text is sent to ArthOS to fill in the form, and nothing is saved until you confirm."],
+  ["Can I bring in the investments I already have?", "Yes — download your holdings or tradebook from Zerodha, Groww, Upstox, Angel One or another broker, or your CAS from CAMS/KFintech, and import it. The file is opened and matched on your device and never uploaded; only the holdings you confirm are saved to your account."],
   ["Does it use AI?", "Not today. Insights and the health score are transparent rules you can read in our docs — no data goes to an AI provider. An optional assistant is planned, and it will be opt-in."],
   ["What is in the demo?", "A private sandbox with six months of realistic data for a salaried professional in Bengaluru. Change anything — it's yours alone, and it deletes itself after 24 hours."],
   ["Is there an iPhone app?", "Not yet. ArthOS is Android-first; the website works on any phone or computer, with the same account."],
@@ -111,7 +113,7 @@ export default function Home() {
             </h1>
 
             <p className="mx-auto mt-7 max-w-2xl animate-fade-up text-base leading-relaxed text-muted [animation-delay:160ms] sm:text-lg">
-              The personal financial operating system. Save first, spend with one daily number, scan payments in a tap, watch investments grow — and get insights that explain themselves.
+              The personal financial operating system. Save first, spend with one daily number, scan payments in a tap, import your investments from any broker — and get insights that explain themselves.
             </p>
 
             <div className="mt-10 flex animate-fade-up flex-col items-center justify-center gap-3 [animation-delay:240ms] sm:flex-row">
@@ -189,6 +191,14 @@ export default function Home() {
             points={["Live prices refreshed every 15 minutes", "P&L, XIRR, realised gains and day change", "Value vs invested over time, by class, horizon and goal", "Buying again merges into one holding; edit any transaction"]}
             visual={<PortfolioVisual />}
             flip
+          />
+
+          <Feature
+            eyebrow="Import"
+            title={<>Years of investing, <span className="italic text-accent">in one upload.</span></>}
+            body="Download your holdings or tradebook from Zerodha, Groww, Upstox, Angel One — or the CAS that lists every mutual fund you own — and drop it in. No typing."
+            points={["The file is read on your device — it's never uploaded", "Tradebooks and CAS keep real dates, so XIRR is exact", "Matched by ISIN to live NSE prices and AMFI NAVs", "Check everything before it's saved; re-import anytime to update"]}
+            visual={<ImportVisual />}
           />
 
           <section className="border-y border-line bg-bg-2/60">
@@ -301,7 +311,7 @@ export default function Home() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[
                 [ShieldCheck, "No bank logins", "ArthOS never asks for net-banking credentials."],
-                [ScanLine, "Screenshots stay put", "Text is read on your device; images are never uploaded."],
+                [ScanLine, "Files stay on your device", "Screenshots and broker files are read on your device — never uploaded."],
                 [Bot, "No external AI", "Insights are rules you can read — nothing sent to an AI provider."],
                 [Lock, "Encrypted in transit", "Every request travels over HTTPS."],
                 [KeyRound, "Hashed passwords", "Stored with bcrypt, never in plain text."],
