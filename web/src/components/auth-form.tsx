@@ -1,23 +1,36 @@
 "use client";
 
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DemoButton } from "./demo-button";
 import { GoogleButton } from "./google-button";
-import { Logo } from "./logo";
+import { Logo, LogoMark } from "./logo";
 import { ThemeToggle } from "./theme-toggle";
 import { Button, ErrorNote, Field, Input } from "./ui";
 import { api, ApiError } from "@/lib/api";
 import { useAuth, useHydrated } from "@/lib/auth-store";
 import type { AuthResponse } from "@/lib/types";
 
-const perks = [
-  "Income, expenses and savings rate in one dashboard",
-  "Stocks, mutual funds, gold and bonds priced live",
-  "Same account on the web and the Android app",
-  "Adaptive daily budgets that tell you what's safe to spend today",
+/** Everything ArthOS does, as two rows of pills drifting in opposite directions (mirrors the app's login hero). */
+const MARQUEE: [string, string][][] = [
+  [
+    ["#4cc38a", "Save first, automatically"],
+    ["#ece7db", "One number for today"],
+    ["#84b6d8", "Live investments"],
+    ["#e8706a", "Scan & Share payments"],
+    ["#d9b26f", "Gold, MFs, stocks, bonds"],
+    ["#4cc38a", "Savings that carry forward"],
+  ],
+  [
+    ["#e8b45c", "Health score that explains"],
+    ["#ece7db", "Home-screen widgets"],
+    ["#f07167", "Pinned budget alerts"],
+    ["#84b6d8", "Smart categories"],
+    ["#b9a5e2", "Subscriptions & bills"],
+    ["#4cc38a", "Private · no bank logins"],
+  ],
 ];
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
@@ -61,39 +74,46 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       <div className="absolute right-4 top-4 z-10 sm:right-6 sm:top-6">
         <ThemeToggle />
       </div>
-      {/* Brand panel */}
-      <aside className="noise relative hidden overflow-hidden border-r border-line bg-bg-2 lg:flex lg:items-center lg:justify-center lg:p-10">
-        <div className="bg-grid pointer-events-none absolute inset-0 opacity-60" />
-        <div className="pointer-events-none absolute -left-40 top-1/3 h-[520px] w-[520px] rounded-full bg-brand/10 blur-[120px]" />
-        <div className="relative flex h-full max-h-[640px] w-full max-w-md flex-col justify-between gap-8 py-2">
-        <Logo />
-        <div>
-          <p className="eyebrow">Personal financial OS</p>
-          <h2 className="mt-4 font-display text-5xl leading-[1.05] tracking-tight">
-            <span className="text-silver">Every rupee,</span>
-            <br />
-            <span className="italic text-accent">in motion.</span>
-          </h2>
-          <ul className="mt-8 space-y-3">
-            {perks.map((p) => (
-              <li key={p} className="flex items-start gap-3 text-sm text-fg-2">
-                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand/15 text-brand">
-                  <Check size={12} />
-                </span>
-                {p}
-              </li>
-            ))}
-          </ul>
+      {/* Brand panel: the app's login hero (deep forest in both themes, अर्थ watermark, every feature drifting by) */}
+      <aside className="relative hidden overflow-hidden border-r border-white/[0.06] bg-[linear-gradient(180deg,#12301f,#0a1d14_55%,#06110c)] text-[#f2efe8] lg:flex lg:flex-col lg:items-center lg:justify-center">
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-[58%] rounded-full bg-[rgba(196,58,53,0.12)] blur-[2px]" />
+        <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[62%] select-none font-deva text-[300px] leading-none text-[rgba(242,239,232,0.045)]">
+          अर्थ
+        </span>
+
+        <div className="relative flex flex-col items-center text-center">
+          <span className="rounded-[22px] shadow-[0_0_44px_rgba(196,58,53,0.55)]">
+            <LogoMark size={76} />
+          </span>
+          <p className="mt-5 font-display text-5xl tracking-tight">
+            Arth<span className="text-[#ec7a74]">OS</span>
+          </p>
+          <p className="mt-2 text-[15px] text-[#a5b0a9]">
+            Take control of your <span className="font-deva text-[#ec7a74]">अर्थ</span>
+          </p>
         </div>
-        <div className="panel max-w-sm p-5">
-          <p className="text-xs text-subtle">This month · remaining</p>
-          <p className="tabular mt-1 text-3xl font-semibold">₹38,420</p>
-          <div className="mt-3 h-1.5 rounded-full bg-fg/5">
-            <div className="h-full w-[58%] rounded-full bg-gradient-to-r from-accent-3 to-accent-1" />
-          </div>
-          <p className="mt-2 text-xs text-income">41.8% of income kept so far</p>
+
+        <div className="relative mt-12 w-full space-y-2.5 [mask-image:linear-gradient(90deg,transparent,#000_12%,#000_88%,transparent)]">
+          {MARQUEE.map((row, i) => (
+            <div key={i} className="flex w-max motion-safe:animate-[marquee_46s_linear_infinite]" style={i % 2 ? { animationDirection: "reverse" } : undefined}>
+              {[0, 1].map((copy) => (
+                <div key={copy} className="flex shrink-0" aria-hidden={copy === 1}>
+                  {row.map(([color, label]) => (
+                    <span key={label} className="mr-2.5 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2 text-[13px] text-[#d9d4c9]">
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
-        </div>
+
+        <Link href="/#features" className="relative mt-10 inline-flex items-center gap-1.5 text-sm font-medium text-[#ec7a74] hover:underline">
+          See everything ArthOS does <ArrowRight size={14} />
+        </Link>
+        <p className="absolute bottom-8 text-xs text-[#7d8b83]">One account · web and Android · free during early access</p>
       </aside>
 
       {/* Form */}
