@@ -67,6 +67,18 @@ jobs:
           path: ~/gradle-dist
           key: gradle-dist-${{ env.GRADLE_VERSION }}
 
+      # Gradle's downloaded libraries (Kotlin compiler, AndroidX, ML Kit, PDFBox…): reused between builds, so an
+      # outage at Maven Central / GitHub release downloads doesn't fail a build that has nothing new to fetch.
+      - name: Cache Gradle libraries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/caches/jars-9
+            ~/.gradle/caches/transforms-4
+          key: gradle-libs-${{ hashFiles('app/package-lock.json', 'app/modules/**/build.gradle') }}
+          restore-keys: gradle-libs-
+
       - name: Fetch Gradle distribution (with retries)
         continue-on-error: true
         run: |
