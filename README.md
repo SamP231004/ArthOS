@@ -10,13 +10,6 @@
 
 [🌐 Live website](https://os-arth.vercel.app/) · [📱 Download the Android app](https://github.com/SamP231004/ArthOS/releases/tag/android-latest) · [📚 Documentation](#-documentation)
 
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F?logo=springboot&logoColor=white)
-![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
-![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
-![Expo](https://img.shields.io/badge/Expo-SDK_58-000020?logo=expo&logoColor=white)
-![Tailwind](https://img.shields.io/badge/Tailwind-v4-06B6D4?logo=tailwindcss&logoColor=white)
-
 <img src="docs/images/hero.png" alt="ArthOS on the web and on Android: the Overview with left to spend, saved first and the money statement" width="100%" />
 
 </div>
