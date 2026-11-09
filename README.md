@@ -87,8 +87,7 @@ ArthOS/
 ├── backend/   ☕ Spring Boot 3.5 · Java 21 · MongoDB · JWT        → Docker on Render
 ├── web/       ▲  Next.js 16 · React 19 · Tailwind v4             → Vercel
 ├── app/       📱 Expo SDK 58 · React Native 0.88 · Expo Router   → APK via GitHub Actions + EAS
-├── docs/      📚 Detailed documentation (you are here ↓)
-└── ArthOS_Detailed_Product_Blueprint.docx                       → the original product spec
+└── docs/      📚 Detailed documentation, screenshots and the original product blueprint
 ```
 
 Each folder is independent, with its own dependencies, env file and deploy target. → [Tech stack & architecture](docs/tech-stack.md)

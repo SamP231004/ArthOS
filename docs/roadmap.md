@@ -3,7 +3,7 @@
 [← Back to README](../README.md)
 
 ArthOS follows the eight phases in the product blueprint
-([`ArthOS_Detailed_Product_Blueprint.docx`](../ArthOS_Detailed_Product_Blueprint.docx)).
+([`docs/product-blueprint.docx`](product-blueprint.docx)).
 
 ```mermaid
 timeline
