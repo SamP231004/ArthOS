@@ -113,7 +113,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         <Link href="/#features" className="relative mt-10 inline-flex items-center gap-1.5 text-sm font-medium text-[#ec7a74] hover:underline">
           See everything ArthOS does <ArrowRight size={14} />
         </Link>
-        <p className="absolute bottom-8 text-xs text-[#7d8b83]">One account · web and Android · free during early access</p>
+        <p className="absolute bottom-8 text-xs text-[#7d8b83]">One account · web and Android</p>
       </aside>
 
       {/* Form */}
@@ -130,18 +130,18 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           )}
           <h1 className="font-display text-[2.15rem] leading-tight tracking-tight">{mode === "login" ? "Welcome back" : "Create your account"}</h1>
           <p className="mt-1 text-sm text-muted">
-            {mode === "login" ? "Sign in to your financial control center." : "Free during early access. Takes under a minute."}
+            {mode === "login" ? "Sign in to your financial control center." : "One account for the web and the Android app. Takes under a minute."}
           </p>
 
           <form onSubmit={submit} className="mt-6 space-y-3.5">
             <div className={mode === "register" ? "grid gap-3.5 sm:grid-cols-2" : ""}>
               {mode === "register" && (
                 <Field label="Full name" error={fieldErrors.name}>
-                  <Input value={form.name} onChange={set("name")} autoComplete="name" required maxLength={80} placeholder="Samarth Patel" />
+                  <Input value={form.name} onChange={set("name")} autoComplete="name" required maxLength={80} />
                 </Field>
               )}
               <Field label="Email" error={fieldErrors.email}>
-                <Input type="email" value={form.email} onChange={set("email")} autoComplete="email" required placeholder="you@example.com" />
+                <Input type="email" value={form.email} onChange={set("email")} autoComplete="email" required />
               </Field>
             </div>
             <Field label="Password" error={fieldErrors.password} hint={mode === "register" ? "At least 8 characters" : undefined}>
@@ -152,7 +152,6 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                 autoComplete={mode === "login" ? "current-password" : "new-password"}
                 required
                 minLength={mode === "register" ? 8 : undefined}
-                placeholder="••••••••"
               />
             </Field>
             <ErrorNote message={error} />

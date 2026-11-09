@@ -142,7 +142,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
             <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: c.lineStrong, marginTop: -6 }} />
             <View style={{ gap: 2 }}>
               <T variant="title" style={{ fontSize: 26 }}>{login ? 'Welcome back' : 'Create your account'}</T>
-              <T variant="muted">{login ? 'Sign in to your money, all in one place.' : 'Free during early access · one account for app and web.'}</T>
+              <T variant="muted">{login ? 'Sign in to your money, all in one place.' : 'One account for the app and the web.'}</T>
             </View>
 
             {googleId !== null && (

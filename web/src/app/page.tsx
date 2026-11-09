@@ -83,7 +83,6 @@ const faqs = [
   ["Does it use AI?", "Not today. Insights and the health score are transparent rules you can read in our docs — no data goes to an AI provider. An optional assistant is planned, and it will be opt-in."],
   ["What is in the demo?", "A private sandbox with six months of realistic data for a salaried professional in Bengaluru. Change anything — it's yours alone, and it deletes itself after 24 hours."],
   ["Is there an iPhone app?", "Not yet. ArthOS is Android-first; the website works on any phone or computer, with the same account."],
-  ["What does it cost?", "ArthOS is free during early access."],
 ];
 
 export default function Home() {
@@ -126,7 +125,7 @@ export default function Home() {
                 <Smartphone size={16} /> Get the Android app
               </a>
             </div>
-            <p className="mt-4 animate-fade-up text-xs text-subtle [animation-delay:300ms]">No sign-up needed for the demo · No bank logins, ever · Free during early access</p>
+            <p className="mt-4 animate-fade-up text-xs text-subtle [animation-delay:300ms]">No sign-up needed for the demo · No bank logins, ever</p>
           </div>
 
           <div id="product" className="relative mt-16 scroll-mt-28 px-4 pb-8 sm:mt-20 sm:px-6">
