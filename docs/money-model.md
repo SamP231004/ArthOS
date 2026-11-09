@@ -2,6 +2,19 @@
 
 [← Back to README](../README.md)
 
+
+
+<table>
+  <tr>
+    <td width="72%"><img src="images/web-overview.png" alt="Overview on the web: left to spend and the money statement" /></td>
+    <td width="28%"><img src="images/app-home.png" alt="Home in the app" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>🌐 Website</sub></td>
+    <td align="center"><sub>📱 Android app</sub></td>
+  </tr>
+</table>
+
 This page explains how ArthOS turns your incomes, expenses and investments into the numbers on the **Overview** screen.
 Most features build on it, including the budget, insights and investment funding.
 

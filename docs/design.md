@@ -2,6 +2,8 @@
 
 [← Back to README](../README.md)
 
+<img src="images/web-landing.png" alt="The landing page in the Ivory theme" width="100%" />
+
 ArthOS aims to feel **premium, calm and practical**, like a control panel rather than a spreadsheet. The website and
 the app share one design language, and **the app mirrors the web**: same palette, wording, sections and order.
 

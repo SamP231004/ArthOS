@@ -2,6 +2,8 @@
 
 [← Back to README](../README.md)
 
+<p align="center"><img src="images/app-widgets.png" alt="Quick add, Safe today, Month and Portfolio widgets on an Android home screen" width="420" /></p>
+
 > *Blueprint, Phase 6: "Deliver small and medium widgets with budget and portfolio information. Allow widget configuration per user preference. Ensure widget values refresh reliably."*
 
 Check your money without opening the app. Long-press the home screen → **Widgets** → **ArthOS**.

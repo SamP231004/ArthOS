@@ -2,6 +2,17 @@
 
 [← Back to README](../README.md)
 
+<table>
+  <tr>
+    <td width="72%"><img src="images/web-expenses.png" alt="Expenses on the web: recurring suggestions and bills from last month not added yet" /></td>
+    <td width="28%"><img src="images/app-expenses.png" alt="Expenses in the app: recurring suggestions" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>🌐 Website</sub></td>
+    <td align="center"><sub>📱 Android app</sub></td>
+  </tr>
+</table>
+
 People stop tracking expenses because typing them in is tedious. Phase 4 cuts that work down to a single share.
 
 | Feature | One-liner |

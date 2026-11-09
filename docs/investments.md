@@ -2,6 +2,17 @@
 
 [← Back to README](../README.md)
 
+<table>
+  <tr>
+    <td width="72%"><img src="images/web-investments.png" alt="Investments on the web: holdings table, net holdings, realised profit, allocation" /></td>
+    <td width="28%"><img src="images/app-investments.png" alt="Investments in the app" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>🌐 Website</sub></td>
+    <td align="center"><sub>📱 Android app</sub></td>
+  </tr>
+</table>
+
 Track **stocks, ETFs, mutual funds, gold and bonds** in one portfolio, at live prices, with each investment linked to
 how you paid for it (savings or spending money).
 

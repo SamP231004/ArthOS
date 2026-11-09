@@ -2,6 +2,17 @@
 
 [← Back to README](../README.md)
 
+<table>
+  <tr>
+    <td width="72%"><img src="images/web-budget.png" alt="Budget on the web: pace switch, safe to spend today, month stats" /></td>
+    <td width="28%"><img src="images/app-budget.png" alt="Budget in the app" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>🌐 Website</sub></td>
+    <td align="center"><sub>📱 Android app</sub></td>
+  </tr>
+</table>
+
 A monthly limit like "₹30,000" is hard to act on, so the budget engine turns it into **one simple daily number**:
 
 > ### *"Safe to spend today: ₹842"*

@@ -2,6 +2,19 @@
 
 [← Back to README](../README.md)
 
+<table>
+  <tr>
+    <td width="72%"><img src="images/web-insights.png" alt="Insights on the web: health score, parts, alerts" /></td>
+    <td width="28%"><img src="images/app-insights.png" alt="Insights in the app" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>🌐 Website</sub></td>
+    <td align="center"><sub>📱 Android app</sub></td>
+  </tr>
+</table>
+
+<p align="center"><img src="images/app-notifications.png" alt="One-line notifications: bill reminder and pinned budget alert" width="480" /><br /><sub>🔔 One-line notifications: a bill reminder and the pinned budget alert</sub></p>
+
 Insights turns a month of raw transactions into **plain-language guidance**: what changed, what looks unusual, what's
 quietly draining money, and how healthy your finances are overall.
 

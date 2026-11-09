@@ -17,6 +17,8 @@
 ![Expo](https://img.shields.io/badge/Expo-SDK_58-000020?logo=expo&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind-v4-06B6D4?logo=tailwindcss&logoColor=white)
 
+<img src="docs/images/hero.png" alt="ArthOS on the web and on Android: the Overview with left to spend, saved first and the money statement" width="100%" />
+
 </div>
 
 ---
@@ -121,7 +123,35 @@ Each folder is independent, with its own dependencies, env file and deploy targe
 
 ## 📸 Screenshots
 
-> 🚧 *Coming soon:* product screenshots of the website and app (Overview, Budget, Investments, Insights, Scan) will be added to [`docs/images/`](docs/images/).
+### 📱 Android app
+
+<img src="docs/images/app-showcase.png" alt="Android app: Home, Budget, Investments and Insights" width="100%" />
+
+<table>
+  <tr>
+    <td width="55%" align="center"><img src="docs/images/app-widgets.png" alt="Home-screen widgets: quick add, safe today, month and portfolio" /><br /><sub>🧩 Home-screen widgets</sub></td>
+    <td width="45%" align="center"><img src="docs/images/app-notifications.png" alt="One-line notifications: a bill reminder and a pinned budget alert" /><br /><sub>🔔 One-line alerts: bill reminder · pinned budget alert</sub></td>
+  </tr>
+</table>
+
+### 🌐 Website
+
+<table>
+  <tr>
+    <td width="50%" align="center"><img src="docs/images/web-overview.png" alt="Overview" /><br /><sub>🏠 Overview</sub></td>
+    <td width="50%" align="center"><img src="docs/images/web-budget.png" alt="Budget" /><br /><sub>🎯 Budget</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/web-investments.png" alt="Investments" /><br /><sub>📈 Investments</sub></td>
+    <td align="center"><img src="docs/images/web-insights.png" alt="Insights" /><br /><sub>💡 Insights</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/web-expenses.png" alt="Expenses" /><br /><sub>💸 Expenses</sub></td>
+    <td align="center"><img src="docs/images/web-landing.png" alt="Landing page" /><br /><sub>✨ Landing page</sub></td>
+  </tr>
+</table>
+
+All screenshots use the **private demo** account (sample data). More in [`docs/images/`](docs/images/).
 
 ---
 
