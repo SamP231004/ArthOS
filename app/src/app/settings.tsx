@@ -1,10 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, Switch, Text, View } from 'react-native';
+import { Pressable, Switch, Text, View } from 'react-native';
 
 import { Logo } from '@/components/logo';
 import { SavingsRuleField } from '@/components/savings-rule';
+import { confirm } from '@/components/confirm';
 import { Screen } from '@/components/screen';
 import { Button, Card, Chip, ErrorNote, Input, T } from '@/components/ui';
 import { API_URL } from '@/lib/api';
@@ -154,6 +156,20 @@ export default function SettingsScreen() {
         <T variant="small">Timezone: {user.timezone} (change it on the website)</T>
       </Card>
 
+      {/* tour */}
+      <Pressable onPress={() => router.push('/walkthrough')} accessibilityRole="button">
+        <Card style={{ flexDirection: 'row', alignItems: 'center', gap: S.md }}>
+          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: alpha(c.mark, 0.12), alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: c.mark, fontSize: 16 }}>✦</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <T style={{ fontSize: 15 }}>Take the tour</T>
+            <T variant="small">Everything ArthOS can do, in seven screens.</T>
+          </View>
+          <Text style={{ color: c.subtle, fontSize: 20 }}>›</Text>
+        </Card>
+      </Pressable>
+
       {/* widgets */}
       <Card style={{ gap: S.sm }}>
         <T variant="label">Home-screen widgets</T>
@@ -176,10 +192,9 @@ export default function SettingsScreen() {
         title="Sign out"
         variant="danger"
         onPress={() =>
-          Alert.alert('Sign out?', 'You can sign back in anytime.', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Sign out', style: 'destructive', onPress: signOut },
-          ])
+          confirm({ title: 'Sign out?', body: 'Your data stays safe in your account — sign back in anytime, on the app or the web.', confirmText: 'Sign out', tone: 'danger', icon: '↪' }).then(
+            (ok) => ok && signOut(),
+          )
         }
       />
       <View style={{ alignItems: 'center', gap: S.sm, marginTop: S.lg }}>

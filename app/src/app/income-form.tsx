@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Switch, View } from 'react-native';
+import { KeyboardAvoidingView, Switch, View } from 'react-native';
 
 import { DateField, isISODate } from '@/components/date-field';
+import { confirm } from '@/components/confirm';
 import { Screen } from '@/components/screen';
 import { Button, Chip, ErrorNote, Input, Loading, T } from '@/components/ui';
 import { alpha, R, S, useTheme } from '@/theme';
@@ -45,10 +46,10 @@ function IncomeForm({ initial, draft }: { initial?: Income; draft?: IncomeDraft 
 
   function remove() {
     if (!initial) return;
-    Alert.alert('Delete income?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => del.mutate(initial.id, { onSuccess: () => router.back() }) },
-    ]);
+    const id = initial.id;
+    confirm({ title: 'Delete income?', body: 'This cannot be undone.', confirmText: 'Delete', tone: 'danger' }).then(
+      (ok) => ok && del.mutate(id, { onSuccess: () => router.back() }),
+    );
   }
 
   return (

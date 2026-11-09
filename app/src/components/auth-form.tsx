@@ -6,6 +6,7 @@ import { ActivityIndicator, Animated, Easing, KeyboardAvoidingView, Pressable, S
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import { FeatureMarquee } from './feature-marquee';
 import { LogoMark } from './logo';
 import { ThemeToggle } from './theme-toggle';
 import { Button, ErrorNote, Input, T } from './ui';
@@ -15,11 +16,6 @@ import { GOOGLE_FALLBACK_ID, googleClientId, signInWithGoogle } from '@/lib/goog
 import type { AuthResponse } from '@/lib/types';
 import { alpha, F, R, S, useTheme } from '@/theme';
 
-const POINTS = [
-  { title: 'Save first, then spend', body: 'Savings are set aside the moment income lands.' },
-  { title: 'One number for today', body: 'Know exactly how much is safe to spend — every day.' },
-  { title: 'Your whole portfolio', body: 'Stocks, mutual funds, gold and bonds, priced live.' },
-];
 
 /**
  * Sign in / create account, laid out like modern fintech apps: a deep-forest brand hero runs under the status bar
@@ -38,13 +34,11 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const [busy, setBusy] = useState<'form' | 'google' | 'demo' | null>(null);
   const [googleId, setGoogleId] = useState<string | null | undefined>(GOOGLE_FALLBACK_ID ?? undefined);
   const [slow, setSlow] = useState(false);
-  const [point, setPoint] = useState(0);
   const [enter] = useState(() => new Animated.Value(0));
-  const [fade] = useState(() => new Animated.Value(1));
   const login = mode === 'login';
   // sized so the whole screen fits without scrolling; create account has one more field, so its hero is shorter
   // login: tall enough that the sheet starts below the rotating lines and their dots (~290dp on an 800dp phone)
-  const heroBody = login ? Math.round(Math.min(330, Math.max(260, height * 0.37))) : Math.round(Math.min(220, Math.max(175, height * 0.24)));
+  const heroBody = login ? Math.round(Math.min(345, Math.max(275, height * 0.39))) : Math.round(Math.min(220, Math.max(175, height * 0.24)));
   const heroH = heroBody + insets.top;
   const centreY = insets.top + 38 + (heroBody - 38 - 24) / 2; // middle of the logo block (below the toggle row)
 
@@ -57,16 +51,6 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
     };
   }, [enter]);
 
-  // rotate the value lines with a soft cross-fade
-  useEffect(() => {
-    const t = setInterval(() => {
-      Animated.timing(fade, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => {
-        setPoint((p) => (p + 1) % POINTS.length);
-        Animated.timing(fade, { toValue: 1, duration: 260, useNativeDriver: true }).start();
-      });
-    }, 3200);
-    return () => clearInterval(t);
-  }, [fade]);
 
   async function run(kind: 'form' | 'google' | 'demo', fn: () => Promise<AuthResponse | null>) {
     setBusy(kind);
@@ -119,7 +103,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
             </View>
             <Animated.View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 24, opacity: enter }}>
               <View style={{ borderRadius: 18, shadowColor: '#c43a35', shadowOpacity: 0.6, shadowRadius: 22, elevation: 12 }}>
-                <LogoMark size={login ? 58 : 50} />
+                <LogoMark size={login ? 50 : 50} />
               </View>
               <Text style={{ marginTop: S.sm, fontFamily: F.display, fontSize: login ? 30 : 27, color: '#f2efe8', letterSpacing: -0.6 }}>
                 Arth<Text style={{ fontFamily: F.displayMedium, color: '#ec7a74' }}>OS</Text>
@@ -129,15 +113,12 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
               </Text>
               {login && (
                 <>
-                  <Animated.View style={{ marginTop: S.md, alignItems: 'center', opacity: fade, minHeight: 40 }}>
-                    <Text style={{ fontFamily: F.uiSemibold, fontSize: 14.5, color: '#f2efe8' }}>{POINTS[point].title}</Text>
-                    <Text style={{ fontFamily: F.ui, fontSize: 12.5, color: '#a5b0a9', marginTop: 2, textAlign: 'center' }}>{POINTS[point].body}</Text>
-                  </Animated.View>
-                  <View style={{ flexDirection: 'row', gap: 6, marginTop: S.sm }}>
-                    {POINTS.map((_, i) => (
-                      <View key={i} style={{ height: 5, width: i === point ? 16 : 5, borderRadius: 3, backgroundColor: i === point ? '#ec7a74' : 'rgba(242,239,232,0.25)' }} />
-                    ))}
+                  <View style={{ marginTop: S.md, marginHorizontal: -S.lg, alignSelf: 'stretch' }}>
+                    <FeatureMarquee />
                   </View>
+                  <Pressable onPress={() => router.push('/walkthrough')} hitSlop={10} accessibilityRole="button" style={{ marginTop: S.sm }}>
+                    <Text style={{ color: '#ec7a74', fontFamily: F.uiSemibold, fontSize: 13 }}>Take the tour  ›</Text>
+                  </Pressable>
                 </>
               )}
             </Animated.View>

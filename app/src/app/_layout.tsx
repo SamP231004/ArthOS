@@ -10,10 +10,12 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
 
+import { ConfirmHost } from '@/components/confirm';
 import { ShareIntentRouter } from '@/components/share-intent-router';
 import { ApiError } from '@/lib/api';
 import { scanAvailable } from '@/lib/scan';
 import { useAuth, useHydrated } from '@/lib/auth-store';
+import { useTour } from '@/lib/tour';
 import { F, ThemeProvider, useTheme } from '@/theme';
 import { scheduleWidgetRefresh } from '@/widgets/refresh';
 import { clearAlertNotifications } from '@/lib/notify';
@@ -62,7 +64,12 @@ function AppStack({ fontsLoaded, queryClient }: { fontsLoaded: boolean; queryCli
   const { token, user } = useAuth();
   const hydrated = useHydrated();
   const { c, scheme, ready } = useTheme();
-  const isReady = hydrated && fontsLoaded && ready;
+  const tourSeen = useTour((t) => t.seen);
+  const loadTour = useTour((t) => t.load);
+  useEffect(() => {
+    loadTour();
+  }, [loadTour]);
+  const isReady = hydrated && fontsLoaded && ready && tourSeen !== null;
 
   useEffect(() => {
     if (isReady) SplashScreen.hideAsync();
@@ -108,6 +115,8 @@ function AppStack({ fontsLoaded, queryClient }: { fontsLoaded: boolean; queryCli
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       {scanAvailable && <ShareIntentRouter ready={onboarded} />}
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>
+        {/* first launch: the walkthrough comes before sign-in; afterwards it's reachable from login and Settings */}
+        {!signedIn && !tourSeen && <Stack.Screen name="walkthrough" />}
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="login" />
           <Stack.Screen name="register" />
@@ -124,7 +133,9 @@ function AppStack({ fontsLoaded, queryClient }: { fontsLoaded: boolean; queryCli
           <Stack.Screen name="holding" options={{ ...modal, title: 'Holding' }} />
           <Stack.Screen name="settings" options={{ ...modal, presentation: 'card', title: 'Settings' }} />
         </Stack.Protected>
+        {(signedIn || tourSeen) && <Stack.Screen name="walkthrough" options={{ animation: 'fade' }} />}
       </Stack>
+      <ConfirmHost />
     </NavThemeProvider>
   );
 }

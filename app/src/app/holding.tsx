@@ -1,10 +1,11 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Pressable, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Pressable, Text, View } from 'react-native';
 
 import { Sparkline } from '@/components/charts';
 import { DateField, isISODate } from '@/components/date-field';
 import { FundingPicker, fundingOf, useFunding } from '@/components/funding-picker';
+import { confirm } from '@/components/confirm';
 import { Screen } from '@/components/screen';
 import { Badge, Button, Card, Chip, ErrorNote, Input, Loading, Segmented, T } from '@/components/ui';
 import { dateLabel, money, todayISO } from '@/lib/format';
@@ -93,7 +94,7 @@ function Overview({ h }: { h: HoldingView }) {
             {h.lots.length > 1 && (
               <Pressable
                 hitSlop={8}
-                onPress={() => Alert.alert('Delete transaction?', '', [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: () => del.mutate(l.id) }])}>
+                onPress={() => confirm({ title: 'Delete transaction?', body: 'Your holding and returns are recalculated without it.', confirmText: 'Delete', tone: 'danger' }).then((ok) => ok && del.mutate(l.id))}>
                 <Text style={{ color: c.subtle, fontSize: 16 }}>✕</Text>
               </Pressable>
             )}
@@ -244,7 +245,7 @@ function Settings({ h, onSaved }: { h: HoldingView; onSaved: () => void }) {
         title="Remove holding"
         variant="danger"
         loading={del.isPending}
-        onPress={() => Alert.alert(`Remove ${h.name}?`, 'All its transactions are deleted too.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Remove', style: 'destructive', onPress: () => del.mutate(h.id, { onSuccess: () => router.back() }) }])}
+        onPress={() => confirm({ title: `Remove ${h.name}?`, body: 'All its transactions are deleted too.', confirmText: 'Remove', tone: 'danger' }).then((ok) => ok && del.mutate(h.id, { onSuccess: () => router.back() }))}
       />
     </Card>
   );
