@@ -26,50 +26,58 @@ ArthOS: Budget & Investments
 
 **Short description** (80 max)
 ```
-Save first, spend with one daily number, track investments, get clear insights.
+Track income, expenses, budgets, investments and insights, all in one place.
 ```
 
 **Full description** (4000 max)
 ```
-ArthOS is your personal financial operating system: income, spending, budgets, savings, investments and insights in one calm place. Know what comes in, what goes out, what grows and what remains.
+ArthOS brings your income, expenses, budgets, savings, investments and insights together in one calm place. Know what comes in, what goes out, what grows and what remains. 💰
 
-SAVE FIRST, AUTOMATICALLY
-• A share of every income goes into your savings account the moment it arrives, and carries forward month after month
+💸 INCOME & EXPENSES
+• Log salary, freelance, dividends and every spend in seconds
+• Search and filter by merchant, category, amount, payment method or month
+• Smart categories learn from you; recurring bills are spotted automatically
+
+🏦 SAVE FIRST, AUTOMATICALLY
+• A share of every income moves to your savings account the moment it arrives, and carries forward month after month
 • "Left to spend" shows exactly what's yours after saving, spending and investing
 
-ONE NUMBER FOR TODAY
-• Turn a monthly budget into one daily number: "Safe to spend today"
+🎯 BUDGETS: ONE NUMBER FOR TODAY
+• Turn your monthly budget into one daily number: "Safe to spend today"
 • Fixed, adaptive or weekly — overspend one day and the rest of the month quietly adjusts
 • Rent and EMIs stay out of your daily number
-• A day-by-day calendar and a step-by-step explanation of how today's number is worked out
+• A day-by-day calendar and a step-by-step explanation of today's number
 
-INVESTMENTS AT LIVE PRICES
+📈 INVESTMENTS AT LIVE PRICES
 • Stocks and ETFs (NSE/BSE), mutual funds (AMFI NAVs), gold (24K/22K, digital, physical, SGB) and bonds
+• Tap Refresh during market hours for the latest prices
 • 1-day and total returns, XIRR, realised profit, allocation, and value vs invested over time
 • Pay for each investment from savings, from spending, or split between them
 
-IMPORT FROM YOUR BROKER — NO TYPING
-• Bring in your holdings or tradebook from Zerodha, Groww, Upstox, Angel One and others, or your CAS for every mutual fund
+📥 IMPORT FROM YOUR BROKER — NO TYPING
+• Bring in holdings or your tradebook from Zerodha, Groww, Upstox, Angel One and others, or your CAS for every mutual fund
 • The file is read on your phone and never uploaded; only the holdings you confirm are saved
 
-SCAN & SHARE
-• Share a payment screenshot from GPay, PhonePe, Paytm or your bank app to ArthOS — amount, merchant, date and category fill themselves in
+📸 SCAN & SHARE PAYMENTS
+• Share a payment screenshot from GPay, PhonePe, Paytm or your bank app — amount, merchant, date and category fill themselves in
 • Text is read on your phone; the image is never uploaded
-• Smart categories learn from you; recurring bills are spotted automatically
 
-INSIGHTS THAT EXPLAIN THEMSELVES
-• Your month in plain words, a 100-point financial health score broken into five parts, unusual spending and subscriptions that add up
+💡 INSIGHTS THAT EXPLAIN THEMSELVES
+• Your month in plain words and a 100-point financial health score broken into five parts
+• Unusual spending and subscriptions that quietly add up
 • No AI and no data sent to third parties — just clear rules
 
-ON YOUR HOME SCREEN
+🧩 ON YOUR HOME SCREEN
 • Widgets: safe to spend today, your month, your portfolio and quick add — tap the eye to hide amounts
 • A pinned alert when you're over budget, and bill reminders on the due date
 
-PRIVATE BY DESIGN
+🔒 PRIVATE BY DESIGN
 • No bank or broker logins, no SMS reading, no ads, no trackers
-• Delete your account and all data anytime, in the app
+• Delete your account and all your data anytime, in the app
 
-One account for the app and the website (os-arth.vercel.app). Try the private demo with six months of sample data — no sign-up needed.
+🌗 Two calm themes, Forest and Ivory, with one tap to switch.
+
+One account for the app and the website (os-arth.vercel.app). Try the private demo with six months of sample data — no sign-up needed. ✨
 ```
 
 **Release notes** (first release)
