@@ -106,17 +106,27 @@ export function DialTabBar({ state, navigateToTab }: BottomTabBarProps) {
                 <View style={[styles.itemCircle, { backgroundColor: active ? alpha(c.mark, 0.15) : c.surface2, borderColor: active ? c.brand : c.lineStrong }]}>
                   <Image source={it.icon} style={{ width: 20, height: 20, tintColor: active ? c.mark : c.fg2 }} />
                 </View>
-                <Text style={{ color: active ? c.mark : c.muted, fontSize: 10, fontFamily: F.uiMedium }}>{it.label}</Text>
+                <Text maxFontSizeMultiplier={1.2} style={{ color: active ? c.mark : c.muted, fontSize: 10, fontFamily: F.uiMedium }}>{it.label}</Text>
               </Pressable>
             </Animated.View>
           );
         })}
 
+        {/* content fades out behind the dial instead of colliding with the label and disc */}
+        {!open && (
+          <LinearGradient
+            pointerEvents="none"
+            colors={[alpha(c.bg, 0), alpha(c.bg, 0.92), c.bg]}
+            locations={[0, 0.55, 1]}
+            style={[styles.fade, { height: DIAL + bottom + 56 }]}
+          />
+        )}
+
         {/* docked half-disc */}
         <View pointerEvents="none" style={[styles.dock, { height: 30 + bottom, backgroundColor: alpha(c.surface, 0.96), borderColor: c.lineStrong }]} />
         {!open && (
           <View pointerEvents="none" style={[styles.label, { bottom: bottom + DIAL + 8, backgroundColor: alpha(c.surface, 0.95), borderColor: c.line }]}>
-            <Text style={{ color: c.muted, fontSize: 10, fontFamily: F.uiMedium }}>{current.label}</Text>
+            <Text maxFontSizeMultiplier={1.2} style={{ color: c.muted, fontSize: 10, fontFamily: F.uiMedium }}>{current.label}</Text>
           </View>
         )}
 
@@ -146,6 +156,7 @@ const styles = StyleSheet.create({
   face: { position: 'absolute', bottom: 0, borderWidth: 1, borderBottomWidth: 0, overflow: 'hidden', alignItems: 'center' },
   bezel: { position: 'absolute', left: 22, right: 22, top: 22, bottom: 0, borderWidth: 1, borderBottomWidth: 0, borderStyle: 'dashed' },
   item: { position: 'absolute' },
+  fade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   itemCircle: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   dock: { position: 'absolute', bottom: 0, width: 132, borderTopLeftRadius: 66, borderTopRightRadius: 66, borderWidth: 1, borderBottomWidth: 0 },
   label: { position: 'absolute', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, borderWidth: 1 },

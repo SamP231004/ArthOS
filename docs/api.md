@@ -80,7 +80,7 @@ Details: [budget.md](budget.md)
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/api/portfolio?range=1M\|3M\|6M\|1Y\|ALL` | Holdings with value, P&L, XIRR, day change; totals, allocation, history (default `1Y`) |
+| GET | `/api/portfolio?range=1M\|3M\|6M\|1Y\|ALL&live=true` | Holdings with value, P&L, XIRR, day change; totals, allocation, history (default `1Y`). `live=true` re-fetches stock prices older than 30 s while NSE is open (gold any time); the response includes `marketOpen` |
 | POST | `/api/holdings` | Create (or **join an existing** holding of the same instrument) with a first lot |
 | PUT · DELETE | `/api/holdings/{id}` | Edit details (horizon, manual price, bond fields…) / delete |
 | POST | `/api/holdings/{id}/lots` | `{type: BUY\|SELL, date, quantity, price, note?, fundedFrom?: SAVINGS\|SPENDING, fromSavings?}` |
@@ -115,7 +115,7 @@ Details: [insights.md](insights.md)
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/api/widget` | Compact snapshot for home-screen widgets: `{month, currency, today, budget, money, portfolio?, generatedAt}`. Details: [widgets.md](widgets.md) |
+| GET | `/api/widget?live=true` | Compact snapshot for home-screen widgets: `{month, currency, today, budget, money, portfolio?, generatedAt}`. `live=true` (the widget ↻) asks for fresh prices. Details: [widgets.md](widgets.md) |
 
 ## ❤️ Health
 

@@ -22,7 +22,9 @@ public record PortfolioView(
         String range,
         /** Oldest live price time among holdings (for "prices as of"). */
         Instant pricesAsOf,
-        List<String> priceNotes) {
+        List<String> priceNotes,
+        /** NSE/BSE are in their regular session right now, so a refresh can bring newer stock prices. */
+        boolean marketOpen) {
 
     public record Totals(BigDecimal value, BigDecimal invested, BigDecimal gain, BigDecimal gainPct,
                          BigDecimal dayChange, BigDecimal dayChangePct, BigDecimal realizedGain, BigDecimal xirr,

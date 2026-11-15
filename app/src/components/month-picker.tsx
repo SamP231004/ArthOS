@@ -12,11 +12,11 @@ export function MonthPicker() {
   return (
     <View style={s.box}>
       <Pressable onPress={() => shift(-1)} hitSlop={8} style={s.arrow} accessibilityLabel="Previous month">
-        <Text style={s.arrowText}>‹</Text>
+        <Text maxFontSizeMultiplier={1.2} style={s.arrowText}>‹</Text>
       </Pressable>
-      <Text style={s.label}>{monthLabel(month)}</Text>
+      <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={s.label}>{monthLabel(month)}</Text>
       <Pressable onPress={() => shift(1)} disabled={atCurrent} hitSlop={8} style={[s.arrow, atCurrent && { opacity: 0.3 }]} accessibilityLabel="Next month">
-        <Text style={s.arrowText}>›</Text>
+        <Text maxFontSizeMultiplier={1.2} style={s.arrowText}>›</Text>
       </Pressable>
     </View>
   );

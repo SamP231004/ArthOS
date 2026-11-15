@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { FlowChart, ValueChart } from '@/components/charts';
 import { AppHeader } from '@/components/app-header';
@@ -9,7 +9,7 @@ import { Button, Card, Chip, ErrorNote, Loading, Segmented, T } from '@/componen
 import { money } from '@/lib/format';
 import { CLASS_META, fmtQty, HORIZON_META, signedPct, toneColor } from '@/lib/invest-meta';
 import { indianMarketStatus } from '@/lib/market';
-import { usePortfolio, useSummary } from '@/lib/queries';
+import { usePortfolio, useRefreshPrices, useSummary } from '@/lib/queries';
 import type { AssetClass, HoldingView, Horizon, Portfolio, PortfolioRange } from '@/lib/types';
 import { useMonth } from '@/lib/ui-store';
 import { alpha, F, R, S, useStyles, useTheme, type Palette } from '@/theme';
@@ -21,11 +21,12 @@ const presentClasses = (p: Portfolio) => CLASS_ORDER.filter((c) => p.holdings.so
 
 export default function InvestTab() {
   const [range, setRange] = useState<PortfolioRange>('1Y');
-  const { data: p, isLoading, error, refetch, isRefetching } = usePortfolio(range);
+  const { data: p, isLoading, error, isRefetching } = usePortfolio(range);
+  const live = useRefreshPrices(range); // pull-to-refresh and the Refresh button both ask for live prices
   const [view, setView] = useState<'holdings' | 'analysis'>('holdings');
 
   return (
-    <Screen refreshing={isRefetching} onRefresh={refetch}>
+    <Screen refreshing={isRefetching || live.isPending} onRefresh={() => live.mutate()}>
       <AppHeader />
       <View>
         <T variant="title">Investments</T>
@@ -52,7 +53,7 @@ export default function InvestTab() {
           <Button title="Add by hand" variant="secondary" onPress={() => router.push('/add-holding')} />
         </Card>
       ) : view === 'holdings' ? (
-        <Holdings p={p} />
+        <Holdings p={p} onRefresh={() => live.mutate()} refreshing={live.isPending} />
       ) : (
         <Analysis p={p} range={range} setRange={setRange} />
       )}
@@ -75,7 +76,7 @@ function SavingsBalance() {
   );
 }
 
-function Holdings({ p }: { p: Portfolio }) {
+function Holdings({ p, onRefresh, refreshing }: { p: Portfolio; onRefresh: () => void; refreshing: boolean }) {
   const { c } = useTheme();
   const classes = presentClasses(p);
   const [picked, setTab] = useState<Tab>(classes[0]);
@@ -123,6 +124,16 @@ function Holdings({ p }: { p: Portfolio }) {
         <T variant="small" style={{ flex: 1 }}>
           <Text style={{ color: market.open ? c.income : c.fg2, fontFamily: F.uiSemibold }}>{market.label}</Text> · {market.detail} · {asOf ? `prices as of ${asOf}` : 'prices pending'}
         </T>
+        <Pressable
+          onPress={onRefresh}
+          disabled={refreshing}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Refresh prices"
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: c.line, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 }}>
+          {refreshing ? <ActivityIndicator size="small" color={c.muted} style={{ transform: [{ scale: 0.7 }], width: 12, height: 12 }} /> : <Text maxFontSizeMultiplier={1.2} style={{ color: c.fg2, fontSize: 13 }}>↻</Text>}
+          <Text maxFontSizeMultiplier={1.2} style={{ color: c.fg2, fontSize: 11.5, fontFamily: F.uiMedium }}>{refreshing ? 'Updating' : 'Refresh'}</Text>
+        </Pressable>
       </View>
 
       <Card style={{ padding: 0 }}>

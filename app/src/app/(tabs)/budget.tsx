@@ -27,7 +27,8 @@ export default function BudgetTab() {
         <T variant="title">Budget</T>
         <T variant="muted">Your month, turned into one simple daily decision.</T>
       </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* wraps onto two lines when large text or a narrow phone can't fit the picker and the buttons */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: S.sm }}>
         <MonthPicker />
         {b?.configured && !editing && <Button title="Edit" variant="secondary" onPress={() => setEditing(true)} />}
       </View>

@@ -31,7 +31,7 @@ export async function widgetTaskHandler({ widgetInfo, widgetAction, clickAction,
     const cached = await cachedSnapshot();
     draw(cached ?? { kind: 'loading' });
     if (widgetAction === 'WIDGET_CLICK' && clickAction === 'TOGGLE_HIDE' && cached?.kind === 'ok') return;
-    draw(await loadSnapshot());
+    draw(await loadSnapshot(20_000, widgetAction === 'WIDGET_CLICK' && clickAction === 'REFRESH'));
   } catch (e) {
     safeDraw(renderWidget, () => errorWidget(e, size));
   }

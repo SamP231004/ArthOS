@@ -31,6 +31,8 @@ public class MarketDataService {
 
     private static final Logger log = LoggerFactory.getLogger(MarketDataService.class);
     private static final Duration QUOTE_TTL = Duration.ofMinutes(10);
+    /** A "refresh prices" tap during market hours: re-fetch anything older than this (also caps how often a user can hit the sources). */
+    private static final Duration LIVE_TTL = Duration.ofSeconds(30);
     private static final Duration NAV_TTL = Duration.ofHours(3);
     private static final Duration HISTORY_TTL = Duration.ofHours(12);
     private static final long WAIT_SECONDS = 12;
@@ -56,8 +58,22 @@ public class MarketDataService {
 
     /** Quotes for many keys, refreshed in parallel where stale. Missing keys had no data at all. */
     public Map<String, Quote> quotes(Collection<String> keys) {
+        return quotes(keys, false);
+    }
+
+    /**
+     * With {@code live}, stocks/ETFs (while the market is open) and gold are re-fetched if older than 30 seconds
+     * instead of 10 minutes. Mutual fund NAVs are published once a day, so they keep their normal cache.
+     */
+    public Map<String, Quote> quotes(Collection<String> keys, boolean live) {
+        boolean open = MarketHours.isOpenNow();
         Map<String, Future<Quote>> pending = new HashMap<>();
-        for (String k : keys.stream().distinct().toList()) pending.put(k, pool.submit(() -> loadQuote(k)));
+        for (String k : keys.stream().distinct().toList()) {
+            Duration ttl = k.startsWith("MUTUAL_FUND:") ? NAV_TTL
+                    : live && (k.startsWith("GOLD:") || open) ? LIVE_TTL
+                    : QUOTE_TTL;
+            pending.put(k, pool.submit(() -> loadQuote(k, ttl)));
+        }
         Map<String, Quote> out = new HashMap<>();
         pending.forEach((k, f) -> {
             Quote q = await(f, k);
@@ -77,9 +93,8 @@ public class MarketDataService {
         return out;
     }
 
-    private Quote loadQuote(String key) {
+    private Quote loadQuote(String key, Duration ttl) {
         MarketCacheEntry e = entry(key);
-        Duration ttl = key.startsWith("MUTUAL_FUND:") ? NAV_TTL : QUOTE_TTL;
         if (e.getPrice() == null || stale(e.getQuoteFetchedAt(), ttl)) {
             Optional<Quote> fresh = provider(key).flatMap(p -> p.quote(symbol(key)));
             if (fresh.isPresent()) {

@@ -69,7 +69,8 @@ export async function cachedSnapshot(): Promise<WidgetState | null> {
 }
 
 /** Fresh numbers from the backend; falls back to the last good snapshot. */
-export async function loadSnapshot(timeoutMs = 20_000): Promise<WidgetState> {
+/** `live`: the widget's Refresh button — ask for fresh stock prices (market hours) and gold instead of the 10-minute cache. */
+export async function loadSnapshot(timeoutMs = 20_000, live = false): Promise<WidgetState> {
   const t = await token();
   if (!t) {
     await SecureStore.deleteItemAsync(CACHE_KEY).catch(() => {});
@@ -78,7 +79,7 @@ export async function loadSnapshot(timeoutMs = 20_000): Promise<WidgetState> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const res = await fetch(`${API_URL}/api/widget`, { headers: { Authorization: `Bearer ${t}`, Accept: 'application/json' }, signal: ctrl.signal });
+    const res = await fetch(`${API_URL}/api/widget${live ? '?live=true' : ''}`, { headers: { Authorization: `Bearer ${t}`, Accept: 'application/json' }, signal: ctrl.signal });
     if (res.status === 401) return { kind: 'signed-out' };
     if (!res.ok) throw new Error(String(res.status));
     const data = (await res.json()) as WidgetSnapshot;

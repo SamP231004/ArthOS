@@ -14,7 +14,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button, ErrorNote, Modal, Skeleton } from "@/components/ui";
 import { money, shortMoney } from "@/lib/format";
 import { indianMarketStatus } from "@/lib/market";
-import { useDeleteHolding, usePortfolio, useSummary } from "@/lib/queries";
+import { useDeleteHolding, usePortfolio, useRefreshPrices, useSummary } from "@/lib/queries";
 import { useMonth } from "@/lib/ui-store";
 import type { AssetClass, HoldingView, Portfolio, PortfolioRange } from "@/lib/types";
 
@@ -27,7 +27,8 @@ const RANGES: PortfolioRange[] = ["1M", "3M", "6M", "1Y", "ALL"];
 
 export default function InvestmentsPage() {
   const [range, setRange] = useState<PortfolioRange>("1Y");
-  const { data: p, isLoading, error, refetch, isFetching } = usePortfolio(range);
+  const { data: p, isLoading, error } = usePortfolio(range);
+  const livePrices = useRefreshPrices(range);
   const [view, setView] = useState<View>("holdings");
   const [adding, setAdding] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
@@ -75,7 +76,7 @@ export default function InvestmentsPage() {
       ) : p && p.holdings.length === 0 ? (
         <Empty onAdd={() => setAdding(true)} onImport={() => setImporting(true)} />
       ) : p && view === "holdings" ? (
-        <HoldingsView p={p} refresh={() => refetch()} refreshing={isFetching} onOpen={(id, tab) => setOpen({ id, tab })} />
+        <HoldingsView p={p} refresh={() => livePrices.mutate()} refreshing={livePrices.isPending} onOpen={(id, tab) => setOpen({ id, tab })} />
       ) : (
         p && <AnalysisView p={p} range={range} setRange={setRange} />
       )}

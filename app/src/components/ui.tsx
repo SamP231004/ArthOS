@@ -18,9 +18,15 @@ import { alpha, F, R, S, useStyles, useTheme, type Palette } from '@/theme';
 
 /** Typography that mirrors the website: Newsreader for display, Manrope for UI, IBM Plex Mono for eyebrows. */
 type Variant = 'display' | 'title' | 'h2' | 'body' | 'medium' | 'muted' | 'small' | 'label' | 'eyebrow' | 'big' | 'num';
+/**
+ * Large system font sizes are honoured, but capped: past ~1.3× the fixed-width rows (buttons, pickers, stat grids)
+ * start wrapping mid-word or running off screen.
+ */
+export const FONT_SCALE_CAP = 1.3;
+
 export function T({ variant = 'body', style, ...rest }: TextProps & { variant?: Variant }) {
   const s = useStyles(makeText);
-  return <Text style={[s.base, s[variant], style]} {...rest} />;
+  return <Text maxFontSizeMultiplier={FONT_SCALE_CAP} style={[s.base, s[variant], style]} {...rest} />;
 }
 
 export function Button({
@@ -46,7 +52,12 @@ export function Button({
   const inner = (
     <View style={[s.inner, size === 'lg' && s.lg]}>
       {loading ? <ActivityIndicator color={textColor} /> : icon}
-      {!loading || icon ? <Text style={[s.text, { color: textColor }]}>{title}</Text> : null}
+      {!loading || icon ? (
+        // one line, shrinking a little rather than breaking "+ Expense" into "+ Expen / se" on narrow phones
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} maxFontSizeMultiplier={1.2} style={[s.text, { color: textColor, flexShrink: 1 }]}>
+          {title}
+        </Text>
+      ) : null}
     </View>
   );
   return (

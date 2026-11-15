@@ -94,12 +94,12 @@ public class PortfolioController {
     }
 
     @GetMapping("/portfolio")
-    PortfolioView portfolio(@RequestParam(defaultValue = "1Y") String range) {
+    PortfolioView portfolio(@RequestParam(defaultValue = "1Y") String range, @RequestParam(defaultValue = "false") boolean live) {
         if (!RANGES.contains(range)) throw ApiException.badRequest("range must be one of " + RANGES);
         String userId = CurrentUser.id();
         List<Holding> list = mergeDuplicates(holdings.findByUserIdOrderByCreatedAtAsc(userId));
         List<String> keys = list.stream().map(Holding::marketKey).filter(Objects::nonNull).distinct().toList();
-        return PortfolioCalculator.calculate(list, market.quotes(keys), market.histories(keys), LocalDate.now(userCtx.zone(userId)), range);
+        return PortfolioCalculator.calculate(list, market.quotes(keys, live), market.histories(keys), LocalDate.now(userCtx.zone(userId)), range);
     }
 
     @PostMapping("/holdings")

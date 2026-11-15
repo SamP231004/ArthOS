@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
@@ -9,7 +9,8 @@ import Svg, { Circle } from 'react-native-svg';
 import { LogoMark } from '@/components/logo';
 import { useAuth } from '@/lib/auth-store';
 import { useTour } from '@/lib/tour';
-import { F, S } from '@/theme';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { alpha, F, S, useTheme, type Palette } from '@/theme';
 
 /**
  * First-run walkthrough: the same story as the website's landing page, one feature per screen. Always on the deep
@@ -18,23 +19,35 @@ import { F, S } from '@/theme';
  */
 
 // fixed brand colours (this screen doesn't follow the theme)
-const K = {
-  bg: '#06110c',
-  card: '#10231a',
-  card2: '#183126',
-  line: 'rgba(214,232,222,0.12)',
-  fg: '#f2efe8',
-  fg2: '#d9d4c9',
-  muted: '#a5b0a9',
-  subtle: '#7d8b83',
-  mark: '#e8706a',
-  income: '#4cc38a',
-  expense: '#f07167',
-  warn: '#e8b45c',
-  info: '#84b6d8',
-  ink: '#ece7db',
-  inkFg: '#0c1a13',
-};
+/** Tour colours, from the active theme (Forest or Ivory) so the tour follows the sun/moon switch. */
+function makeK(c: Palette, dark: boolean) {
+  return {
+    bg: c.bg,
+    card: c.surface,
+    card2: c.surface2,
+    line: c.lineStrong,
+    fg: c.fg,
+    fg2: c.fg2,
+    muted: c.muted,
+    subtle: c.subtle,
+    mark: c.mark,
+    income: c.income,
+    expense: c.expense,
+    warn: c.warn,
+    info: c.info,
+    ink: c.brand,
+    inkFg: c.inkFg,
+    dark,
+    /** the foreground colour at an opacity: tracks, dots, dashed borders */
+    fgA: (a: number) => alpha(c.fg, a),
+    hero: dark ? (['#12301f', '#0a1d14', '#06110c'] as const) : (['#ffffff', '#f8f6f1', '#f6f4ef'] as const),
+  };
+}
+
+function useK() {
+  const { c, mode } = useTheme();
+  return useMemo(() => makeK(c, mode === 'dark'), [c, mode]);
+}
 
 type Slide = { eyebrow: string; title: string; body: string; Visual: () => React.JSX.Element };
 
@@ -50,6 +63,7 @@ const SLIDES: Slide[] = [
 ];
 
 export default function Walkthrough() {
+  const K = useK();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const signedIn = useAuth((s) => !!s.token);
@@ -67,8 +81,8 @@ export default function Walkthrough() {
 
   return (
     <View style={{ flex: 1, backgroundColor: K.bg }}>
-      <StatusBar style="light" />
-      <LinearGradient colors={['#12301f', '#0a1d14', '#06110c']} style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '60%' }} />
+      <StatusBar style={K.dark ? 'light' : 'dark'} />
+      <LinearGradient colors={K.hero} style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '60%' }} />
 
       <View style={{ paddingTop: insets.top + S.sm, paddingHorizontal: S.lg, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -77,11 +91,14 @@ export default function Walkthrough() {
             Arth<Text style={{ color: K.mark, fontFamily: F.displayMedium }}>OS</Text>
           </Text>
         </View>
-        {!last && (
-          <Pressable onPress={finish} hitSlop={12} accessibilityRole="button">
-            <Text style={{ color: K.muted, fontFamily: F.uiMedium, fontSize: 14 }}>Skip</Text>
-          </Pressable>
-        )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.sm }}>
+          <ThemeToggle color={K.muted} />
+          {!last && (
+            <Pressable onPress={finish} hitSlop={12} accessibilityRole="button">
+              <Text style={{ color: K.muted, fontFamily: F.uiMedium, fontSize: 14 }}>Skip</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
 
       <ScrollView
@@ -118,7 +135,7 @@ export default function Walkthrough() {
         <View style={{ flexDirection: 'row', gap: 6, justifyContent: 'center' }}>
           {SLIDES.map((_, n) => (
             <Pressable key={n} onPress={() => go(n)} hitSlop={6} accessibilityLabel={`Screen ${n + 1}`}>
-              <View style={{ height: 6, width: n === i ? 22 : 6, borderRadius: 3, backgroundColor: n === i ? K.mark : 'rgba(242,239,232,0.25)' }} />
+              <View style={{ height: 6, width: n === i ? 22 : 6, borderRadius: 3, backgroundColor: n === i ? K.mark : K.fgA(0.25) }} />
             </Pressable>
           ))}
         </View>
@@ -137,10 +154,13 @@ export default function Walkthrough() {
 // ------------------------------------------------------------------ visuals (static mirrors of real screens)
 
 function Card({ children, w = 300 }: { children: React.ReactNode; w?: number }) {
+  const K = useK();
   return <View style={{ width: w, backgroundColor: K.card, borderRadius: 22, borderWidth: 1, borderColor: K.line, padding: 16, gap: 10 }}>{children}</View>;
 }
 
-function Row({ k, v, color = K.fg2, bold }: { k: string; v: string; color?: string; bold?: boolean }) {
+function Row({ k, v, color, bold }: { k: string; v: string; color?: string; bold?: boolean }) {
+  const K = useK();
+  color ??= K.fg2;
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
       <Text style={{ color: bold ? K.fg : K.muted, fontFamily: bold ? F.uiSemibold : F.ui, fontSize: 13 }}>{k}</Text>
@@ -150,9 +170,10 @@ function Row({ k, v, color = K.fg2, bold }: { k: string; v: string; color?: stri
 }
 
 function Bar({ pct, color, marker }: { pct: number; color: string; marker?: number }) {
+  const K = useK();
   return (
     <View style={{ height: 14, justifyContent: 'center' }}>
-      <View style={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(242,239,232,0.08)', overflow: 'hidden' }}>
+      <View style={{ height: 6, borderRadius: 3, backgroundColor: K.fgA(0.08), overflow: 'hidden' }}>
         <View style={{ width: `${pct}%`, height: '100%', borderRadius: 3, backgroundColor: color }} />
       </View>
       {marker != null && <View style={{ position: 'absolute', left: `${marker}%`, width: 2, height: 14, borderRadius: 1, backgroundColor: K.fg }} />}
@@ -161,6 +182,7 @@ function Bar({ pct, color, marker }: { pct: number; color: string; marker?: numb
 }
 
 function WelcomeVisual() {
+  const K = useK();
   return (
     <View style={{ alignItems: 'center', gap: 18 }}>
       <View style={{ borderRadius: 26, shadowColor: '#c43a35', shadowOpacity: 0.6, shadowRadius: 30, elevation: 16 }}>
@@ -176,6 +198,7 @@ function WelcomeVisual() {
 }
 
 function SaveVisual() {
+  const K = useK();
   return (
     <Card>
       <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 12 }}>Left to spend this month</Text>
@@ -184,7 +207,7 @@ function SaveVisual() {
         <View style={{ flex: 20, backgroundColor: K.income }} />
         <View style={{ flex: 38, backgroundColor: K.expense }} />
         <View style={{ flex: 7, backgroundColor: K.info }} />
-        <View style={{ flex: 35, backgroundColor: 'rgba(242,239,232,0.08)' }} />
+        <View style={{ flex: 35, backgroundColor: K.fgA(0.08) }} />
       </View>
       <Row k="Income" v="₹92,000" />
       <Row k="Saved first · 20%" v="₹18,400" color={K.income} />
@@ -195,6 +218,7 @@ function SaveVisual() {
 }
 
 function BudgetVisual() {
+  const K = useK();
   return (
     <Card>
       <View style={{ flexDirection: 'row', gap: 6 }}>
@@ -208,7 +232,7 @@ function BudgetVisual() {
       <Bar pct={58} color={K.income} marker={60} />
       <View style={{ flexDirection: 'row', gap: 4, marginTop: 2 }}>
         {[1, 1, 2, 1, 0, 1, 1, 3, 1, 1, 1, 0, 1, 1].map((v, n) => (
-          <View key={n} style={{ flex: 1, height: 18, borderRadius: 4, backgroundColor: v === 2 ? 'rgba(232,180,92,0.3)' : v === 3 ? 'rgba(240,113,103,0.3)' : v === 0 ? 'rgba(242,239,232,0.06)' : 'rgba(76,195,138,0.25)' }} />
+          <View key={n} style={{ flex: 1, height: 18, borderRadius: 4, backgroundColor: v === 2 ? 'rgba(232,180,92,0.3)' : v === 3 ? 'rgba(240,113,103,0.3)' : v === 0 ? K.fgA(0.06) : 'rgba(76,195,138,0.25)' }} />
         ))}
       </View>
     </Card>
@@ -216,6 +240,7 @@ function BudgetVisual() {
 }
 
 function PortfolioVisual() {
+  const K = useK();
   return (
     <Card>
       <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 12 }}>Portfolio</Text>
@@ -242,6 +267,7 @@ function PortfolioVisual() {
 }
 
 function ImportVisual() {
+  const K = useK();
   const rows: [string, string, string][] = [
     ['Reliance Industries', 'Stock · 10 shares', '₹24,105'],
     ['NIFTYBEES · Nifty 50 ETF', 'ETF · 50 units', '₹10,513'],
@@ -254,7 +280,7 @@ function ImportVisual() {
           <Text key={b} style={{ color: K.fg2, fontFamily: F.uiMedium, fontSize: 11, borderWidth: 1, borderColor: K.line, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>{b}</Text>
         ))}
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderStyle: 'dashed', borderColor: 'rgba(242,239,232,0.2)', borderRadius: 12, padding: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderStyle: 'dashed', borderColor: K.fgA(0.2), borderRadius: 12, padding: 10 }}>
         <Text style={{ fontSize: 14 }}>📄</Text>
         <Text style={{ flex: 1, color: K.fg2, fontFamily: F.ui, fontSize: 12 }} numberOfLines={1}>holdings-zerodha.xlsx</Text>
         <Text style={{ color: K.income, fontFamily: F.uiSemibold, fontSize: 10.5 }}>🔒 on this phone</Text>
@@ -277,13 +303,14 @@ function ImportVisual() {
 }
 
 function ScanVisual() {
+  const K = useK();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       <View style={{ width: 130, backgroundColor: '#121212', borderRadius: 20, padding: 12, alignItems: 'center', gap: 4, borderWidth: 1, borderColor: K.line }}>
         <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#3a6ea5', alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: '#fff', fontFamily: F.uiSemibold }}>A</Text>
+          <Text style={{ color: '#fff', fontFamily: F.uiSemibold }}>Z</Text>
         </View>
-        <Text style={{ color: '#e8e8e8', fontFamily: F.ui, fontSize: 10 }}>To Annapurna Tiffins</Text>
+        <Text style={{ color: '#e8e8e8', fontFamily: F.ui, fontSize: 10 }}>To Zomato</Text>
         <Text style={{ color: '#e8e8e8', fontFamily: F.ui, fontSize: 22 }}>₹159.44</Text>
         <Text style={{ color: '#9fdcb0', fontFamily: F.ui, fontSize: 9.5 }}>✓ Completed</Text>
         <Text style={{ color: '#e8e8e8', fontFamily: F.uiMedium, fontSize: 9.5, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 999, overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 3, marginTop: 4 }}>Share → ArthOS</Text>
@@ -293,7 +320,7 @@ function ScanVisual() {
         <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 10 }}>New expense</Text>
         <Text style={{ color: K.fg, fontFamily: F.uiSemibold, fontSize: 20 }}>₹159.44</Text>
         {[
-          ['Merchant', 'Annapurna'],
+          ['Merchant', 'Zomato'],
           ['Category', 'Food'],
           ['Paid with', 'UPI'],
           ['Date', '6 Nov'],
@@ -310,13 +337,14 @@ function ScanVisual() {
 }
 
 function InsightsVisual() {
+  const K = useK();
   const R = 40, C = 2 * Math.PI * R, arc = C * (240 / 360);
   return (
     <Card>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
         <View style={{ width: 100, height: 100, alignItems: 'center', justifyContent: 'center' }}>
           <Svg width={100} height={100} viewBox="0 0 100 100" style={{ position: 'absolute', transform: [{ rotate: '150deg' }] }}>
-            <Circle cx={50} cy={50} r={R} stroke="rgba(242,239,232,0.12)" strokeWidth={9} fill="none" strokeLinecap="round" strokeDasharray={`${arc} ${C}`} />
+            <Circle cx={50} cy={50} r={R} stroke={K.fgA(0.12)} strokeWidth={9} fill="none" strokeLinecap="round" strokeDasharray={`${arc} ${C}`} />
             <Circle cx={50} cy={50} r={R} stroke={K.income} strokeWidth={9} fill="none" strokeLinecap="round" strokeDasharray={`${0.84 * arc} ${C}`} />
           </Svg>
           <Text style={{ color: K.fg, fontFamily: F.uiSemibold, fontSize: 28 }}>84</Text>
@@ -336,9 +364,10 @@ function InsightsVisual() {
 }
 
 function PhoneVisual() {
+  const K = useK();
   return (
     <View style={{ width: 300, gap: 10 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#1d2622', borderRadius: 18, paddingHorizontal: 12, paddingVertical: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: K.card2, borderWidth: 1, borderColor: K.line, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 10 }}>
         <LogoMark size={22} />
         <Text style={{ flex: 1, color: K.fg, fontFamily: F.uiMedium, fontSize: 13 }} numberOfLines={1}>On pace to overspend by ₹4,531</Text>
         <Text style={{ color: K.subtle, fontSize: 11 }}>pinned</Text>

@@ -87,7 +87,8 @@ export default function ExpensesTab() {
         <T variant="title">Expenses</T>
         <T variant="muted">Everything going out this month.</T>
       </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* wraps onto two lines when large text or a narrow phone can't fit the picker and the buttons */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: S.sm }}>
         <MonthPicker />
         <View style={{ flexDirection: 'row', gap: S.sm }}>
           <Button title="Scan" variant="secondary" onPress={() => router.push('/scan')} />

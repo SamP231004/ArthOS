@@ -31,6 +31,8 @@ Each entry follows the same shape: **🐛 Symptom → 🔍 Root cause → 🛠�
 | 20 | [🧮 Two different "left" numbers on one widget](#20--two-different-left-numbers-on-one-widget) | 📱 App | ✅ Fixed |
 | 21 | [🔐 Java didn't trust AMFI's certificate](#21--java-didnt-trust-amfis-certificate) | ☕ Backend | ✅ Fixed |
 | 22 | [👯 Importing could count a holding twice](#22--importing-could-count-a-holding-twice) | 📈 Investments | ✅ Fixed |
+| 23 | [📏 Buttons ran off screen on some phones](#23--buttons-ran-off-screen-on-some-phones) | 📱 App | ✅ Fixed |
+| 24 | [⏱️ "Refresh prices" didn't bring new prices](#24-️-refresh-prices-didnt-bring-new-prices) | 📈 Investments · ☕ Backend | ✅ Fixed |
 
 ---
 
@@ -368,4 +370,22 @@ APKs use the **v2** signing block. We wrote a small parser that reads the certif
 | 🔍 **Root cause** | A holdings file describes your **whole** position, but the import merged it into the existing holding like a new purchase. |
 | 🛠️ **Fix** | Hand-entered holdings are **skipped** with a clear note. A fresh file from the same broker **replaces** that broker's earlier import (Zerodha holdings ↔ tradebook, Groww MF ↔ CAS). Different brokers still add up, because they hold different shares. Imported lots never touch the savings account. |
 | 💡 **Lesson** | "Import" and "add" mean different things. Decide which source is the truth for each holding. |
+
+## 23. 📏 Buttons ran off screen on some phones
+
+| | |
+|---|---|
+| 🐛 **Symptom** | On some phones the app looked broken while it was fine on ours: **"+ Expense" split into "+ Expen / se"**, "+ Income" broke over two lines, the Expenses header's **"+ Add" button ran off the right edge**, and the floating **"Home" label sat on top of text** near the bottom dial. |
+| 🔍 **Root cause** | Android lets people enlarge text (**Settings → Display → Font size**), and many phones ship with it above 100%. React Native honours that by default, so every label grew by up to ~1.5–2× — but our rows were laid out for 100%: three equal buttons in one row, a month picker plus two buttons side by side, all with fixed sizes and no room to grow. Narrow screens (≈360 dp) made it worse. The dial is drawn over the scrolling page, so content scrolled straight under its label. |
+| 🛠️ **Fix** | **1.** Text still follows the phone's setting, but capped (`maxFontSizeMultiplier`: 1.3× for body text, 1.2× for buttons, pickers and the dial) — readable, without breaking layouts. **2.** Buttons are **one line** and shrink their text slightly if needed (`numberOfLines={1}` + `adjustsFontSizeToFit`) instead of breaking a word. **3.** Rows with a month picker and buttons **wrap onto a second line** when they don't fit (`flexWrap`). **4.** A soft **fade behind the dial** so content dissolves under it instead of colliding with the label. |
+| 💡 **Lesson** | Test with the largest system font and a small screen, not just your own phone. Design every row for "what if this text is 50% bigger?" — let it wrap or shrink, never overflow. |
+
+## 24. ⏱️ "Refresh prices" didn't bring new prices
+
+| | |
+|---|---|
+| 🐛 **Symptom** | During market hours, tapping refresh on Investments (or pulling down in the app) changed nothing for up to 10 minutes. |
+| 🔍 **Root cause** | Refresh only re-asked our server, and the server deliberately serves stock quotes from a **10-minute cache** to stay fast and avoid hammering Yahoo/NSE. A refresh never told it to skip the cache. |
+| 🛠️ **Fix** | A **`live`** option on the portfolio and widget endpoints: stocks/ETFs are re-fetched if older than **30 seconds** while NSE is open (Mon–Fri 9:15–3:30 IST), gold any time; mutual-fund NAVs keep their daily cache. The web refresh button, the app's new **Refresh** chip, pull-to-refresh and the widget's ↻ all use it, and the Investments screen polls live every minute while the market is open. The 30-second floor also caps how often anyone can hit the price sources. |
+| 💡 **Lesson** | A cache needs an explicit "I really want fresh data" path — and a floor so that path can't be abused. |
 

@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
+import { indianMarketStatus } from "./market";
 import { useAuth } from "./auth-store";
 import type { CategorySuggestion, Insights, WidgetSnapshot, ParseResult, RecurringCandidate } from "./types";
 import type { AssetClass, BudgetInput, BudgetStatus, HoldingInput, HoldingView, LotInput, Portfolio, PortfolioRange, Quote, SymbolMatch, Expense, ExpenseInput, Income, IncomeInput, MonthSummary, User } from "./types";
@@ -119,9 +120,22 @@ function useInvalidatePortfolio() {
 export function usePortfolio(range: PortfolioRange) {
   return useQuery({
     queryKey: ["portfolio", range],
-    queryFn: () => api<Portfolio>(`/api/portfolio?range=${range}`),
+    // while NSE is open, ask the server for fresh stock prices (it re-fetches anything older than 30 s) every minute
+    queryFn: () => api<Portfolio>(`/api/portfolio?range=${range}${indianMarketStatus().open ? "&live=true" : ""}`),
     placeholderData: (prev) => prev, // keep the chart while switching ranges
-    refetchInterval: 5 * 60_000,
+    refetchInterval: () => (indianMarketStatus().open ? 60_000 : 5 * 60_000),
+  });
+}
+
+/** "Refresh prices": fetch live quotes now (stocks during market hours, gold any time) and update every cached range. */
+export function useRefreshPrices(range: PortfolioRange) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api<Portfolio>(`/api/portfolio?range=${range}&live=true`),
+    onSuccess: (p) => {
+      qc.setQueryData(["portfolio", range], p);
+      qc.invalidateQueries({ queryKey: ["portfolio"], predicate: (q) => q.queryKey[1] !== range });
+    },
   });
 }
 

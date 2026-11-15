@@ -181,6 +181,8 @@ export type Portfolio = {
   range: PortfolioRange;
   pricesAsOf?: string;
   priceNotes: string[];
+  /** NSE/BSE regular session is on right now (server clock). */
+  marketOpen?: boolean;
 };
 
 export type SymbolMatch = { symbol: string; name: string; exchange: string; assetClass: AssetClass };

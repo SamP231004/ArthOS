@@ -66,7 +66,8 @@ public final class PortfolioCalculator {
         List<String> notes = computed.stream().filter(c -> c.source == PriceSource.COST && c.h.marketKey() != null)
                 .map(c -> "No live price for " + c.h.getName() + " right now; valued at its last trade price.").toList();
 
-        return new PortfolioView(totals, allocation, horizons, views, history(computed, today, range), range, asOf, notes);
+        return new PortfolioView(totals, allocation, horizons, views, history(computed, today, range), range, asOf, notes,
+                com.arthos.market.MarketHours.isOpenNow());
     }
 
     // ---------------------------------------------------------------- per holding

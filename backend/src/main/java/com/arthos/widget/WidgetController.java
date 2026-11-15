@@ -79,7 +79,7 @@ public class WidgetController {
     }
 
     @GetMapping
-    Snapshot snapshot() {
+    Snapshot snapshot(@org.springframework.web.bind.annotation.RequestParam(defaultValue = "false") boolean live) {
         String uid = CurrentUser.id();
         User user = users.findById(uid).orElseThrow(() -> ApiException.unauthorized("Account no longer exists"));
         ZoneId zone = MonthKey.zoneOrDefault(user.getTimezone());
@@ -115,7 +115,7 @@ public class WidgetController {
                 : new BudgetPart(false, null, null, null, null, null, null, null, null, null, null, daysLeft);
 
         return new Snapshot(key, user.getCurrency(), today, today.getDayOfMonth(), ym.lengthOfMonth(), budget, money,
-                portfolio(allHoldings, today), Instant.now());
+                portfolio(allHoldings, today, live), Instant.now());
     }
 
     private static BudgetStatus budget(YearMonth ym, LocalDate today, List<Expense> monthExpenses, Optional<Budget> own, Optional<Budget> earlier) {
@@ -125,11 +125,11 @@ public class WidgetController {
                 own.isPresent() ? null : b.get().getMonthKey());
     }
 
-    private PortfolioPart portfolio(List<Holding> list, LocalDate today) {
+    private PortfolioPart portfolio(List<Holding> list, LocalDate today, boolean live) {
         if (list.isEmpty()) return null;
         List<String> keys = list.stream().map(Holding::marketKey).filter(Objects::nonNull).distinct().toList();
         // quotes and histories come from the shared price cache, kept warm by the refresh job
-        PortfolioView v = PortfolioCalculator.calculate(list, market.quotes(keys), market.histories(keys), today, "1M");
+        PortfolioView v = PortfolioCalculator.calculate(list, market.quotes(keys, live), market.histories(keys), today, "1M");
         PortfolioView.Totals t = v.totals();
         if (t.holdingsCount() == 0) return null;
         return new PortfolioPart(t.value(), t.invested(), t.gain(), t.gainPct(), t.dayChange(), t.dayChangePct(), t.holdingsCount());
