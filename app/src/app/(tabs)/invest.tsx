@@ -18,6 +18,12 @@ type Tab = AssetClass;
 /** Fixed tab order, showing only the classes the user holds (no "All" tab). */
 const CLASS_ORDER: AssetClass[] = ['STOCK', 'MUTUAL_FUND', 'GOLD', 'BOND'];
 const presentClasses = (p: Portfolio) => CLASS_ORDER.filter((c) => p.holdings.some((h) => h.assetClass === c));
+/** Fully sold holdings stay in the data (their realised profit counts) but aren't listed as holdings. */
+const isHeld = (h: HoldingView) => h.quantity > 1e-9;
+const heldClasses = (p: Portfolio) => {
+  const c = CLASS_ORDER.filter((x) => p.holdings.some((h) => h.assetClass === x && isHeld(h)));
+  return c.length ? c : presentClasses(p);
+};
 
 export default function InvestTab() {
   const [range, setRange] = useState<PortfolioRange>('1Y');
@@ -78,10 +84,11 @@ function SavingsBalance() {
 
 function Holdings({ p, onRefresh, refreshing }: { p: Portfolio; onRefresh: () => void; refreshing: boolean }) {
   const { c } = useTheme();
-  const classes = presentClasses(p);
+  const classes = heldClasses(p);
   const [picked, setTab] = useState<Tab>(classes[0]);
   const tab = classes.includes(picked) ? picked : classes[0]; // the picked class may have been emptied
-  const items = p.holdings.filter((h) => h.assetClass === tab).sort((a, b) => b.currentValue - a.currentValue);
+  const all = p.holdings.filter((h) => h.assetClass === tab);
+  const items = (all.some(isHeld) ? all.filter(isHeld) : all).sort((a, b) => b.currentValue - a.currentValue);
   const invested = items.reduce((x, h) => x + h.invested, 0);
   const current = items.reduce((x, h) => x + h.currentValue, 0);
   const pl = current - invested;
@@ -175,18 +182,35 @@ function Row({ h, last, share }: { h: HoldingView; last: boolean; share: number 
         </View>
       </View>
 
-      <View style={s.facts}>
-        <Fact k={h.assetClass === 'GOLD' ? 'Grams' : 'Qty'} v={`${fmtQty(h.quantity)}${qtyUnit}`} />
-        <View style={s.factDivider} />
-        <Fact k="Avg price" v={money(h.avgCost)} />
-        <View style={s.factDivider} />
-        <Fact
-          k={h.assetClass === 'MUTUAL_FUND' ? 'NAV' : h.priceSource === 'LIVE' ? 'LTP' : 'Price'}
-          v={money(h.price)}
-          extra={live ? `${(h.dayChangePct ?? 0) >= 0 ? '▲' : '▼'}${Math.abs(h.dayChangePct ?? 0).toFixed(2)}%` : h.priceSource === 'MANUAL' ? 'manual' : h.priceSource === 'FACE_VALUE' ? 'face value' : 'last trade'}
-          extraColor={live ? dayTone : c.subtle}
-        />
-      </View>
+      {h.assetClass === 'MUTUAL_FUND' ? (
+        // funds: what people track — invested, today's move and XIRR, not units or NAV
+        <View style={s.facts}>
+          <Fact k="Invested" v={money(h.invested)} />
+          <View style={s.factDivider} />
+          <Fact
+            k="1D change"
+            v={`${h.dayChange >= 0 ? '+' : '−'}${money(Math.abs(h.dayChange))}`}
+            vColor={toneColor(c, h.dayChange)}
+            extra={h.dayChangePct != null ? `${h.dayChangePct >= 0 ? '▲' : '▼'}${Math.abs(h.dayChangePct).toFixed(2)}%` : undefined}
+            extraColor={dayTone}
+          />
+          <View style={s.factDivider} />
+          <Fact k="XIRR" v={h.xirr != null ? signedPct(h.xirr) : '—'} vColor={toneColor(c, h.xirr)} />
+        </View>
+      ) : (
+        <View style={s.facts}>
+          <Fact k={h.assetClass === 'GOLD' ? 'Grams' : 'Qty'} v={`${fmtQty(h.quantity)}${qtyUnit}`} />
+          <View style={s.factDivider} />
+          <Fact k="Avg price" v={money(h.avgCost)} />
+          <View style={s.factDivider} />
+          <Fact
+            k={h.priceSource === 'LIVE' ? 'LTP' : 'Price'}
+            v={money(h.price)}
+            extra={live ? `${(h.dayChangePct ?? 0) >= 0 ? '▲' : '▼'}${Math.abs(h.dayChangePct ?? 0).toFixed(2)}%` : h.priceSource === 'MANUAL' ? 'manual' : h.priceSource === 'FACE_VALUE' ? 'face value' : 'last trade'}
+            extraColor={live ? dayTone : c.subtle}
+          />
+        </View>
+      )}
 
       <View style={[s.line, { marginTop: 2 }]}>
         <View style={s.track}>
@@ -201,12 +225,12 @@ function Row({ h, last, share }: { h: HoldingView; last: boolean; share: number 
 }
 
 /** One labelled figure in the QTY · AVG · LTP strip: tiny caps label above the value. */
-function Fact({ k, v, extra, extraColor }: { k: string; v: string; extra?: string; extraColor?: string }) {
+function Fact({ k, v, vColor, extra, extraColor }: { k: string; v: string; vColor?: string; extra?: string; extraColor?: string }) {
   const { c } = useTheme();
   return (
     <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
       <Text style={{ color: c.subtle, fontFamily: F.uiMedium, fontSize: 9.5, letterSpacing: 0.8, textTransform: 'uppercase' }}>{k}</Text>
-      <Text style={{ color: c.fg, fontFamily: F.uiSemibold, fontSize: 13, fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit>
+      <Text style={{ color: vColor ?? c.fg, fontFamily: F.uiSemibold, fontSize: 13, fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit>
         {v}
       </Text>
       {extra ? <Text style={{ color: extraColor ?? c.subtle, fontFamily: F.uiMedium, fontSize: 10.5, fontVariant: ['tabular-nums'] }}>{extra}</Text> : null}
@@ -306,14 +330,14 @@ function Analysis({ p, range, setRange }: { p: Portfolio; range: PortfolioRange;
 
       <GroupCard
         title="By time horizon"
-        rows={groupBy(p.holdings, (h) => h.horizon ?? 'NONE', (k) => HORIZON_META[k as Horizon | 'NONE'].label).sort(
+        rows={groupBy(p.holdings.filter(isHeld), (h) => h.horizon ?? 'NONE', (k) => HORIZON_META[k as Horizon | 'NONE'].label).sort(
           (x, y) => HORIZON_ORDER.indexOf(x.key as Horizon | 'NONE') - HORIZON_ORDER.indexOf(y.key as Horizon | 'NONE'),
         )}
         colorOf={(g) => ({ SHORT: c.c6, MEDIUM: c.c3, LONG: c.c1, NONE: c.c8 })[g.key as Horizon | 'NONE']}
       />
       <GroupCard
         title="By goal"
-        rows={groupBy(p.holdings, (h) => h.goal?.trim() || '', (k) => k || 'No goal set')}
+        rows={groupBy(p.holdings.filter(isHeld), (h) => h.goal?.trim() || '', (k) => k || 'No goal set')}
         colorOf={(g, i) => (g.key ? [c.c1, c.c4, c.c2, c.c5, c.c6, c.c3, c.c7][i % 7] : c.c8)}
       />
     </>
