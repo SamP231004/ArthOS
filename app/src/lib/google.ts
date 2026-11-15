@@ -1,4 +1,5 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { TurboModuleRegistry } from 'react-native';
 
 import { api, ApiError } from './api';
 import type { AuthResponse } from './types';
@@ -9,7 +10,10 @@ type Providers = { google?: { clientId: string } | null };
  * Expo Go only ships the native modules bundled with it, and Google sign-in isn't one of them — importing it there
  * crashes the screen. So the library is loaded lazily, and only in real (EAS/dev-client) builds.
  */
-export const googleAvailable = Constants.executionEnvironment !== ExecutionEnvironment.StoreClient;
+export const googleAvailable =
+  Constants.executionEnvironment !== ExecutionEnvironment.StoreClient &&
+  // the environment check isn't enough (an older dev build, or Expo Go reporting differently): ask for the module itself
+  TurboModuleRegistry.get('RNGoogleSignin') != null;
 
 type GoogleModule = typeof import('@react-native-google-signin/google-signin');
 let mod: GoogleModule | null = null;
