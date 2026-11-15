@@ -28,7 +28,9 @@ import { Logo } from "@/components/logo";
 import { BudgetSimulator } from "@/components/marketing/budget-simulator";
 import { ImportVisual, InsightsVisual, MoneyFlowVisual, PhoneVisual, PortfolioVisual, ScanVisual } from "@/components/marketing/feature-visuals";
 import { ProductPreview } from "@/components/marketing/product-preview";
+import { JsonLd, faqLd } from "@/components/marketing/content-shell";
 import { SiteNav } from "@/components/marketing/site-nav";
+import { AUTHOR, SITE_DESCRIPTION, SITE_NAME, SITE_URL, absolute } from "@/lib/site";
 import { SocialLinks } from "@/components/social-links";
 import { buttonClass } from "@/lib/button";
 
@@ -87,9 +89,34 @@ const faqs = [
   ["Is there an iPhone app?", "Not yet. ArthOS is Android-first; the website works on any phone or computer, with the same account."],
 ];
 
+const structuredData = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: SITE_URL,
+    description: SITE_DESCRIPTION,
+    inLanguage: "en-IN",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: SITE_NAME,
+    url: SITE_URL,
+    description: SITE_DESCRIPTION,
+    applicationCategory: "FinanceApplication",
+    operatingSystem: "Web, Android",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
+    image: absolute("/opengraph-image"),
+    author: { "@type": "Person", name: AUTHOR.name, url: AUTHOR.url },
+  },
+  faqLd(faqs.map(([q, a]) => ({ q, a }))),
+];
+
 export default function Home() {
   return (
     <div className="relative flex flex-1 flex-col overflow-x-clip">
+      <JsonLd data={structuredData} />
       <SiteNav />
 
       <main className="flex-1">
@@ -401,6 +428,8 @@ export default function Home() {
             <a href="#privacy" className="text-muted hover:text-fg">Privacy</a>
             <a href={DOCS_URL} target="_blank" rel="noreferrer" className="text-muted hover:text-fg">Documentation</a>
             <a href="#roadmap" className="text-muted hover:text-fg">Roadmap</a>
+            <Link href="/tools" className="text-muted hover:text-fg">Free calculators</Link>
+            <Link href="/guides" className="text-muted hover:text-fg">Guides</Link>
             <Link href="/login" className="text-muted hover:text-fg">Sign in</Link>
             <Link href="/privacy" className="text-muted hover:text-fg">Privacy policy</Link>
             <Link href="/delete-account" className="text-muted hover:text-fg">Delete account</Link>

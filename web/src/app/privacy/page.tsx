@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage } from "@/components/marketing/legal-page";
 
-export const metadata: Metadata = { title: "Privacy policy · ArthOS", description: "What ArthOS collects, why, and how to delete it." };
+export const metadata: Metadata = { title: "Privacy policy", description: "What ArthOS collects, why, and how to delete it.", alternates: { canonical: "/privacy" } };
 
 const CONTACT = "samp231004@gmail.com";
 

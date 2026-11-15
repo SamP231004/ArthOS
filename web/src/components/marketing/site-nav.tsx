@@ -8,7 +8,8 @@ const links = [
   ["Android app", "#app"],
   ["Web vs app", "#platforms"],
   ["Privacy", "#privacy"],
-  ["FAQ", "#faq"],
+  ["Calculators", "/tools"],
+  ["Guides", "/guides"],
 ];
 
 export function SiteNav() {

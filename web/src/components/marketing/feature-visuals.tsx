@@ -112,15 +112,15 @@ export function ScanVisual() {
     <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-stretch sm:justify-center">
       {/* a payment app's success screen */}
       <div className="w-56 shrink-0 rounded-[1.75rem] border border-line-strong bg-[#121212] p-4 text-center text-[#e8e8e8] shadow-2xl">
-        <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-[#3a6ea5] text-lg font-semibold">A</div>
-        <p className="mt-2 text-xs">To Annapurna Tiffins</p>
+        <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-[#3a6ea5] text-lg font-semibold">Z</div>
+        <p className="mt-2 text-xs">To Zomato</p>
         <p className="mt-1 text-3xl font-light tracking-tight">₹159.44</p>
         <p className="mt-2 inline-flex items-center gap-1 text-[10px] text-[#9fdcb0]"><Check size={10} /> Completed</p>
         <p className="mt-1 text-[10px] text-[#9a9a9a]">6 Nov 2026, 1:04 pm</p>
         <div className="mt-3 space-y-1 rounded-xl border border-white/10 p-2.5 text-left text-[9.5px] text-[#bdbdbd]">
           <p>UPI transaction ID</p>
           <p className="text-[#8a8a8a]">4312 9876 5432</p>
-          <p className="pt-1">To: ANNAPURNA TIFFINS</p>
+          <p className="pt-1">To: ZOMATO</p>
         </div>
         <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[10px]">Share → <span className="font-semibold">ArthOS</span></p>
       </div>
@@ -137,7 +137,7 @@ export function ScanVisual() {
         <p className="tabular mt-2 text-3xl font-semibold tracking-tight">₹159.44</p>
         <div className="mt-4 space-y-2 text-sm">
           {[
-            ["Merchant", "Annapurna Tiffins"],
+            ["Merchant", "Zomato"],
             ["Category", "Food · learned"],
             ["Paid with", "UPI"],
             ["Date", "6 Nov, 1:04 pm"],
@@ -254,11 +254,7 @@ export function PhoneVisual() {
           </div>
         </div>
       </div>
-      <div className="mt-4 flex justify-around px-6 pb-1">
-        {["#c2534a", "#5a8dee", "#3f9b6b", "#d9a23f"].map((c) => (
-          <span key={c} className="h-9 w-9 rounded-full opacity-80" style={{ background: c }} />
-        ))}
-      </div>
+      <div className="mx-auto mt-4 mb-1 h-1 w-24 rounded-full bg-white/25" />
     </div>
   );
 }

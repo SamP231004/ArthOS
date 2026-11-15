@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage } from "@/components/marketing/legal-page";
 
-export const metadata: Metadata = { title: "Delete your account · ArthOS", description: "How to delete your ArthOS account and all its data." };
+export const metadata: Metadata = { title: "Delete your account", description: "How to delete your ArthOS account and all its data.", alternates: { canonical: "/delete-account" } };
 
 const CONTACT = "samp231004@gmail.com";
 
