@@ -36,6 +36,7 @@ export default function SettingsPage() {
   };
   const [f, setF] = useState(initial);
   const [saved, setSaved] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [delBusy, setDelBusy] = useState(false);
   const [delError, setDelError] = useState<string | null>(null);
@@ -87,7 +88,12 @@ export default function SettingsPage() {
 
       {/* profile */}
       <section className="panel-glow flex flex-wrap items-center gap-5 p-6">
-        <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-accent-2 to-accent-3 text-xl font-semibold text-accent-fg">{initials(user.name)}</span>
+        {user.avatarUrl && !avatarFailed ? (
+          // eslint-disable-next-line @next/next/no-img-element -- remote Google avatar; next/image would need remotePatterns
+          <img src={user.avatarUrl} alt="" referrerPolicy="no-referrer" onError={() => setAvatarFailed(true)} className="h-16 w-16 shrink-0 rounded-2xl object-cover ring-1 ring-line-strong" />
+        ) : (
+          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-accent-2 to-accent-3 text-xl font-semibold text-accent-fg">{initials(user.name)}</span>
+        )}
         <div className="min-w-0 flex-1">
           <p className="truncate font-display text-2xl tracking-tight">{user.name}</p>
           <p className="truncate text-sm text-muted">{user.email}</p>

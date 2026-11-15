@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Linking, Pressable, Switch, Text, View } from 'react-native';
+import { Image, Linking, Pressable, Switch, Text, View } from 'react-native';
 
 import { Logo } from '@/components/logo';
 import { SavingsRuleField } from '@/components/savings-rule';
@@ -35,6 +35,7 @@ export default function SettingsScreen() {
   const [savingsValue, setSavingsValue] = useState(String(user?.savingsValue ?? 20));
   const [startingBalance, setStartingBalance] = useState(String(user?.savingsStartingBalance ?? 0));
   const [pinned, setPinned] = useState(true);
+  const [avatarFailed, setAvatarFailed] = useState(false);
   useEffect(() => {
     pinAlertsEnabled().then(setPinned);
   }, []);
@@ -51,9 +52,13 @@ export default function SettingsScreen() {
     <Screen edges={['bottom']}>
       {/* profile */}
       <Card glow style={{ flexDirection: 'row', alignItems: 'center', gap: S.md }}>
-        <LinearGradient colors={['#c43a35', '#a31c1b']} style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: '#fff7f3', fontFamily: F.uiSemibold, fontSize: 20 }}>{initials(user.name)}</Text>
-        </LinearGradient>
+        {user.avatarUrl && !avatarFailed ? (
+          <Image source={{ uri: user.avatarUrl }} onError={() => setAvatarFailed(true)} accessibilityIgnoresInvertColors style={{ width: 56, height: 56, borderRadius: 18, borderWidth: 1, borderColor: c.lineStrong }} />
+        ) : (
+          <LinearGradient colors={['#c43a35', '#a31c1b']} style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#fff7f3', fontFamily: F.uiSemibold, fontSize: 20 }}>{initials(user.name)}</Text>
+          </LinearGradient>
+        )}
         <View style={{ flex: 1, gap: 2 }}>
           <T variant="h2" numberOfLines={1}>{user.name}</T>
           <T variant="small" numberOfLines={1}>{user.email}</T>
