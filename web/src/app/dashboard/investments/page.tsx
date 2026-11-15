@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ChartPie, ChevronDown, ChevronsUpDown, LayoutGrid, Minus, Pencil, PiggyBank, Plus, RefreshCw, Trash2, TrendingUp, Upload, Wallet } from "lucide-react";
+import { ArrowDown, ArrowUp, ChartPie, ChevronDown, ChevronsUpDown, LayoutGrid, Info, Minus, Pencil, PiggyBank, Plus, RefreshCw, Trash2, TrendingUp, Upload, Wallet } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Donut } from "@/components/charts";
 import { AddHoldingModal } from "@/components/invest/add-holding";
@@ -9,6 +9,7 @@ import { ContributionChart } from "@/components/invest/contribution-chart";
 import { GoalHorizon } from "@/components/invest/goal-horizon";
 import { HoldingModal, type DetailTab } from "@/components/invest/holding-detail";
 import { CLASS_META, fmtQty, signedPct, tone } from "@/components/invest/meta";
+import { SavingsBreakdown } from "@/components/invest/savings-breakdown";
 import { ValueChart } from "@/components/invest/value-chart";
 import { PageHeader } from "@/components/page-header";
 import { Button, ErrorNote, Modal, Skeleton } from "@/components/ui";
@@ -44,15 +45,22 @@ export default function InvestmentsPage() {
 
   const month = useMonth();
   const savings = useSummary(month).data?.savings;
+  const [showSavings, setShowSavings] = useState(false);
   return (
     <div className="space-y-6">
+      {savings && <SavingsBreakdown open={showSavings} onClose={() => setShowSavings(false)} a={savings} p={p} />}
       <PageHeader title="Investments" subtitle="Stocks, mutual funds, gold and bonds — one live portfolio.">
         {savings && (
-          <span className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm ${savings.closing < 0 ? "border-expense/30 text-expense" : "border-line text-fg-2"}`} title="Savings account balance: saved first every month, carried forward">
+          <button
+            onClick={() => setShowSavings(true)}
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm transition hover:bg-fg/[0.03] ${savings.closing < 0 ? "border-expense/30 text-expense" : "border-line text-fg-2"}`}
+            title="See how this was worked out"
+          >
             <PiggyBank size={15} className="text-brand" />
             <span className="text-muted">{savings.closing < 0 ? "Savings overdrawn" : "Savings to invest"}</span>
             <span className="tabular font-semibold">{money(Math.abs(savings.closing))}</span>
-          </span>
+            <Info size={13} className="text-subtle" />
+          </button>
         )}
         <div className="flex rounded-xl border border-line bg-surface p-1 text-sm">
           {([["holdings", "Holdings", LayoutGrid], ["analysis", "Analysis", ChartPie]] as [View, string, typeof ChartPie][]).map(([v, l, I]) => (
@@ -128,15 +136,13 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
   const sort = cols.some(([k]) => k === sortState.key) ? sortState : { key: "currentValue" as SortKey, dir: -1 as const };
   const del = useDeleteHolding();
 
-  const items = useMemo(() => {
-    const all = p.holdings.filter((h) => h.assetClass === tab);
-    const hs = all.some(isHeld) ? all.filter(isHeld) : all;
-    return [...hs].sort((a, b) => {
-      const va = a[sort.key], vb = b[sort.key];
-      if (typeof va === "string" || typeof vb === "string") return String(va).localeCompare(String(vb)) * sort.dir;
-      return ((va ?? -Infinity) - (vb ?? -Infinity) || 0) * sort.dir;
-    });
-  }, [p, tab, sort.key, sort.dir]);
+  // the React Compiler memoises this
+  const all = p.holdings.filter((h) => h.assetClass === tab);
+  const items = (all.some(isHeld) ? all.filter(isHeld) : all).sort((a, b) => {
+    const va = a[sort.key], vb = b[sort.key];
+    if (typeof va === "string" || typeof vb === "string") return String(va).localeCompare(String(vb)) * sort.dir;
+    return ((va ?? -Infinity) - (vb ?? -Infinity) || 0) * sort.dir;
+  });
 
   const invested = items.reduce((s, h) => s + h.invested, 0);
   const current = items.reduce((s, h) => s + h.currentValue, 0);

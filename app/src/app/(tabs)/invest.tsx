@@ -6,7 +6,7 @@ import { FlowChart, ValueChart } from '@/components/charts';
 import { AppHeader } from '@/components/app-header';
 import { Screen } from '@/components/screen';
 import { Button, Card, Chip, ErrorNote, Loading, Segmented, T } from '@/components/ui';
-import { money } from '@/lib/format';
+import { dateLabel, money, monthLabel } from '@/lib/format';
 import { CLASS_META, fmtQty, HORIZON_META, signedPct, toneColor } from '@/lib/invest-meta';
 import { indianMarketStatus } from '@/lib/market';
 import { usePortfolio, useRefreshPrices, useSummary } from '@/lib/queries';
@@ -38,7 +38,7 @@ export default function InvestTab() {
         <T variant="title">Investments</T>
         <T variant="muted">Stocks, mutual funds, gold and bonds — one live portfolio.</T>
       </View>
-      <SavingsBalance />
+      <SavingsBalance p={p} />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Segmented value={view} onChange={setView} options={[{ value: 'holdings', label: 'Holdings' }, { value: 'analysis', label: 'Analysis' }]} />
         <View style={{ flexDirection: 'row', gap: S.sm }}>
@@ -67,17 +67,81 @@ export default function InvestTab() {
   );
 }
 
-/** The savings account balance: what's set aside and ready to invest. */
-function SavingsBalance() {
+/** The savings account balance: what's set aside and ready to invest. Tap to see how it was worked out. */
+function SavingsBalance({ p }: { p?: Portfolio }) {
   const { c } = useTheme();
   const month = useMonth();
   const a = useSummary(month).data?.savings;
+  const [open, setOpen] = useState(false);
   if (!a) return null;
   const over = a.closing < 0;
+  const first = a.history[0];
+  const saved = a.history.reduce((x, h) => x + h.saved, 0);
+  const invested = a.history.reduce((x, h) => x + h.invested, 0);
+  const proceeds = a.history.reduce((x, h) => x + h.proceeds, 0);
+  const signed = (n: number) => `${n < 0 ? '−' : ''}${money(Math.abs(n))}`;
+  // mirrors SavingsService.flows: imported holdings (owned before ArthOS) never touch the account
+  const end = `${a.month}-31`;
+  const moves = (p?.holdings ?? [])
+    .flatMap((h) =>
+      h.lots
+        .filter((l) => !l.importedFrom && l.date <= end && (l.type === 'SELL' || (l.fromSavings ?? 0) > 0))
+        .map((l) => ({ id: l.id, date: l.date, name: h.name, sale: l.type === 'SELL', amount: l.type === 'SELL' ? l.quantity * l.price : l.fromSavings! })),
+    )
+    .sort((x, y) => (x.date < y.date ? 1 : -1));
+  const row = (k: string, v: string, color?: string, bold?: boolean) => (
+    <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: S.sm, paddingVertical: 4 }}>
+      <Text style={{ flex: 1, color: bold ? c.fg : c.muted, fontFamily: bold ? F.uiSemibold : F.ui, fontSize: 13 }}>{k}</Text>
+      <Text style={{ color: color ?? c.fg, fontFamily: bold ? F.uiSemibold : F.uiMedium, fontSize: 13, fontVariant: ['tabular-nums'] }}>{v}</Text>
+    </View>
+  );
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: over ? alpha(c.expense, 0.35) : c.line, borderRadius: R.md, paddingHorizontal: S.md, paddingVertical: S.sm }}>
-      <T variant="small">{over ? 'Savings account overdrawn' : 'Savings to invest'}</T>
-      <Text style={{ color: over ? c.expense : c.fg, fontFamily: F.uiSemibold, fontSize: 15, fontVariant: ['tabular-nums'] }}>{money(Math.abs(a.closing))}</Text>
+    <View style={{ borderWidth: 1, borderColor: over ? alpha(c.expense, 0.35) : c.line, borderRadius: R.md }}>
+      <Pressable
+        onPress={() => setOpen((o) => !o)}
+        accessibilityRole="button"
+        accessibilityLabel="Show how the savings balance was worked out"
+        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: S.md, paddingVertical: S.sm }}>
+        <T variant="small">{over ? 'Savings account overdrawn' : 'Savings to invest'}  <Text style={{ color: c.subtle }}>{open ? '▴' : '▾'}</Text></T>
+        <Text style={{ color: over ? c.expense : c.fg, fontFamily: F.uiSemibold, fontSize: 15, fontVariant: ['tabular-nums'] }}>{money(Math.abs(a.closing))}</Text>
+      </Pressable>
+      {open && (
+        <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line, paddingHorizontal: S.md, paddingVertical: S.sm, gap: S.sm }}>
+          <View>
+            {row(!first || first.opening === a.startingBalance ? 'Savings you already had' : `Carried in before ${monthLabel(first.month)}`, signed(first?.opening ?? a.startingBalance))}
+            {row('Saved first from income', `+${money(saved)}`, c.income)}
+            {row('Investments paid from savings', `−${money(invested)}`)}
+            {proceeds > 0 && row('Sales paid back in', `+${money(proceeds)}`, c.income)}
+            {row(over ? 'Overdrawn' : 'Available to invest', signed(a.closing), over ? c.expense : c.fg, true)}
+          </View>
+          <View>
+            <Text style={{ color: c.subtle, fontFamily: F.uiMedium, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 2 }}>Month by month</Text>
+            {a.history.map((h) =>
+              row(
+                monthLabel(h.month),
+                `${h.saved ? `+${money(h.saved)}` : ''}${h.invested ? `  −${money(h.invested)}` : ''}${h.proceeds ? `  +${money(h.proceeds)}` : ''}  → ${signed(h.closing)}`,
+                h.closing < 0 ? c.expense : c.fg2,
+              ),
+            )}
+          </View>
+          {moves.length > 0 && (
+            <View>
+              <Text style={{ color: c.subtle, fontFamily: F.uiMedium, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 2 }}>Used savings</Text>
+              {moves.slice(0, 12).map((m) => (
+                <View key={m.id} style={{ flexDirection: 'row', gap: S.sm, paddingVertical: 4 }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text numberOfLines={1} style={{ color: c.fg2, fontFamily: F.ui, fontSize: 13 }}>{m.name}</Text>
+                    <Text style={{ color: c.subtle, fontFamily: F.ui, fontSize: 11 }}>{dateLabel(m.date)} · {m.sale ? 'sold, back into savings' : 'bought from savings'}</Text>
+                  </View>
+                  <Text style={{ color: m.sale ? c.income : c.fg, fontFamily: F.uiMedium, fontSize: 13, fontVariant: ['tabular-nums'] }}>{m.sale ? '+' : '−'}{money(m.amount)}</Text>
+                </View>
+              ))}
+              {moves.length > 12 && <T variant="small">+{moves.length - 12} more — full list on the website</T>}
+            </View>
+          )}
+          {over && <T variant="small">More was invested from savings than was set aside. Raise how much you save first, mark past buys as paid from spending money, or set the savings you already had in Settings.</T>}
+        </View>
+      )}
     </View>
   );
 }
