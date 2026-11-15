@@ -26,7 +26,7 @@ ArthOS: Budget & Investments
 
 **Short description** (80 max)
 ```
-Track income, expenses, budgets, investments and insights, all in one place.
+Your money in one place: income, expenses, savings, budgets and investments.
 ```
 
 **Full description** (4000 max)
@@ -77,7 +77,9 @@ ArthOS brings your income, expenses, budgets, savings, investments and insights 
 
 🌗 Two calm themes, Forest and Ivory, with one tap to switch.
 
-One account for the app and the website (os-arth.vercel.app). Try the private demo with six months of sample data — no sign-up needed. ✨
+One account for the app and the website (os-arth.vercel.app). Try the private demo with six months of sample data — no sign-up needed.
+
+Take control of your अर्थ (money). ✨
 ```
 
 **Release notes** (first release)
