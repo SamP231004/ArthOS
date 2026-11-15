@@ -250,8 +250,8 @@ export function useInsights(month: string) {
 /** Public ISIN → NSE symbol / AMFI scheme code reference, downloaded once and used to match files locally. */
 export function useIsinIndex(enabled: boolean) {
   return useQuery({
-    queryKey: ["isin-index"],
-    queryFn: () => api<import("./import").IsinIndex>("/api/market/isin-index"),
+    queryKey: ["isin-index", 2],
+    queryFn: () => api<import("./import").IsinIndex>("/api/market/isin-index?v=2"), // bump v when the index format changes: the response is cached for 12h
     enabled,
     staleTime: 12 * 60 * 60_000,
     gcTime: 12 * 60 * 60_000,
