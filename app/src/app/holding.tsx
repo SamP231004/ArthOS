@@ -11,7 +11,7 @@ import { Badge, Button, Card, Chip, ErrorNote, Input, Loading, Segmented, T } fr
 import { dateLabel, money, todayISO } from '@/lib/format';
 import { CLASS_META, fmtQty, holdingSubtitle, HORIZON_META, signedPct, SOURCE_LABEL, toneColor } from '@/lib/invest-meta';
 import { useAddLot, useDeleteHolding, useDeleteLot, useHolding, useSaveHolding, useUpdateLot } from '@/lib/queries';
-import { HORIZONS, type HoldingView, type Horizon, type LotType } from '@/lib/types';
+import { HORIZONS, type AssetClass, type HoldingView, type Horizon, type LotType } from '@/lib/types';
 import { alpha, F, R, S, useTheme } from '@/theme';
 
 type Tab = 'overview' | 'trade' | 'settings';
@@ -210,6 +210,7 @@ function Settings({ h, onSaved }: { h: HoldingView; onSaved: () => void }) {
   const [horizon, setHorizon] = useState<Horizon | undefined>(h.horizon);
   const [goal, setGoal] = useState(h.goal ?? '');
   const [manual, setManual] = useState(h.manualPrice != null ? String(h.manualPrice) : '');
+  const [countAs, setCountAs] = useState<AssetClass | undefined>(h.countAs ?? undefined);
   return (
     <Card style={{ gap: S.md }}>
       <Input label="Name" value={name} onChangeText={setName} maxLength={140} />
@@ -222,6 +223,17 @@ function Settings({ h, onSaved }: { h: HoldingView; onSaved: () => void }) {
         </View>
       </View>
       <Input label="Goal" value={goal} onChangeText={setGoal} maxLength={60} placeholder="Optional" />
+      {h.assetClass !== 'GOLD' && (
+        <View style={{ gap: S.sm }}>
+          <T variant="label">Counts as</T>
+          <View style={{ flexDirection: 'row', gap: S.sm, flexWrap: 'wrap' }}>
+            <Chip label={`Automatic${!h.countAs && h.category ? ` (${CLASS_META[h.category].plural})` : ''}`} active={countAs == null} onPress={() => setCountAs(undefined)} />
+            <Chip label={CLASS_META[h.assetClass].plural} active={countAs === h.assetClass} onPress={() => setCountAs(h.assetClass)} />
+            <Chip label="Gold" active={countAs === 'GOLD'} onPress={() => setCountAs('GOLD')} />
+          </View>
+          <T variant="small">Where it sits in tabs and allocation. Gold and silver funds or ETFs count as gold automatically; the price still comes from its NAV or market price.</T>
+        </View>
+      )}
       <Input label="Manual price per unit" keyboardType="decimal-pad" value={manual} onChangeText={(t) => setManual(t.replace(/[^0-9.]/g, ''))} hint={h.assetClass === 'BOND' ? 'Bonds have no live feed — set the latest traded price' : 'Overrides live pricing; leave empty to use live data'} />
       <ErrorNote message={(save.error ?? del.error)?.message} />
       <Button
@@ -234,7 +246,7 @@ function Settings({ h, onSaved }: { h: HoldingView; onSaved: () => void }) {
               input: {
                 assetClass: h.assetClass, name, symbol: h.symbol, exchange: h.exchange, horizon, goal: goal || undefined,
                 goldForm: h.gold?.form, purity: h.gold?.purity, faceValue: h.bond?.faceValue, couponRate: h.bond?.couponRate,
-                maturityDate: h.bond?.maturityDate, bondType: h.bond?.bondType, manualPrice: manual ? Number(manual) : undefined, notes: h.notes,
+                maturityDate: h.bond?.maturityDate, bondType: h.bond?.bondType, manualPrice: manual ? Number(manual) : undefined, notes: h.notes, countAs,
               },
             },
             { onSuccess: onSaved },

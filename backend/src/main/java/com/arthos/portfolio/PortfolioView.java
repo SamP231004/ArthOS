@@ -58,5 +58,9 @@ public record PortfolioView(
             BigDecimal currentValue, BigDecimal gain, BigDecimal gainPct,
             BigDecimal dayChange, BigDecimal dayChangePct, BigDecimal realizedGain, BigDecimal xirr,
             BigDecimal share, String goal, Horizon horizon, BigDecimal manualPrice, String notes,
-            LocalDate firstBought, GoldInfo gold, BondInfo bond, List<BigDecimal> spark, List<LotView> lots) {}
+            LocalDate firstBought, GoldInfo gold, BondInfo bond, List<BigDecimal> spark, List<LotView> lots,
+            /** Where it counts in allocation and tabs (a gold fund → GOLD); valuation follows assetClass. */
+            AssetClass category,
+            /** The user's "count as" choice; null = automatic. */
+            AssetClass countAs) {}
 }

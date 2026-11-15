@@ -7,7 +7,7 @@ import { CLASS_META, HORIZON_META, SOURCE_LABEL, fmtQty, holdingSubtitle, signed
 import { Badge, Button, ErrorNote, Field, Input, Modal, Select } from "../ui";
 import { dateLabel, money, todayISO } from "@/lib/format";
 import { useAddLot, useDeleteHolding, useDeleteLot, useSaveHolding, useUpdateLot } from "@/lib/queries";
-import { HORIZONS, type HoldingView, type Horizon, type LotType } from "@/lib/types";
+import { HORIZONS, type AssetClass, type HoldingView, type Horizon, type LotType } from "@/lib/types";
 import { FundingPicker, fundingOf, useFunding } from "./funding-picker";
 
 /** "edit" opens the overview with the transactions ready to edit (a single purchase opens straight into its editor). */
@@ -268,6 +268,7 @@ function Settings({ h, onDeleted, onSaved }: { h: HoldingView; onDeleted: () => 
   const [horizon, setHorizon] = useState<Horizon | "">(h.horizon ?? "");
   const [goal, setGoal] = useState(h.goal ?? "");
   const [manual, setManual] = useState(h.manualPrice != null ? String(h.manualPrice) : "");
+  const [countAs, setCountAs] = useState<AssetClass | "">(h.countAs ?? "");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -289,6 +290,7 @@ function Settings({ h, onDeleted, onSaved }: { h: HoldingView; onDeleted: () => 
           bondType: h.bond?.bondType,
           manualPrice: manual ? Number(manual) : undefined,
           notes: h.notes,
+          countAs: countAs || undefined,
         },
       });
       onSaved();
@@ -308,6 +310,15 @@ function Settings({ h, onDeleted, onSaved }: { h: HoldingView; onDeleted: () => 
         </Field>
         <Field label="Goal"><Input maxLength={60} value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="Optional" /></Field>
       </div>
+      {h.assetClass !== "GOLD" && (
+        <Field label="Counts as" hint="Where it sits in tabs and allocation. Gold and silver funds or ETFs count as gold automatically; the price still comes from its NAV or market price.">
+          <Select value={countAs} onChange={(e) => setCountAs(e.target.value as AssetClass | "")}>
+            <option value="">Automatic{!h.countAs && h.category ? ` (${CLASS_META[h.category].plural})` : ""}</option>
+            <option value={h.assetClass}>{CLASS_META[h.assetClass].plural}</option>
+            <option value="GOLD">Gold</option>
+          </Select>
+        </Field>
+      )}
       <Field label="Manual price per unit" hint={h.assetClass === "BOND" ? "Bonds have no live feed — set the latest traded price" : "Overrides the live price; leave empty to use live data"}>
         <Input type="number" min="0" step="any" value={manual} onChange={(e) => setManual(e.target.value)} />
       </Field>

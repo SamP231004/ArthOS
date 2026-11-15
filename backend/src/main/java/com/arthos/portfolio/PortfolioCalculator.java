@@ -48,7 +48,7 @@ public final class PortfolioCalculator {
                 m(dayChange), pct(dayChange, prevValue), m(realized), rate(Xirr.of(allFlows)), holdings.size());
 
         Map<AssetClass, List<Computed>> byClass = new EnumMap<>(AssetClass.class);
-        computed.forEach(c -> byClass.computeIfAbsent(c.h.getAssetClass(), k -> new ArrayList<>()).add(c));
+        computed.forEach(c -> byClass.computeIfAbsent(c.h.category(), k -> new ArrayList<>()).add(c));
         List<ClassSlice> allocation = byClass.entrySet().stream().map(e -> {
             BigDecimal v = sum(e.getValue(), c -> c.value), inv = sum(e.getValue(), c -> c.invested);
             return new ClassSlice(e.getKey(), m(v), m(inv), m(v.subtract(inv)), pct(v.subtract(inv), inv), pct(v, value), e.getValue().size());
@@ -97,7 +97,8 @@ public final class PortfolioCalculator {
                     lots.isEmpty() ? null : lots.getFirst().getDate(), gold(), bond(), spark,
                     lots.stream().map(l -> new LotView(l.getId(), l.getType(), l.getDate(), l.getQuantity().stripTrailingZeros(), l.getPrice(),
                             m(l.getQuantity().multiply(l.getPrice())), l.getNote(), l.fundedFrom(),
-                            l.getType() == LotType.SELL ? null : m(l.fromSavings()), l.getType() == LotType.SELL ? null : m(l.fromSpending()), l.getImportSource())).toList());
+                            l.getType() == LotType.SELL ? null : m(l.fromSavings()), l.getType() == LotType.SELL ? null : m(l.fromSpending()), l.getImportSource())).toList(),
+                    h.category(), h.getCountAs());
         }
 
         GoldInfo gold() {

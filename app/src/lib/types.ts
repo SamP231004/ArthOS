@@ -170,6 +170,10 @@ export type HoldingView = {
   bond?: { faceValue: number; couponRate: number; maturityDate: string; bondType: BondType; annualCoupon: number; nextCouponDate?: string; yearsToMaturity?: number; currentYield?: number };
   spark: number[];
   lots: { id: string; type: LotType; date: string; quantity: number; price: number; amount: number; note?: string; fundedFrom?: FundingSource; fromSavings?: number; fromSpending?: number; importedFrom?: string }[];
+  /** Where it counts in allocation and tabs (a gold fund → GOLD); valuation follows assetClass. */
+  category?: AssetClass;
+  /** The user's "count as" choice; null = automatic. */
+  countAs?: AssetClass | null;
 };
 
 export type Portfolio = {
@@ -219,6 +223,8 @@ export type HoldingInput = {
   manualPrice?: number;
   notes?: string;
   firstLot?: LotInput;
+  /** GOLD or its own class; omitted = automatic. */
+  countAs?: AssetClass;
 };
 
 // ---- Automation (Phase 4) — mirrors backend/src/main/java/com/arthos/automation/AutomationController.java ----

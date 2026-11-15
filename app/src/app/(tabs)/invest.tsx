@@ -17,11 +17,13 @@ import { alpha, F, R, S, useStyles, useTheme, type Palette } from '@/theme';
 type Tab = AssetClass;
 /** Fixed tab order, showing only the classes the user holds (no "All" tab). */
 const CLASS_ORDER: AssetClass[] = ['STOCK', 'MUTUAL_FUND', 'GOLD', 'BOND'];
-const presentClasses = (p: Portfolio) => CLASS_ORDER.filter((c) => p.holdings.some((h) => h.assetClass === c));
+/** Where a holding counts: a gold fund or gold ETF sits under Gold (it's still valued by NAV / market price). */
+const cat = (h: HoldingView) => h.category ?? h.assetClass;
+const presentClasses = (p: Portfolio) => CLASS_ORDER.filter((c) => p.holdings.some((h) => cat(h) === c));
 /** Fully sold holdings stay in the data (their realised profit counts) but aren't listed as holdings. */
 const isHeld = (h: HoldingView) => h.quantity > 1e-9;
 const heldClasses = (p: Portfolio) => {
-  const c = CLASS_ORDER.filter((x) => p.holdings.some((h) => h.assetClass === x && isHeld(h)));
+  const c = CLASS_ORDER.filter((x) => p.holdings.some((h) => cat(h) === x && isHeld(h)));
   return c.length ? c : presentClasses(p);
 };
 
@@ -151,7 +153,7 @@ function Holdings({ p, onRefresh, refreshing }: { p: Portfolio; onRefresh: () =>
   const classes = heldClasses(p);
   const [picked, setTab] = useState<Tab>(classes[0]);
   const tab = classes.includes(picked) ? picked : classes[0]; // the picked class may have been emptied
-  const all = p.holdings.filter((h) => h.assetClass === tab);
+  const all = p.holdings.filter((h) => cat(h) === tab);
   const items = (all.some(isHeld) ? all.filter(isHeld) : all).sort((a, b) => b.currentValue - a.currentValue);
   const invested = items.reduce((x, h) => x + h.invested, 0);
   const current = items.reduce((x, h) => x + h.currentValue, 0);
@@ -229,7 +231,8 @@ function Row({ h, last, share }: { h: HoldingView; last: boolean; share: number 
   const gainTone = toneColor(c, h.gain);
   const live = h.priceSource === 'LIVE' && h.dayChangePct != null;
   const dayTone = toneColor(c, h.dayChangePct);
-  const sub = [h.symbol, h.exchange].filter(Boolean).join(' · ') || CLASS_META[h.assetClass].label;
+  const counted = cat(h) !== h.assetClass ? (h.assetClass === 'MUTUAL_FUND' ? 'Fund · NAV' : 'ETF') : null; // e.g. a gold fund under Gold
+  const sub = [counted, h.symbol, h.exchange].filter(Boolean).join(' · ') || CLASS_META[h.assetClass].label;
   const qtyUnit = h.assetClass === 'GOLD' ? ' g' : '';
   return (
     <Pressable onPress={() => router.push(`/holding?id=${h.id}`)} style={({ pressed }) => [s.row, !last && s.rowBorder, pressed && { backgroundColor: alpha(c.fg, 0.03) }]}>
@@ -319,7 +322,7 @@ function Analysis({ p, range, setRange }: { p: Portfolio; range: PortfolioRange;
   const classes = presentClasses(p);
   const [tab, setTab] = useState<Tab | 'ALL'>('ALL');
   const [period, setPeriod] = useState<'month' | 'year'>('month');
-  const hs = tab === 'ALL' ? p.holdings : p.holdings.filter((h) => h.assetClass === tab);
+  const hs = tab === 'ALL' ? p.holdings : p.holdings.filter((h) => cat(h) === tab);
 
   const flows = useMemo(() => {
     const by = new Map<string, number>();

@@ -141,6 +141,11 @@ public class Holding {
 
     private String goal;
     private Horizon horizon;
+    /**
+     * Where the holding counts in allocation and tabs, when the user picked it: GOLD (a gold fund or ETF) or its own
+     * class. Null = automatic ({@link #category()}). Valuation always follows {@link #assetClass} (NAV, market price…).
+     */
+    private AssetClass countAs;
 
     private GoldForm goldForm;
     private GoldPurity purity;
@@ -196,6 +201,26 @@ public class Holding {
     public void setBondType(BondType bondType) { this.bondType = bondType; }
     public BigDecimal getManualPrice() { return manualPrice; }
     public void setManualPrice(BigDecimal manualPrice) { this.manualPrice = manualPrice; }
+    public AssetClass getCountAs() { return countAs; }
+    public void setCountAs(AssetClass countAs) { this.countAs = countAs; }
+
+    private static final java.util.regex.Pattern PRECIOUS = java.util.regex.Pattern.compile("\\b(gold|silver)\\b", java.util.regex.Pattern.CASE_INSENSITIVE);
+    private static final java.util.regex.Pattern ETF = java.util.regex.Pattern.compile("\\b(etf|bees)\\b|bees$", java.util.regex.Pattern.CASE_INSENSITIVE);
+
+    /**
+     * The class this holding counts under in allocation and tabs. Gold and silver funds (and gold/silver ETFs) count as
+     * GOLD, though they're still valued by NAV/market price; stocks need "ETF"/"BeES" too, so a jewellery company
+     * named "… Gold …" stays a stock. The user's choice ({@link #countAs}) wins.
+     */
+    public AssetClass category() {
+        if (countAs != null) return countAs;
+        String n = name == null ? "" : name;
+        if (assetClass == AssetClass.MUTUAL_FUND && PRECIOUS.matcher(n).find()) return AssetClass.GOLD;
+        if (assetClass == AssetClass.STOCK && PRECIOUS.matcher(n).find() && (ETF.matcher(n).find() || ETF.matcher(symbol == null ? "" : symbol).find()))
+            return AssetClass.GOLD;
+        return assetClass;
+    }
+
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
     public Instant getExpiresAt() { return expiresAt; }

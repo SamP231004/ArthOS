@@ -22,11 +22,13 @@ import type { AssetClass, HoldingView, Portfolio, PortfolioRange } from "@/lib/t
 type Tab = AssetClass;
 /** Fixed tab order, showing only the classes the user holds. */
 const CLASS_ORDER: AssetClass[] = ["STOCK", "MUTUAL_FUND", "GOLD", "BOND"];
-const presentClasses = (p: Portfolio) => CLASS_ORDER.filter((c) => p.holdings.some((h) => h.assetClass === c));
+/** Where a holding counts: a gold fund or gold ETF sits under Gold (it's still valued by NAV / market price). */
+const cat = (h: HoldingView) => h.category ?? h.assetClass;
+const presentClasses = (p: Portfolio) => CLASS_ORDER.filter((c) => p.holdings.some((h) => cat(h) === c));
 /** Fully sold holdings stay in the data (their realised profit counts) but aren't listed as holdings. */
 const isHeld = (h: HoldingView) => h.quantity > 1e-9;
 const heldClasses = (p: Portfolio) => {
-  const c = CLASS_ORDER.filter((x) => p.holdings.some((h) => h.assetClass === x && isHeld(h)));
+  const c = CLASS_ORDER.filter((x) => p.holdings.some((h) => cat(h) === x && isHeld(h)));
   return c.length ? c : presentClasses(p);
 };
 type View = "holdings" | "analysis";
@@ -137,7 +139,7 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
   const del = useDeleteHolding();
 
   // the React Compiler memoises this
-  const all = p.holdings.filter((h) => h.assetClass === tab);
+  const all = p.holdings.filter((h) => cat(h) === tab);
   const items = (all.some(isHeld) ? all.filter(isHeld) : all).sort((a, b) => {
     const va = a[sort.key], vb = b[sort.key];
     if (typeof va === "string" || typeof vb === "string") return String(va).localeCompare(String(vb)) * sort.dir;
@@ -219,6 +221,11 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
                         <div className="min-w-0">
                           <p className="max-w-[150px] truncate font-medium @5xl:max-w-[190px] @6xl:max-w-[260px]" title={h.name}>{h.name}</p>
                           <p className="text-xs text-subtle">
+                            {cat(h) !== h.assetClass && (
+                              <span className="mr-1.5 rounded bg-fg/[0.06] px-1.5 py-px text-[10px] font-medium text-muted" title={`Counts as ${CLASS_META[cat(h)].label.toLowerCase()} · valued by ${h.assetClass === "MUTUAL_FUND" ? "NAV" : "market price"}`}>
+                                {h.assetClass === "MUTUAL_FUND" ? "Fund · NAV" : "ETF"}
+                              </span>
+                            )}
                             {isMf ? (h.firstBought ? `Since ${new Date(h.firstBought).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}` : "Mutual fund") : `Avg ${money(h.avgCost)}${h.assetClass === "GOLD" ? "/g" : ""}`}
                           </p>
                         </div>
@@ -374,7 +381,7 @@ function AnalysisView({ p, range, setRange }: { p: Portfolio; range: PortfolioRa
   const classes = presentClasses(p);
   const [tab, setTab] = useState<Tab | "ALL">("ALL");
   const [period, setPeriod] = useState<"month" | "year">("month");
-  const hs = tab === "ALL" ? p.holdings : p.holdings.filter((h) => h.assetClass === tab);
+  const hs = tab === "ALL" ? p.holdings : p.holdings.filter((h) => cat(h) === tab);
 
   const flows = useMemo(() => {
     const by = new Map<string, number>();

@@ -80,6 +80,8 @@ public class PortfolioController {
             BondType bondType,
             @DecimalMin("0") BigDecimal manualPrice,
             @Size(max = 500) String notes,
+            /** Where it counts in allocation and tabs: GOLD or its own class; null = automatic. */
+            AssetClass countAs,
             /** Required on create; ignored on update (use the lots endpoints). */
             @Valid LotRequest firstLot) {}
 
@@ -332,6 +334,9 @@ public class PortfolioController {
         h.setName(r.name().trim());
         h.setGoal(blank(r.goal()));
         h.setHorizon(r.horizon());
+        if (r.countAs() != null && r.countAs() != r.assetClass() && r.countAs() != AssetClass.GOLD)
+            throw ApiException.badRequest("A holding can count as gold or as its own class");
+        h.setCountAs(r.assetClass() == AssetClass.GOLD ? null : r.countAs());
         h.setManualPrice(r.manualPrice());
         h.setNotes(blank(r.notes()));
         h.setExchange(blank(r.exchange()));
