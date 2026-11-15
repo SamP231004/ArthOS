@@ -128,6 +128,8 @@ export function fromTrades(rows: RawTrade[], m: Matcher): { items: ImportItem[];
         held += l.quantity;
         return true;
       }
+      // brokers round units (Groww: 2 decimals), so a full exit can add up to a hair more than was bought
+      if (l.quantity > held + 1e-6 && l.quantity <= held + Math.max(0.05, held * 0.001)) l.quantity = round(held, 6);
       if (l.quantity > held + 1e-6) {
         dropped++;
         return false;
