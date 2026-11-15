@@ -127,11 +127,19 @@ public class ReferenceIndex {
             String[] f = line.split(";", -1);
             if (f.length < 5 || !f[0].trim().matches("\\d+")) continue;
             String code = f[0].trim(), name = f[3].trim();
+            // Newer files split "HDFC Multi Cap Fund;Direct Plan;Growth Option": put plan and option back in the name,
+            // or every variant of a fund looks the same to clients matching by name (Groww exports have no ISINs).
+            if (f.length >= 8) name = withPart(withPart(name, f[4]), f[5]);
             for (String isin : new String[] {f[1].trim(), f[2].trim()}) {
                 if (isin.length() == 12 && isin.startsWith("IN")) byIsin.putIfAbsent(isin, new String[] {isin, code, name});
             }
         }
         return new ArrayList<>(byIsin.values());
+    }
+
+    private static String withPart(String name, String part) {
+        String p = part.trim();
+        return p.isEmpty() || name.toLowerCase().contains(p.toLowerCase()) ? name : name + " - " + p;
     }
 
     /** [{"schemeCode":122639,"schemeName":"…","isinGrowth":"INF879O01027","isinDivReinvestment":null}, …] */

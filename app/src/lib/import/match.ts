@@ -17,12 +17,32 @@ const key = (s: string) =>
     .replace(/\b(limited|ltd|the|inc|corporation|corp|company|co)\b/g, "")
     .replace(/[^a-z0-9]/g, "");
 
+/**
+ * Fund names are written differently everywhere: Groww says "HDFC Multi Cap Fund Direct Growth", AMFI says
+ * "HDFC Multi Cap Fund - Direct Plan - Growth Option". Reduce both to base name + plan + option.
+ * `explicit` is false when the name doesn't say Direct or Regular (old, merged schemes in AMFI's list).
+ */
+const OPTION_WORDS = /\b(idcw|dividend|div|payout|reinvestment|reinvest|income|distribution|cum|capital|withdrawal|bonus|daily|weekly|fortnightly|monthly|quarterly|annual|half|yearly)\b/g;
+export function fundKey(name: string): { key: string; explicit: boolean } {
+  const s = name.toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ");
+  const direct = /\b(direct|dir)\b/.test(s);
+  const explicit = direct || /\b(regular|reg)\b/.test(s);
+  const option = /\b(idcw|dividend|div|payout|reinvest\w*|income distribution)\b/.test(s) ? "idcw" : "growth";
+  const base = s
+    .replace(OPTION_WORDS, " ")
+    .replace(/\b(direct|dir|regular|reg|plan|option|opt|growth|gr|fund|scheme|the|mf)\b/g, " ")
+    .replace(/\s+/g, "");
+  return { key: `${base}|${direct ? "direct" : "regular"}|${option}`, explicit };
+}
+
 export class Matcher {
   private eqIsin = new Map<string, [string, string]>();
   private eqSym = new Map<string, [string, string, string]>();
   private eqName = new Map<string, [string, string, string]>();
   private mfIsin = new Map<string, [string, string]>();
   private mfName = new Map<string, [string, string, string]>();
+  /** names that don't say Direct/Regular: only used when no current scheme matches */
+  private mfLoose = new Map<string, [string, string, string]>();
 
   constructor(index: IsinIndex) {
     for (const [isin, symbol, name] of index.eq) {
@@ -32,7 +52,9 @@ export class Matcher {
     }
     for (const [isin, code, name] of index.mf) {
       this.mfIsin.set(isin, [code, name]);
-      if (!this.mfName.has(key(name))) this.mfName.set(key(name), [isin, code, name]);
+      const f = fundKey(name);
+      const map = f.explicit ? this.mfName : this.mfLoose;
+      if (!map.has(f.key)) map.set(f.key, [isin, code, name]);
     }
   }
 
@@ -52,7 +74,8 @@ export class Matcher {
       const k = key(r.name);
       const e = this.eqName.get(k);
       if (e) return { assetClass: "STOCK", symbol: `${e[1]}.NS`, name: e[2], isin: e[0] };
-      const m = this.mfName.get(k);
+      const fk = fundKey(r.name).key;
+      const m = this.mfName.get(fk) ?? this.mfLoose.get(fk);
       if (m) return { assetClass: "MUTUAL_FUND", symbol: m[1], name: m[2], isin: m[0] };
     }
     return null;

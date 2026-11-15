@@ -40,6 +40,18 @@ class ReferenceIndexTest {
     }
 
     @Test
+    void amfiPlanAndOptionColumnsGoBackIntoTheName() {
+        List<String[]> mf = ReferenceIndex.parseAmfi("""
+                149368;INF179KC1BS5;-;HDFC Multi Cap Fund;Direct Plan;Growth Option;19.998;13-Nov-2026
+                149366;INF179KC1BV9;-;HDFC Multi Cap Fund;Regular Plan;Growth Option;18.908;13-Nov-2026
+                122674;INF109KA1376;-;ICICI Prudential Short Term Fund;;;42.3355;24-Apr-2020
+                """);
+        assertEquals("HDFC Multi Cap Fund - Direct Plan - Growth Option", mf.get(0)[2]);
+        assertEquals("HDFC Multi Cap Fund - Regular Plan - Growth Option", mf.get(1)[2]);
+        assertEquals("ICICI Prudential Short Term Fund", mf.get(2)[2]);
+    }
+
+    @Test
     void parsesMfapiFallbackList() throws Exception {
         List<String[]> mf = ReferenceIndex.parseMfapi("""
                 [{"schemeCode":100027,"schemeName":"Old fund","isinGrowth":null,"isinDivReinvestment":null},
