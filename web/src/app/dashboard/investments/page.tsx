@@ -107,6 +107,8 @@ const COLS: [SortKey, string][] = [
   ["gain", "P&L"],
 ];
 /** Funds: what people actually track — no units or NAV. */
+/** Columns that step aside on narrower screens instead of making the table scroll sideways. */
+const HIDE: Partial<Record<SortKey, string>> = { price: "hidden @2xl:table-cell", xirr: "hidden @2xl:table-cell", invested: "hidden @3xl:table-cell", quantity: "hidden @4xl:table-cell", dayChange: "hidden @4xl:table-cell" };
 const MF_COLS: [SortKey, string][] = [
   ["name", "Name"],
   ["invested", "Invested"],
@@ -182,12 +184,12 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
         </div>
 
         {/* table */}
-        <div className="mt-4 overflow-x-auto px-4 pb-4 sm:px-5 sm:pb-5">
-          <table className="w-full min-w-[820px] whitespace-nowrap text-sm">
+        <div className="@container mt-4 overflow-x-auto px-4 pb-4 sm:px-5 sm:pb-5">
+          <table className="w-full whitespace-nowrap text-sm">
             <thead>
               <tr className="border-b border-line text-left text-[11px] uppercase tracking-[0.12em] text-subtle">
                 {cols.map(([k, l]) => (
-                  <th key={k} className={`py-3 font-medium ${k === "name" ? "pl-2 pr-3" : k === "invested" ? "px-3 text-center" : "px-3 text-right"}`}>
+                  <th key={k} className={`py-3 font-medium ${HIDE[k] ?? ""} ${k === "name" ? "pl-2 pr-3" : k === "invested" ? "px-3 text-center" : "px-3 text-right"}`}>
                     <button onClick={() => setSort((s) => ({ key: k, dir: s.key === k ? (s.dir === 1 ? -1 : 1) : k === "name" ? 1 : -1 }))} className="inline-flex items-center gap-1 hover:text-fg">
                       {l}
                       {sort.key === k ? sort.dir === 1 ? <ArrowUp size={11} /> : <ArrowDown size={11} /> : <ChevronsUpDown size={11} className="opacity-40" />}
@@ -209,15 +211,15 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
                           {initials(h.name)}
                         </span>
                         <div className="min-w-0">
-                          <p className="max-w-[210px] truncate font-medium" title={h.name}>{h.name}</p>
+                          <p className="max-w-[150px] truncate font-medium @5xl:max-w-[190px] @6xl:max-w-[260px]" title={h.name}>{h.name}</p>
                           <p className="text-xs text-subtle">
                             {isMf ? (h.firstBought ? `Since ${new Date(h.firstBought).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}` : "Mutual fund") : `Avg ${money(h.avgCost)}${h.assetClass === "GOLD" ? "/g" : ""}`}
                           </p>
                         </div>
                       </div>
                     </td>
-                    {!isMf && <td className="tabular px-3 py-3.5 text-right">{fmtQty(h.quantity)}{h.assetClass === "GOLD" ? " g" : ""}</td>}
-                    <td className="px-3 py-3.5 text-center">
+                    {!isMf && <td className={`tabular px-3 py-3.5 text-right ${HIDE.quantity}`}>{fmtQty(h.quantity)}{h.assetClass === "GOLD" ? " g" : ""}</td>}
+                    <td className={`px-3 py-3.5 text-center ${HIDE.invested}`}>
                       <p className="tabular">{money(h.invested)}</p>
                       <div className="mt-1 flex items-center justify-center gap-2">
                         <span className="h-1 w-16 overflow-hidden rounded-full bg-fg/[0.07]">
@@ -227,7 +229,7 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
                       </div>
                     </td>
                     {!isMf && (
-                      <td className="px-3 py-3.5 text-right">
+                      <td className={`px-3 py-3.5 text-right ${HIDE.price}`}>
                         <p className="tabular">{money(h.price)}</p>
                         <p className={`tabular text-xs ${h.priceSource === "LIVE" ? tone(h.dayChangePct) : "text-subtle"}`}>
                           {h.priceSource === "LIVE" ? signedPct(h.dayChangePct) : h.priceSource === "MANUAL" ? "manual" : h.priceSource === "FACE_VALUE" ? "face value" : "last trade"}
@@ -236,7 +238,7 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
                     )}
                     <td className="tabular px-3 py-3.5 text-right font-medium">{money(h.currentValue)}</td>
                     {isMf && (
-                      <td className="px-3 py-3.5 text-right">
+                      <td className={`px-3 py-3.5 text-right ${HIDE.dayChange}`}>
                         <p className={`tabular ${tone(h.dayChange)}`}>{h.dayChange >= 0 ? "+" : "−"}{money(Math.abs(h.dayChange))}</p>
                         <p className={`tabular text-xs ${tone(h.dayChangePct)}`}>{h.dayChangePct != null ? signedPct(h.dayChangePct) : "—"}</p>
                       </td>
@@ -245,7 +247,7 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
                       <p className={`tabular font-medium ${tone(h.gain)}`}>{h.gain >= 0 ? "+" : "−"}{money(Math.abs(h.gain))}</p>
                       <p className={`tabular text-xs ${tone(h.gainPct)}`}>{signedPct(h.gainPct)}</p>
                     </td>
-                    {isMf && <td className={`tabular px-3 py-3.5 text-right font-medium ${tone(h.xirr)}`}>{h.xirr != null ? signedPct(h.xirr) : "—"}</td>}
+                    {isMf && <td className={`tabular px-3 py-3.5 text-right font-medium ${tone(h.xirr)} ${HIDE.xirr}`}>{h.xirr != null ? signedPct(h.xirr) : "—"}</td>}
                     <td className="py-3.5 pr-2 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="inline-flex gap-1">
                         <button onClick={() => onOpen(h.id, "edit")} className="rounded-lg p-1.5 text-subtle transition hover:bg-fg/5 hover:text-fg" aria-label={`Edit ${h.name}`} title="Edit transactions (quantity, price/NAV, date, funding)">
