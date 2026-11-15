@@ -317,9 +317,9 @@ function Analysis({ p, range, setRange }: { p: Portfolio; range: PortfolioRange;
   const { c } = useTheme();
   const { width } = useWindowDimensions();
   const classes = presentClasses(p);
-  const [tab, setTab] = useState<Tab>(classes[0]);
+  const [tab, setTab] = useState<Tab | 'ALL'>('ALL');
   const [period, setPeriod] = useState<'month' | 'year'>('month');
-  const hs = p.holdings.filter((h) => h.assetClass === tab);
+  const hs = tab === 'ALL' ? p.holdings : p.holdings.filter((h) => h.assetClass === tab);
 
   const flows = useMemo(() => {
     const by = new Map<string, number>();
@@ -347,6 +347,7 @@ function Analysis({ p, range, setRange }: { p: Portfolio; range: PortfolioRange;
   return (
     <>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: S.sm }}>
+        <Chip label="All" active={tab === 'ALL'} onPress={() => setTab('ALL')} />
         {classes.map((x) => (
           <Chip key={x} label={CLASS_META[x].plural} active={tab === x} onPress={() => setTab(x)} />
         ))}

@@ -372,9 +372,9 @@ function RealizedProfit({ p }: { p: Portfolio }) {
 
 function AnalysisView({ p, range, setRange }: { p: Portfolio; range: PortfolioRange; setRange: (r: PortfolioRange) => void }) {
   const classes = presentClasses(p);
-  const [tab, setTab] = useState<Tab>(classes[0]);
+  const [tab, setTab] = useState<Tab | "ALL">("ALL");
   const [period, setPeriod] = useState<"month" | "year">("month");
-  const hs = p.holdings.filter((h) => h.assetClass === tab);
+  const hs = tab === "ALL" ? p.holdings : p.holdings.filter((h) => h.assetClass === tab);
 
   const flows = useMemo(() => {
     const by = new Map<string, number>();
@@ -408,9 +408,9 @@ function AnalysisView({ p, range, setRange }: { p: Portfolio; range: PortfolioRa
     <div className="space-y-6">
       <div className="panel flex flex-wrap items-center justify-between gap-3 p-3">
         <div className="flex flex-wrap rounded-xl bg-fg/[0.05] p-1 text-sm">
-          {classes.map((t) => (
+          {(["ALL", ...classes] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`rounded-lg px-3 py-1.5 transition ${tab === t ? "bg-surface text-fg shadow-sm" : "text-muted hover:text-fg"}`}>
-              {CLASS_META[t].plural}
+              {t === "ALL" ? "All" : CLASS_META[t].plural}
             </button>
           ))}
         </div>
