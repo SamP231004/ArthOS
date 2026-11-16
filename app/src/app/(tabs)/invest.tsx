@@ -148,6 +148,20 @@ function SavingsBalance({ p }: { p?: Portfolio }) {
   );
 }
 
+/**
+ * 'prices as of' for the rows on screen. Fund NAVs come once a day after the close, so they're labelled by date on
+ * their own: one old NAV must not make live stock prices look stale.
+ */
+function asOfLabel(items: HoldingView[]): string | null {
+  const live = items.filter((h) => h.priceSource === 'LIVE' && h.priceAsOf);
+  const oldest = (hs: HoldingView[]) => hs.map((h) => h.priceAsOf!).sort()[0];
+  const nav = live.filter((h) => h.assetClass === 'MUTUAL_FUND'), market = live.filter((h) => h.assetClass !== 'MUTUAL_FUND');
+  const parts: string[] = [];
+  if (market.length) parts.push(`prices as of ${new Date(oldest(market)).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}`);
+  if (nav.length) parts.push(`NAVs as of ${new Date(oldest(nav)).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`);
+  return parts.length ? parts.join(' · ') : null;
+}
+
 function Holdings({ p, onRefresh, refreshing }: { p: Portfolio; onRefresh: () => void; refreshing: boolean }) {
   const { c } = useTheme();
   const classes = heldClasses(p);
@@ -159,7 +173,7 @@ function Holdings({ p, onRefresh, refreshing }: { p: Portfolio; onRefresh: () =>
   const current = items.reduce((x, h) => x + h.currentValue, 0);
   const pl = current - invested;
   const day = items.reduce((x, h) => x + h.dayChange, 0);
-  const asOf = p.pricesAsOf ? new Date(p.pricesAsOf).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : null;
+  const asOf = asOfLabel(items);
   const t = p.totals;
   const market = indianMarketStatus();
 
@@ -195,7 +209,7 @@ function Holdings({ p, onRefresh, refreshing }: { p: Portfolio; onRefresh: () =>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: market.open ? c.income : c.subtle }} />
         <T variant="small" style={{ flex: 1 }}>
-          <Text style={{ color: market.open ? c.income : c.fg2, fontFamily: F.uiSemibold }}>{market.label}</Text> · {market.detail} · {asOf ? `prices as of ${asOf}` : 'prices pending'}
+          <Text style={{ color: market.open ? c.income : c.fg2, fontFamily: F.uiSemibold }}>{market.label}</Text> · {market.detail} · {asOf ?? 'prices pending'}
         </T>
         <Pressable
           onPress={onRefresh}

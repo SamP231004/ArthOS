@@ -107,6 +107,20 @@ export default function InvestmentsPage() {
 
 // ───────────────────────────────────────── Holdings
 
+/**
+ * "prices as of" for the rows on screen. Fund NAVs come once a day after the close, so they're labelled by date on
+ * their own: one old NAV must not make live stock prices look stale.
+ */
+function asOfLabel(items: HoldingView[]): string | null {
+  const live = items.filter((h) => h.priceSource === "LIVE" && h.priceAsOf);
+  const oldest = (hs: HoldingView[]) => hs.map((h) => h.priceAsOf!).sort()[0];
+  const nav = live.filter((h) => h.assetClass === "MUTUAL_FUND"), market = live.filter((h) => h.assetClass !== "MUTUAL_FUND");
+  const parts: string[] = [];
+  if (market.length) parts.push(`prices as of ${new Date(oldest(market)).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`);
+  if (nav.length) parts.push(`NAVs as of ${new Date(oldest(nav)).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`);
+  return parts.length ? parts.join(" · ") : null;
+}
+
 type SortKey = "name" | "quantity" | "invested" | "price" | "currentValue" | "dayChange" | "gain" | "xirr";
 const COLS: [SortKey, string][] = [
   ["name", "Name"],
@@ -150,7 +164,7 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
   const current = items.reduce((s, h) => s + h.currentValue, 0);
   const pl = current - invested;
   const day = items.reduce((s, h) => s + h.dayChange, 0);
-  const asOf = p.pricesAsOf ? new Date(p.pricesAsOf).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : null;
+  const asOf = asOfLabel(items);
   const [market, setMarket] = useState(() => indianMarketStatus());
   useEffect(() => {
     const t = setInterval(() => setMarket(indianMarketStatus()), 60_000);
@@ -183,7 +197,7 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
               </span>
               <span className={market.open ? "font-medium text-income" : "font-medium text-fg-2"}>{market.label}</span>
               <span className="text-subtle">· {market.detail}</span>
-              <span className="text-subtle">· {asOf ? `prices as of ${asOf}` : "prices pending"}</span>
+              <span className="text-subtle">· {asOf ?? "prices pending"}</span>
             </span>
             <button onClick={refresh} className="rounded-lg p-1 text-subtle transition hover:bg-fg/5 hover:text-fg" aria-label="Refresh prices">
               <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
