@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { FlowChart, ValueChart } from '@/components/charts';
@@ -12,7 +12,7 @@ import { indianMarketStatus } from '@/lib/market';
 import { usePortfolio, useRefreshPrices, useSummary } from '@/lib/queries';
 import type { AssetClass, HoldingView, Horizon, Portfolio, PortfolioRange } from '@/lib/types';
 import { useMonth } from '@/lib/ui-store';
-import { alpha, F, R, S, useStyles, useTheme, type Palette } from '@/theme';
+import { alpha, F, R, S, useStyles, useTheme, type Mode, type Palette } from '@/theme';
 
 type Tab = AssetClass;
 /** Fixed tab order, showing only the classes the user holds (no "All" tab). */
@@ -40,7 +40,7 @@ export default function InvestTab() {
         <T variant="title">Investments</T>
         <T variant="muted">Stocks, mutual funds, gold and bonds — one live portfolio.</T>
       </View>
-      <SavingsBalance p={p} />
+      <SavingsBalance key={view} p={p} />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Segmented value={view} onChange={setView} options={[{ value: 'holdings', label: 'Holdings' }, { value: 'analysis', label: 'Analysis' }]} />
         <View style={{ flexDirection: 'row', gap: S.sm }}>
@@ -75,6 +75,17 @@ function SavingsBalance({ p }: { p?: Portfolio }) {
   const month = useMonth();
   const a = useSummary(month).data?.savings;
   const [open, setOpen] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  // opens compact every time you come back to the tab
+  useFocusEffect(
+    useCallback(
+      () => () => {
+        setOpen(false);
+        setShowAll(false);
+      },
+      [],
+    ),
+  );
   if (!a) return null;
   const over = a.closing < 0;
   const first = a.history[0];
@@ -118,18 +129,42 @@ function SavingsBalance({ p }: { p?: Portfolio }) {
           </View>
           <View>
             <Text style={{ color: c.subtle, fontFamily: F.uiMedium, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 2 }}>Month by month</Text>
-            {a.history.map((h) =>
-              row(
-                monthLabel(h.month),
-                `${h.saved ? `+${money(h.saved)}` : ''}${h.invested ? `  −${money(h.invested)}` : ''}${h.proceeds ? `  +${money(h.proceeds)}` : ''}  → ${signed(h.closing)}`,
-                h.closing < 0 ? c.expense : c.fg2,
-              ),
-            )}
+            {a.history.map((h, i) => {
+              // one block per month: month and the balance it ended on, then what moved, each with a label
+              const r = (n: number) => money(Math.round(n));
+              const parts = [
+                h.saved ? { k: 'Saved', v: `+${r(h.saved)}`, color: c.income } : null,
+                h.invested ? { k: 'Invested', v: `−${r(h.invested)}`, color: c.fg2 } : null,
+                h.proceeds ? { k: 'Sales', v: `+${r(h.proceeds)}`, color: c.income } : null,
+              ].filter((x) => x != null);
+              return (
+                <View key={h.month} style={{ paddingVertical: 7, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderTopColor: c.line, gap: 3 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: S.sm }}>
+                    <Text style={{ color: c.fg, fontFamily: F.uiSemibold, fontSize: 13.5 }}>{monthLabel(h.month).replace(/^(\w{3})\w*/, '$1')}</Text>
+                    <Text style={{ color: h.closing < 0 ? c.expense : c.fg, fontFamily: F.uiSemibold, fontSize: 13.5, fontVariant: ['tabular-nums'] }}>
+                      <Text style={{ color: c.subtle, fontFamily: F.ui, fontSize: 11.5 }}>{h.closing < 0 ? 'overdrawn ' : 'balance '}</Text>
+                      {money(Math.abs(h.closing))}
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: S.md, rowGap: 2 }}>
+                    {parts.length === 0 ? (
+                      <Text style={{ color: c.subtle, fontFamily: F.ui, fontSize: 12 }}>No change</Text>
+                    ) : (
+                      parts.map((x) => (
+                        <Text key={x.k} style={{ color: c.subtle, fontFamily: F.ui, fontSize: 12, fontVariant: ['tabular-nums'] }}>
+                          {x.k} <Text style={{ color: x.color, fontFamily: F.uiMedium }}>{x.v}</Text>
+                        </Text>
+                      ))
+                    )}
+                  </View>
+                </View>
+              );
+            })}
           </View>
           {moves.length > 0 && (
             <View>
               <Text style={{ color: c.subtle, fontFamily: F.uiMedium, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 2 }}>Used savings</Text>
-              {moves.slice(0, 12).map((m) => (
+              {(showAll ? moves : moves.slice(0, 5)).map((m) => (
                 <View key={m.id} style={{ flexDirection: 'row', gap: S.sm, paddingVertical: 4 }}>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text numberOfLines={1} style={{ color: c.fg2, fontFamily: F.ui, fontSize: 13 }}>{m.name}</Text>
@@ -138,7 +173,11 @@ function SavingsBalance({ p }: { p?: Portfolio }) {
                   <Text style={{ color: m.sale ? c.income : c.fg, fontFamily: F.uiMedium, fontSize: 13, fontVariant: ['tabular-nums'] }}>{m.sale ? '+' : '−'}{money(m.amount)}</Text>
                 </View>
               ))}
-              {moves.length > 12 && <T variant="small">+{moves.length - 12} more — full list on the website</T>}
+              {moves.length > 5 && (
+                <Pressable onPress={() => setShowAll((x) => !x)} hitSlop={8} accessibilityRole="button" style={{ paddingTop: 6 }}>
+                  <Text style={{ color: c.brand, fontFamily: F.uiSemibold, fontSize: 12.5 }}>{showAll ? 'Show fewer' : `Show all ${moves.length}`}</Text>
+                </Pressable>
+              )}
             </View>
           )}
           {over && <T variant="small">More was invested from savings than was set aside. Raise how much you save first, mark past buys as paid from spending money, or set the savings you already had in Settings.</T>}
@@ -157,10 +196,34 @@ function asOfLabel(items: HoldingView[]): string | null {
   const oldest = (hs: HoldingView[]) => hs.map((h) => h.priceAsOf!).sort()[0];
   const nav = live.filter((h) => h.assetClass === 'MUTUAL_FUND'), market = live.filter((h) => h.assetClass !== 'MUTUAL_FUND');
   const parts: string[] = [];
-  if (market.length) parts.push(`prices as of ${new Date(oldest(market)).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}`);
+  if (market.length) {
+    const d = new Date(oldest(market));
+    const today = d.toDateString() === new Date().toDateString();
+    // today: just the time, so the market line fits on one row
+    parts.push(`prices ${today ? d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }) : `as of ${d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}`}`);
+  }
   if (nav.length) parts.push(`NAVs as of ${new Date(oldest(nav)).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`);
   return parts.length ? parts.join(' · ') : null;
 }
+
+type SortKey = 'currentValue' | 'gain' | 'gainPct' | 'dayChangePct' | 'invested' | 'xirr' | 'name';
+const SORTS: [SortKey, string][] = [
+  ['currentValue', 'Current'],
+  ['gain', 'Returns'],
+  ['gainPct', 'Returns %'],
+  ['dayChangePct', '1D %'],
+  ['invested', 'Invested'],
+  ['name', 'Name'],
+];
+const MF_SORTS: [SortKey, string][] = [
+  ['currentValue', 'Current'],
+  ['gain', 'Returns'],
+  ['gainPct', 'Returns %'],
+  ['xirr', 'XIRR'],
+  ['dayChangePct', '1D %'],
+  ['invested', 'Invested'],
+  ['name', 'Name'],
+];
 
 function Holdings({ p, onRefresh, refreshing }: { p: Portfolio; onRefresh: () => void; refreshing: boolean }) {
   const { c } = useTheme();
@@ -168,7 +231,16 @@ function Holdings({ p, onRefresh, refreshing }: { p: Portfolio; onRefresh: () =>
   const [picked, setTab] = useState<Tab>(classes[0]);
   const tab = classes.includes(picked) ? picked : classes[0]; // the picked class may have been emptied
   const all = p.holdings.filter((h) => cat(h) === tab);
-  const items = (all.some(isHeld) ? all.filter(isHeld) : all).sort((a, b) => b.currentValue - a.currentValue);
+  const [sortBy, setSortBy] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'currentValue', dir: -1 });
+  const sorts = tab === 'MUTUAL_FUND' ? MF_SORTS : SORTS;
+  const sort = sorts.some(([k]) => k === sortBy.key) ? sortBy : { key: 'currentValue' as SortKey, dir: -1 as const };
+  const sortLabel = sorts.find(([k]) => k === sort.key)?.[1] ?? 'Current';
+  const [sortOpen, setSortOpen] = useState(false);
+  const items = (all.some(isHeld) ? all.filter(isHeld) : all).sort((a, b) => {
+    const va = a[sort.key], vb = b[sort.key];
+    if (typeof va === 'string' || typeof vb === 'string') return String(va).localeCompare(String(vb)) * sort.dir;
+    return ((va ?? -Infinity) - (vb ?? -Infinity) || 0) * sort.dir;
+  });
   const invested = items.reduce((x, h) => x + h.invested, 0);
   const current = items.reduce((x, h) => x + h.currentValue, 0);
   const pl = current - invested;
@@ -196,14 +268,25 @@ function Holdings({ p, onRefresh, refreshing }: { p: Portfolio; onRefresh: () =>
         ))}
       </ScrollView>
 
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', paddingHorizontal: 2 }}>
-        <View>
-          <T style={{ fontFamily: F.uiSemibold, fontSize: 15 }}>{CLASS_META[tab].plural} ({items.length})</T>
-          <T variant="small">{money(invested)} invested · {money(current)} now</T>
+      <View style={{ gap: 2, paddingHorizontal: 2 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: S.sm }}>
+          <T style={{ fontFamily: F.uiSemibold, fontSize: 15, flexShrink: 1 }} numberOfLines={1}>{CLASS_META[tab].plural} ({items.length})</T>
+          <Pressable
+            onPress={() => setSortOpen((o) => !o)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`Sort holdings, now by ${sortLabel}`}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: sortOpen ? c.brand : c.line, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
+            <Text maxFontSizeMultiplier={1.2} style={{ color: c.fg2, fontFamily: F.uiMedium, fontSize: 12 }}>{sort.dir === -1 ? '↓' : '↑'} {sortLabel}</Text>
+            <Text maxFontSizeMultiplier={1.2} style={{ color: c.subtle, fontSize: 10 }}>{sortOpen ? '▴' : '▾'}</Text>
+          </Pressable>
         </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={{ color: toneColor(c, pl), fontFamily: F.uiSemibold, fontSize: 14, fontVariant: ['tabular-nums'] }}>{pl >= 0 ? '+' : '−'}{money(Math.abs(pl))}</Text>
-          <Text style={{ color: toneColor(c, day), fontFamily: F.ui, fontSize: 11.5, fontVariant: ['tabular-nums'] }}>1D {day >= 0 ? '+' : '−'}{money(Math.abs(day))}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', columnGap: S.sm }}>
+          <T variant="small">{money(Math.round(invested))} invested · {money(Math.round(current))} now</T>
+          <Text style={{ color: toneColor(c, pl), fontFamily: F.uiSemibold, fontSize: 13, fontVariant: ['tabular-nums'] }}>
+            {pl >= 0 ? '+' : '−'}{money(Math.round(Math.abs(pl)))}
+            <Text style={{ color: toneColor(c, day), fontFamily: F.ui, fontSize: 11.5 }}>{`  1D ${day >= 0 ? '+' : '−'}${money(Math.round(Math.abs(day)))}`}</Text>
+          </Text>
         </View>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -223,6 +306,28 @@ function Holdings({ p, onRefresh, refreshing }: { p: Portfolio; onRefresh: () =>
         </Pressable>
       </View>
 
+      {sortOpen && (
+        <View style={{ borderWidth: 1, borderColor: c.line, borderRadius: R.md, paddingVertical: 4, backgroundColor: c.surface }}>
+          {sorts.map(([k, l]) => {
+            const on = sort.key === k;
+            return (
+              <Pressable
+                key={k}
+                onPress={() => {
+                  setSortBy({ key: k, dir: on ? (sort.dir === 1 ? -1 : 1) : k === 'name' ? 1 : -1 });
+                  if (!on) setSortOpen(false); // tapping the current one flips it and keeps the list open
+                }}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+                style={({ pressed }) => ({ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: S.md, paddingVertical: 9, backgroundColor: pressed ? alpha(c.fg, 0.04) : 'transparent' })}>
+                <Text style={{ color: on ? c.fg : c.fg2, fontFamily: on ? F.uiSemibold : F.ui, fontSize: 14 }}>{l}</Text>
+                {on && <Text style={{ color: c.brand, fontFamily: F.uiSemibold, fontSize: 12.5 }}>{sort.key === 'name' ? (sort.dir === 1 ? 'A → Z' : 'Z → A') : sort.dir === -1 ? 'High → low' : 'Low → high'}</Text>}
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
+
       <Card style={{ padding: 0 }}>
         {items.map((h, i) => (
           <Row key={h.id} h={h} last={i === items.length - 1} share={invested ? (h.invested / invested) * 100 : 0} />
@@ -241,7 +346,6 @@ function Holdings({ p, onRefresh, refreshing }: { p: Portfolio; onRefresh: () =>
 function Row({ h, last, share }: { h: HoldingView; last: boolean; share: number }) {
   const { c } = useTheme();
   const s = useStyles(make);
-  const col = CLASS_META[h.assetClass].color(c);
   const gainTone = toneColor(c, h.gain);
   const live = h.priceSource === 'LIVE' && h.dayChangePct != null;
   const dayTone = toneColor(c, h.dayChangePct);
@@ -295,7 +399,7 @@ function Row({ h, last, share }: { h: HoldingView; last: boolean; share: number 
 
       <View style={[s.line, { marginTop: 2 }]}>
         <View style={s.track}>
-          <View style={{ width: `${Math.min(100, share)}%`, height: '100%', borderRadius: R.pill, backgroundColor: col }} />
+          <View style={{ width: `${Math.min(100, share)}%`, height: '100%', borderRadius: R.pill, backgroundColor: alpha(c.fg, 0.38) }} />
         </View>
         <Text style={[s.sub, { minWidth: 92, textAlign: 'right' }]}>
           <Text style={{ color: c.fg2, fontFamily: F.uiSemibold }}>{share.toFixed(1)}%</Text> of {CLASS_META[h.assetClass].plural.toLowerCase()}
@@ -305,16 +409,24 @@ function Row({ h, last, share }: { h: HoldingView; last: boolean; share: number 
   );
 }
 
-/** One labelled figure in the QTY · AVG · LTP strip: tiny caps label above the value. */
+/** One labelled figure in the QTY · AVG · LTP strip: tiny caps label above the value, the day move in the top-right corner. */
 function Fact({ k, v, vColor, extra, extraColor }: { k: string; v: string; vColor?: string; extra?: string; extraColor?: string }) {
-  const { c } = useTheme();
+  const { c, mode } = useTheme();
+  const label = mode === 'dark' ? c.muted : c.subtle; // subtle is too dim on Forest's dark cards
   return (
     <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-      <Text style={{ color: c.subtle, fontFamily: F.uiMedium, fontSize: 9.5, letterSpacing: 0.8, textTransform: 'uppercase' }}>{k}</Text>
+      {/* label on the left, the day move in the top-right corner, so the value below always keeps the full width */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 4 }}>
+        <Text style={{ color: label, fontFamily: F.uiMedium, fontSize: 9.5, letterSpacing: 0.8, textTransform: 'uppercase' }} numberOfLines={1}>{k}</Text>
+        {extra ? (
+          <Text style={{ color: extraColor ?? c.subtle, fontFamily: F.uiMedium, fontSize: 10.5, fontVariant: ['tabular-nums'] }} numberOfLines={1}>
+            {extra}
+          </Text>
+        ) : null}
+      </View>
       <Text style={{ color: vColor ?? c.fg, fontFamily: F.uiSemibold, fontSize: 13, fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit>
         {v}
       </Text>
-      {extra ? <Text style={{ color: extraColor ?? c.subtle, fontFamily: F.uiMedium, fontSize: 10.5, fontVariant: ['tabular-nums'] }}>{extra}</Text> : null}
     </View>
   );
 }
@@ -477,7 +589,7 @@ function GroupCard({ title, rows, colorOf }: { title: string; rows: Group[]; col
   );
 }
 
-const make = (c: Palette) =>
+const make = (c: Palette, mode: Mode) =>
   StyleSheet.create({
     row: { gap: 6, paddingHorizontal: S.lg, paddingVertical: 14 },
     line: { flexDirection: 'row', alignItems: 'center', gap: S.md },
@@ -488,6 +600,7 @@ const make = (c: Palette) =>
     track: { flex: 1, height: 5, borderRadius: R.pill, backgroundColor: alpha(c.fg, 0.07), overflow: 'hidden' },
     rowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.line },
     name: { color: c.fg, fontFamily: F.uiSemibold, fontSize: 15 },
-    sub: { color: c.subtle, fontFamily: F.ui, fontSize: 12, fontVariant: ['tabular-nums'] },
+    // the subtle grey is too dim on Forest's dark cards: use the muted tone there
+    sub: { color: mode === 'dark' ? c.muted : c.subtle, fontFamily: F.ui, fontSize: 12, fontVariant: ['tabular-nums'] },
     value: { color: c.fg, fontFamily: F.uiSemibold, fontSize: 15, fontVariant: ['tabular-nums'] },
   });
