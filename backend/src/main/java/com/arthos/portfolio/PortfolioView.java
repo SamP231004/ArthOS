@@ -30,8 +30,10 @@ public record PortfolioView(
                          BigDecimal dayChange, BigDecimal dayChangePct, BigDecimal realizedGain, BigDecimal xirr,
                          int holdingsCount) {}
 
+    /** One category (gold funds count as GOLD). dayChange…xirr let clients show a per-category summary like the totals. */
     public record ClassSlice(AssetClass assetClass, BigDecimal value, BigDecimal invested, BigDecimal gain,
-                             BigDecimal gainPct, BigDecimal share, int count) {}
+                             BigDecimal gainPct, BigDecimal share, int count,
+                             BigDecimal dayChange, BigDecimal dayChangePct, BigDecimal realizedGain, BigDecimal xirr) {}
 
     public record HorizonSlice(Horizon horizon, BigDecimal value, BigDecimal share, int count) {}
 

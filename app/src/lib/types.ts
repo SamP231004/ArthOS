@@ -178,7 +178,7 @@ export type HoldingView = {
 
 export type Portfolio = {
   totals: { value: number; invested: number; gain: number; gainPct?: number; dayChange: number; dayChangePct?: number; realizedGain: number; xirr?: number; holdingsCount: number };
-  allocation: { assetClass: AssetClass; value: number; invested: number; gain: number; gainPct?: number; share?: number; count: number }[];
+  allocation: { assetClass: AssetClass; value: number; invested: number; gain: number; gainPct?: number; share?: number; count: number; dayChange?: number; dayChangePct?: number; realizedGain?: number; xirr?: number }[];
   byHorizon: { horizon?: Horizon; value: number; share?: number; count: number }[];
   holdings: HoldingView[];
   history: { date: string; value: number; invested: number }[];

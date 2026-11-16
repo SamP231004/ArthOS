@@ -248,25 +248,37 @@ function Holdings({ p, onRefresh, refreshing }: { p: Portfolio; onRefresh: () =>
   const asOf = asOfLabel(items);
   const t = p.totals;
   const market = indianMarketStatus();
+  // the card follows the selected category, like the web's summary strip; the whole portfolio sits in its footer
+  const slice = p.allocation.find((a) => a.assetClass === tab);
+  const realized = all.reduce((x, h) => x + h.realizedGain, 0); // fully sold holdings included
+  const dayPct = current - day ? (day / (current - day)) * 100 : 0;
 
   return (
     <>
-      <Card glow style={{ gap: 0 }}>
-        <T variant="small">Current value</T>
-        <T variant="big" style={{ marginTop: 2 }}>{money(t.value, 'INR', false).split('.')[0]}</T>
-        <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.lineStrong, marginVertical: S.md }} />
-        <Line k="Invested" v={money(t.invested)} />
-        <Line k="Total returns" v={`${t.gain >= 0 ? '+' : '−'}${money(Math.abs(t.gain))} (${signedPct(t.gainPct)})`} color={toneColor(c, t.gain)} />
-        <Line k="1D returns" v={`${t.dayChange >= 0 ? '+' : '−'}${money(Math.abs(t.dayChange))} (${signedPct(t.dayChangePct)})`} color={toneColor(c, t.dayChange)} />
-        <Line k="XIRR" v={t.xirr != null ? signedPct(t.xirr) : '—'} color={toneColor(c, t.xirr)} />
-        {t.realizedGain !== 0 && <Line k="Realised profit" v={`${t.realizedGain >= 0 ? '+' : '−'}${money(Math.abs(t.realizedGain))}`} color={toneColor(c, t.realizedGain)} />}
-      </Card>
-
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: S.sm }}>
         {classes.map((x) => (
           <Chip key={x} label={CLASS_META[x].plural} active={tab === x} onPress={() => setTab(x)} />
         ))}
       </ScrollView>
+
+      <Card glow style={{ gap: 0 }}>
+        <T variant="small">{CLASS_META[tab].plural} · current value</T>
+        <T variant="big" style={{ marginTop: 2 }}>{money(current, 'INR', false).split('.')[0]}</T>
+        <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.lineStrong, marginVertical: S.md }} />
+        <Line k="Invested" v={money(invested)} />
+        <Line k="Total returns" v={`${pl >= 0 ? '+' : '−'}${money(Math.abs(pl))} (${signedPct(invested ? (pl / invested) * 100 : 0)})`} color={toneColor(c, pl)} />
+        <Line k="1D returns" v={`${day >= 0 ? '+' : '−'}${money(Math.abs(day))} (${signedPct(dayPct)})`} color={toneColor(c, day)} />
+        <Line k="XIRR" v={slice?.xirr != null ? signedPct(slice.xirr) : '—'} color={toneColor(c, slice?.xirr)} />
+        {Math.abs(realized) >= 0.005 && <Line k="Realised profit" v={`${realized >= 0 ? '+' : '−'}${money(Math.abs(realized))}`} color={toneColor(c, realized)} />}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', columnGap: S.sm, marginTop: S.sm, paddingTop: S.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line }}>
+          <T variant="small">All investments</T>
+          <Text style={{ color: c.fg2, fontFamily: F.uiMedium, fontSize: 12.5, fontVariant: ['tabular-nums'] }}>
+            {money(Math.round(t.value))}
+            <Text style={{ color: toneColor(c, t.gain) }}>{`  ${signedPct(t.gainPct)}`}</Text>
+            {t.xirr != null && <Text style={{ color: c.subtle }}>{`  · XIRR ${signedPct(t.xirr)}`}</Text>}
+          </Text>
+        </View>
+      </Card>
 
       <View style={{ gap: 2, paddingHorizontal: 2 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: S.sm }}>
@@ -280,13 +292,6 @@ function Holdings({ p, onRefresh, refreshing }: { p: Portfolio; onRefresh: () =>
             <Text maxFontSizeMultiplier={1.2} style={{ color: c.fg2, fontFamily: F.uiMedium, fontSize: 12 }}>{sort.dir === -1 ? '↓' : '↑'} {sortLabel}</Text>
             <Text maxFontSizeMultiplier={1.2} style={{ color: c.subtle, fontSize: 10 }}>{sortOpen ? '▴' : '▾'}</Text>
           </Pressable>
-        </View>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', columnGap: S.sm }}>
-          <T variant="small">{money(Math.round(invested))} invested · {money(Math.round(current))} now</T>
-          <Text style={{ color: toneColor(c, pl), fontFamily: F.uiSemibold, fontSize: 13, fontVariant: ['tabular-nums'] }}>
-            {pl >= 0 ? '+' : '−'}{money(Math.round(Math.abs(pl)))}
-            <Text style={{ color: toneColor(c, day), fontFamily: F.ui, fontSize: 11.5 }}>{`  1D ${day >= 0 ? '+' : '−'}${money(Math.round(Math.abs(day)))}`}</Text>
-          </Text>
         </View>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -334,6 +339,7 @@ function Holdings({ p, onRefresh, refreshing }: { p: Portfolio; onRefresh: () =>
         ))}
       </Card>
       {p.priceNotes.length > 0 && <T variant="small" style={{ color: c.warn }}>{p.priceNotes.join(' ')}</T>}
+      <RealizedProfit p={p} />
     </>
   );
 }
@@ -406,6 +412,48 @@ function Row({ h, last, share }: { h: HoldingView; last: boolean; share: number 
         </Text>
       </View>
     </Pressable>
+  );
+}
+
+/** Profit booked by selling, across the whole portfolio — mirrors the web's "Realised profit" card. */
+function RealizedProfit({ p }: { p: Portfolio }) {
+  const { c } = useTheme();
+  const [open, setOpen] = useState(false);
+  const r = p.totals.realizedGain;
+  const rows = p.holdings.filter((h) => Math.abs(h.realizedGain) >= 0.005).sort((a, b) => b.realizedGain - a.realizedGain);
+  if (!rows.length) return null;
+  const tone = toneColor(c, r);
+  return (
+    <Card style={{ gap: S.sm }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <T variant="eyebrow">Realised profit</T>
+        <View style={{ backgroundColor: alpha(tone, 0.12), borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
+          <Text style={{ color: tone, fontFamily: F.uiMedium, fontSize: 11 }}>{r >= 0 ? '▲ Gain' : '▼ Loss'}</Text>
+        </View>
+      </View>
+      <Text style={{ color: tone, fontFamily: F.uiSemibold, fontSize: 28, fontVariant: ['tabular-nums'] }}>{r < 0 ? '−' : ''}{money(Math.abs(r))}</Text>
+      <Pressable onPress={() => setOpen((o) => !o)} hitSlop={8} accessibilityRole="button" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <T variant="small">Booked from withdrawals till now</T>
+        <Text style={{ color: c.fg, fontFamily: F.uiSemibold, fontSize: 12.5 }}>Breakdown {open ? '▴' : '▾'}</Text>
+      </Pressable>
+      {open && (
+        <View style={{ borderWidth: 1, borderColor: c.line, borderRadius: R.md }}>
+          {rows.map((h, i) => (
+            <View key={h.id} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: S.sm, paddingHorizontal: S.md, paddingVertical: 10, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderTopColor: c.line }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={2} style={{ color: c.fg2, fontFamily: F.ui, fontSize: 13, lineHeight: 18 }}>{h.name}</Text>
+                <Text style={{ color: c.subtle, fontFamily: F.ui, fontSize: 11, marginTop: 1 }}>
+                  {CLASS_META[h.assetClass].label} · {isHeld(h) ? 'partly sold' : 'fully sold'}
+                </Text>
+              </View>
+              <Text style={{ color: toneColor(c, h.realizedGain), fontFamily: F.uiSemibold, fontSize: 13, fontVariant: ['tabular-nums'] }}>
+                {h.realizedGain >= 0 ? '+' : '−'}{money(Math.abs(h.realizedGain))}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </Card>
   );
 }
 

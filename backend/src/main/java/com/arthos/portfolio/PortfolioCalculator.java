@@ -51,7 +51,12 @@ public final class PortfolioCalculator {
         computed.forEach(c -> byClass.computeIfAbsent(c.h.category(), k -> new ArrayList<>()).add(c));
         List<ClassSlice> allocation = byClass.entrySet().stream().map(e -> {
             BigDecimal v = sum(e.getValue(), c -> c.value), inv = sum(e.getValue(), c -> c.invested);
-            return new ClassSlice(e.getKey(), m(v), m(inv), m(v.subtract(inv)), pct(v.subtract(inv), inv), pct(v, value), e.getValue().size());
+            BigDecimal day = sum(e.getValue(), c -> c.dayChange), real = sum(e.getValue(), c -> c.realized);
+            List<Xirr.Flow> flows = new ArrayList<>();
+            e.getValue().forEach(c -> flows.addAll(c.flows));
+            if (v.signum() > 0) flows.add(new Xirr.Flow(today, v.doubleValue()));
+            return new ClassSlice(e.getKey(), m(v), m(inv), m(v.subtract(inv)), pct(v.subtract(inv), inv), pct(v, value), e.getValue().size(),
+                    m(day), pct(day, v.subtract(day)), m(real), rate(Xirr.of(flows)));
         }).sorted(Comparator.comparing(ClassSlice::value).reversed()).toList();
 
         Map<Horizon, List<Computed>> byH = new HashMap<>();
