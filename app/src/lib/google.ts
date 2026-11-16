@@ -10,16 +10,20 @@ type Providers = { google?: { clientId: string } | null };
  * Expo Go only ships the native modules bundled with it, and Google sign-in isn't one of them — importing it there
  * crashes the screen. So the library is loaded lazily, and only in real (EAS/dev-client) builds.
  */
-export const googleAvailable =
-  Constants.executionEnvironment !== ExecutionEnvironment.StoreClient &&
-  // the environment check isn't enough (an older dev build, or Expo Go reporting differently): ask for the module itself
-  TurboModuleRegistry.get('RNGoogleSignin') != null;
+export const googleAvailable = Constants.executionEnvironment !== ExecutionEnvironment.StoreClient;
 
 type GoogleModule = typeof import('@react-native-google-signin/google-signin');
 let mod: GoogleModule | null = null;
 function lib(): GoogleModule {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  if (!mod) mod = require('@react-native-google-signin/google-signin') as GoogleModule;
+  if (!mod) {
+    // Checked at tap time, not at startup (the lookup can come back empty that early). Without the native module the
+    // library's own lookup throws a fatal red-screen error, so say it plainly instead.
+    if (TurboModuleRegistry.get('RNGoogleSignin') == null) {
+      throw new Error('Google sign-in needs the ArthOS app (Play Store or development build), not Expo Go. Use email here.');
+    }
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    mod = require('@react-native-google-signin/google-signin') as GoogleModule;
+  }
   return mod;
 }
 
