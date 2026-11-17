@@ -34,6 +34,7 @@ public class MarketDataService {
     /** A "refresh prices" tap during market hours: re-fetch anything older than this (also caps how often a user can hit the sources). */
     private static final Duration LIVE_TTL = Duration.ofSeconds(30);
     private static final Duration NAV_TTL = Duration.ofHours(3);
+    private static final Duration NAV_BEHIND_TTL = Duration.ofMinutes(20);
     private static final Duration HISTORY_TTL = Duration.ofHours(12);
     private static final long WAIT_SECONDS = 12;
 
@@ -95,6 +96,10 @@ public class MarketDataService {
 
     private Quote loadQuote(String key, Duration ttl) {
         MarketCacheEntry e = entry(key);
+        // AMFI publishes NAVs scheme by scheme through the evening and morning: a NAV that's behind (older than ~a day
+        // and a half) is checked again every 20 minutes instead of waiting out the 3-hour cache
+        if (key.startsWith("MUTUAL_FUND:") && e.getAsOf() != null && e.getAsOf().isBefore(Instant.now().minus(Duration.ofHours(36))))
+            ttl = ttl.compareTo(NAV_BEHIND_TTL) > 0 ? NAV_BEHIND_TTL : ttl;
         if (e.getPrice() == null || stale(e.getQuoteFetchedAt(), ttl)) {
             Optional<Quote> fresh = provider(key).flatMap(p -> p.quote(symbol(key)));
             if (fresh.isPresent()) {

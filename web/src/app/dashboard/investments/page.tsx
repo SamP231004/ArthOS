@@ -165,6 +165,7 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
   const pl = current - invested;
   const day = items.reduce((s, h) => s + h.dayChange, 0);
   const asOf = asOfLabel(items);
+  const xirr = p.allocation.find((a) => a.assetClass === tab)?.xirr; // per category, from the backend
   const [market, setMarket] = useState(() => indianMarketStatus());
   useEffect(() => {
     const t = setInterval(() => setMarket(indianMarketStatus()), 60_000);
@@ -186,9 +187,20 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
 
         {/* summary strip */}
         <div className="mx-4 grid grid-cols-2 overflow-hidden rounded-2xl border border-line sm:mx-5 lg:grid-cols-4">
-          <Cell k="Invested" v={money(invested)} sub={`${items.length} holding${items.length === 1 ? "" : "s"}`} />
-          <Cell k="Current value" v={money(current)} sub="At market price" />
-          <Cell k="Unrealised P&L" v={`${pl >= 0 ? "+" : "−"}${money(Math.abs(pl))}`} tone={tone(pl)} pill={signedPct(invested ? (pl / invested) * 100 : 0)} />
+          {tab === "STOCK" ? (
+            <>
+              <Cell k="Invested" v={money(invested)} sub={`${items.length} holding${items.length === 1 ? "" : "s"}`} />
+              <Cell k="Current value" v={money(current)} sub="At market price" />
+              <Cell k="Unrealised P&L" v={`${pl >= 0 ? "+" : "−"}${money(Math.abs(pl))}`} tone={tone(pl)} pill={signedPct(invested ? (pl / invested) * 100 : 0)} />
+            </>
+          ) : (
+            // funds, gold and bonds are held for years: lead with what they're worth and their annualised return
+            <>
+              <Cell k="Current value" v={money(current)} sub={`${money(invested)} invested · ${items.length} holding${items.length === 1 ? "" : "s"}`} />
+              <Cell k="Returns" v={`${pl >= 0 ? "+" : "−"}${money(Math.abs(pl))}`} tone={tone(pl)} pill={signedPct(invested ? (pl / invested) * 100 : 0)} />
+              <Cell k="XIRR" v={xirr != null ? signedPct(xirr) : "—"} tone={tone(xirr)} sub="Annualised, from your purchase dates" />
+            </>
+          )}
           <Cell k="Today" v={`${day >= 0 ? "+" : "−"}${money(Math.abs(day))}`} tone={tone(day)} sub={signedPct(current - day ? (day / (current - day)) * 100 : 0)} />
           <div className="col-span-full flex items-center justify-between border-t border-line px-4 py-2.5 text-xs text-muted">
             <span className="flex items-center gap-2">
