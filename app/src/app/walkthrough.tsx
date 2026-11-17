@@ -1,8 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { AccessibilityInfo, Animated, Easing, Pressable, Text, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -57,7 +57,7 @@ const SLIDES: Slide[] = [
   { eyebrow: 'Budget', title: 'One number for today', body: 'Your monthly limit becomes a single daily number that adapts when life happens. Rent and EMIs stay out of it.', Visual: BudgetVisual },
   { eyebrow: 'Investments', title: 'Every rupee that grows', body: 'Stocks, mutual funds, gold and bonds at live prices — with 1-day and total returns, XIRR and allocation.', Visual: PortfolioVisual },
   { eyebrow: 'Import', title: 'Years of investing, in one upload', body: 'Download your holdings or tradebook from Zerodha, Groww or any broker — or your CAS for every mutual fund — and import it. The file is read on your phone and never uploaded.', Visual: ImportVisual },
-  { eyebrow: 'Scan & Share', title: 'Share a screenshot. That’s the entry.', body: 'From GPay, PhonePe or your bank app, tap Share → ArthOS. Amount, merchant, date and category fill themselves in. Read on your phone — never uploaded.', Visual: ScanVisual },
+  { eyebrow: 'Scan & Share', title: 'Share a screenshot. That’s the entry.', body: 'From GPay, PhonePe or your bank app, tap Share → ArthOS. Amount, merchant, date and category fill themselves in. The screenshot is read on your phone; only the text is used to fill in the details.', Visual: ScanVisual },
   { eyebrow: 'Insights', title: 'A score that explains itself', body: 'Your month in plain words, a 100-point health score, unusual spending and subscriptions that add up — no AI, just clear rules.', Visual: InsightsVisual },
   { eyebrow: 'On your phone', title: 'Your money on your home screen', body: 'Widgets you can glance at (tap the eye to hide amounts), a pinned alert when you’re over budget, and bill reminders on the due date.', Visual: PhoneVisual },
 ];
@@ -71,6 +71,20 @@ export default function Walkthrough() {
   const ref = useRef<ScrollViewInstance>(null);
   const [i, setI] = useState(0);
   const last = i === SLIDES.length - 1;
+  // "Remove animations" or TalkBack on: no auto-advance, no motion — the tour waits for swipes and taps
+  const [calm, setCalm] = useState(false);
+  useEffect(() => {
+    let live = true;
+    const check = () =>
+      Promise.all([AccessibilityInfo.isReduceMotionEnabled(), AccessibilityInfo.isScreenReaderEnabled()]).then(([a, b]) => live && setCalm(a || b));
+    check();
+    const subs = [AccessibilityInfo.addEventListener('reduceMotionChanged', check), AccessibilityInfo.addEventListener('screenReaderChanged', check)];
+    return () => {
+      live = false;
+      subs.forEach((x) => x.remove());
+    };
+  }, []);
+  const [scrollX] = useState(() => new Animated.Value(0));
 
   const finish = () => {
     markSeen();
@@ -78,6 +92,18 @@ export default function Walkthrough() {
     else router.replace('/login');
   };
   const go = (n: number) => ref.current?.scrollTo({ x: n * width, animated: true });
+
+  // story-style: the current segment fills over SLIDE_MS, then the tour moves on; touching or dragging pauses it
+  const [fill] = useState(() => new Animated.Value(0));
+  const [paused, setPaused] = useState(false);
+  useEffect(() => {
+    fill.setValue(0);
+    if (paused || last || calm) return;
+    const a = Animated.timing(fill, { toValue: 1, duration: SLIDE_MS, easing: Easing.linear, useNativeDriver: false });
+    a.start(({ finished }) => finished && go(i + 1));
+    return () => a.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- restart only when the slide or pause state changes
+  }, [i, paused, last, calm]);
 
   return (
     <View style={{ flex: 1, backgroundColor: K.bg }}>
@@ -94,26 +120,54 @@ export default function Walkthrough() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.sm }}>
           <ThemeToggle color={K.muted} />
           {!last && (
-            <Pressable onPress={finish} hitSlop={12} accessibilityRole="button">
+            <Pressable onPress={() => finish()} hitSlop={12} accessibilityRole="button">
               <Text style={{ color: K.muted, fontFamily: F.uiMedium, fontSize: 14 }}>Skip</Text>
             </Pressable>
           )}
         </View>
       </View>
 
-      <ScrollView
+      <View style={{ flexDirection: 'row', gap: 5, paddingHorizontal: S.lg, paddingTop: S.md }} accessibilityLabel={`Screen ${i + 1} of ${SLIDES.length}`}>
+        {SLIDES.map((_, n) => (
+          <Pressable key={n} onPress={() => go(n)} hitSlop={{ top: 10, bottom: 10 }} style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: K.fgA(0.18), overflow: 'hidden' }}>
+            {n < i || (n === i && last) ? (
+              <View style={{ flex: 1, backgroundColor: K.mark }} />
+            ) : n === i ? (
+              <Animated.View style={{ height: '100%', backgroundColor: K.mark, width: fill.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }} />
+            ) : null}
+          </Pressable>
+        ))}
+      </View>
+
+      <Animated.ScrollView
         ref={ref}
         horizontal
+        scrollEventThrottle={16}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: true })}
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={(e) => setI(Math.round(e.nativeEvent.contentOffset.x / width))}
+        onTouchStart={() => setPaused(true)}
+        onTouchEnd={() => setPaused(false)}
+        onScrollBeginDrag={() => setPaused(true)}
+        onMomentumScrollEnd={(e) => {
+          setI(Math.round(e.nativeEvent.contentOffset.x / width));
+          setPaused(false);
+        }}
         style={{ flex: 1 }}
       >
-        {SLIDES.map((s) => (
+        {SLIDES.map((s, n) => (
           <View key={s.title} style={{ width, paddingHorizontal: S.lg, justifyContent: 'center', gap: S.xl }}>
-            <View style={{ alignItems: 'center' }}>
-              <s.Visual />
-            </View>
+            {/* parallax: the picture trails the text a little as you swipe */}
+            <Animated.View
+              style={{
+                alignItems: 'center',
+                transform: calm ? [] : [{ translateX: scrollX.interpolate({ inputRange: [(n - 1) * width, n * width, (n + 1) * width], outputRange: [width * 0.28, 0, -width * 0.28] }) }],
+              }}
+            >
+              <Active.Provider value={{ active: n === i, calm }}>
+                <s.Visual />
+              </Active.Provider>
+            </Animated.View>
             <View style={{ gap: S.sm }}>
               <Text style={{ color: K.mark, fontFamily: F.uiSemibold, fontSize: 13 }}>{s.eyebrow}</Text>
               <Text style={{ color: K.fg, fontFamily: s.title.includes('अर्थ') ? F.display : F.display, fontSize: 30, lineHeight: 36, letterSpacing: -0.6 }}>
@@ -129,25 +183,116 @@ export default function Walkthrough() {
             </View>
           </View>
         ))}
-      </ScrollView>
+      </Animated.ScrollView>
 
-      <View style={{ paddingHorizontal: S.lg, paddingBottom: insets.bottom + S.lg, gap: S.lg }}>
-        <View style={{ flexDirection: 'row', gap: 6, justifyContent: 'center' }}>
-          {SLIDES.map((_, n) => (
-            <Pressable key={n} onPress={() => go(n)} hitSlop={6} accessibilityLabel={`Screen ${n + 1}`}>
-              <View style={{ height: 6, width: n === i ? 22 : 6, borderRadius: 3, backgroundColor: n === i ? K.mark : K.fgA(0.25) }} />
+      <View style={{ paddingHorizontal: S.lg, paddingBottom: insets.bottom + S.lg, minHeight: 54 + insets.bottom + S.lg, justifyContent: 'flex-end' }}>
+        {last ? (
+          <View style={{ flexDirection: 'row', gap: S.sm }}>
+            <RoundButton label="←" a11y="Previous screen" onPress={() => go(i - 1)} K={K} />
+            <Pressable
+              onPress={() => finish()}
+              accessibilityRole="button"
+              style={({ pressed }) => ({ flex: 1, height: 54, borderRadius: 16, backgroundColor: K.ink, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.85 : 1 })}
+            >
+              <Text style={{ color: K.inkFg, fontFamily: F.uiSemibold, fontSize: 16 }}>{signedIn ? 'Done' : 'Get started  →'}</Text>
             </Pressable>
-          ))}
-        </View>
-        <Pressable
-          onPress={() => (last ? finish() : go(i + 1))}
-          accessibilityRole="button"
-          style={({ pressed }) => ({ height: 54, borderRadius: 16, backgroundColor: K.ink, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.85 : 1 })}
-        >
-          <Text style={{ color: K.inkFg, fontFamily: F.uiSemibold, fontSize: 16 }}>{last ? (signedIn ? 'Done' : 'Get started  →') : 'Next'}</Text>
-        </Pressable>
+          </View>
+        ) : (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            {i > 0 ? <RoundButton label="←" a11y="Previous screen" onPress={() => go(i - 1)} K={K} /> : <View style={{ width: 54 }} />}
+            <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 13 }}>
+              {calm ? 'Swipe or tap →' : paused ? 'Paused' : 'Swipe or wait'} · {i + 1} of {SLIDES.length}
+            </Text>
+            <RoundButton label="→" a11y="Next screen" onPress={() => go(i + 1)} K={K} filled />
+          </View>
+        )}
       </View>
     </View>
+  );
+}
+
+const SLIDE_MS = 4000;
+
+/** Which slide is on screen, so its picture can play; `calm` = reduce motion / screen reader (show the end state). */
+const Active = createContext<{ active: boolean; calm: boolean }>({ active: false, calm: true });
+
+/** 0 → 1 over `ms` after `delay` while the slide is on screen; back to 0 when it leaves. */
+function useProgress(ms = 900, delay = 0) {
+  const { active, calm } = useContext(Active);
+  const [v] = useState(() => new Animated.Value(calm ? 1 : 0));
+  useEffect(() => {
+    if (calm) return v.setValue(1);
+    if (!active) return v.setValue(0);
+    const a = Animated.timing(v, { toValue: 1, duration: ms, delay, easing: Easing.out(Easing.cubic), useNativeDriver: false });
+    a.start();
+    return () => a.stop();
+  }, [active, calm, ms, delay, v]);
+  return v;
+}
+
+/** Fades and lifts its children in; `step` staggers siblings. */
+function Reveal({ step = 0, children, style }: { step?: number; children: React.ReactNode; style?: object }) {
+  const p = useProgress(500, 250 + step * 140);
+  return <Animated.View style={[style, { opacity: p, transform: [{ translateY: p.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>{children}</Animated.View>;
+}
+
+/** A rupee figure that counts up to `to` (Indian digit grouping). */
+function CountUp({ to, prefix = '₹', suffix = '', style }: { to: number; prefix?: string; suffix?: string; style: object }) {
+  const p = useProgress(1100, 150);
+  const [n, setN] = useState(to);
+  useEffect(() => {
+    const id = p.addListener(({ value }) => setN(Math.round(to * value)));
+    return () => p.removeListener(id);
+  }, [p, to]);
+  return <Text style={style}>{prefix}{n.toLocaleString('en-IN')}{suffix}</Text>;
+}
+
+/** A bar segment whose width grows to `pct`. */
+function Grow({ pct, color, height = '100%', delay = 200 }: { pct: number; color: string; height?: number | '100%'; delay?: number }) {
+  const p = useProgress(900, delay);
+  return <Animated.View style={{ height, borderRadius: 3, backgroundColor: color, width: p.interpolate({ inputRange: [0, 1], outputRange: ['0%', `${pct}%`] }) }} />;
+}
+
+/** A soft light sweeping down a card, as if it's being read. */
+function ScanLine({ height }: { height: number }) {
+  const { active, calm } = useContext(Active);
+  const [y] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    if (!active || calm) return;
+    const loop = Animated.loop(Animated.timing(y, { toValue: 1, duration: 1600, easing: Easing.inOut(Easing.quad), useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [active, calm, y]);
+  if (calm) return null;
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{ position: 'absolute', left: 6, right: 6, top: 0, height: 2, borderRadius: 1, backgroundColor: 'rgba(120,220,170,0.9)', shadowColor: '#4cc38a', shadowOpacity: 0.9, shadowRadius: 8, transform: [{ translateY: y.interpolate({ inputRange: [0, 1], outputRange: [8, height - 10] }) }] }}
+    />
+  );
+}
+
+function RoundButton({ label, a11y, onPress, K, filled }: { label: string; a11y: string; onPress: () => void; K: ReturnType<typeof useK>; filled?: boolean }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={a11y}
+      hitSlop={6}
+      style={({ pressed }) => ({
+        width: 54,
+        height: 54,
+        borderRadius: 27,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: filled ? K.ink : 'transparent',
+        borderWidth: filled ? 0 : 1,
+        borderColor: K.fgA(0.2),
+        opacity: pressed ? 0.8 : 1,
+      })}
+    >
+      <Text style={{ color: filled ? K.inkFg : K.fg, fontFamily: F.uiSemibold, fontSize: 20 }}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -174,7 +319,7 @@ function Bar({ pct, color, marker }: { pct: number; color: string; marker?: numb
   return (
     <View style={{ height: 14, justifyContent: 'center' }}>
       <View style={{ height: 6, borderRadius: 3, backgroundColor: K.fgA(0.08), overflow: 'hidden' }}>
-        <View style={{ width: `${pct}%`, height: '100%', borderRadius: 3, backgroundColor: color }} />
+        <Grow pct={pct} color={color} />
       </View>
       {marker != null && <View style={{ position: 'absolute', left: `${marker}%`, width: 2, height: 14, borderRadius: 1, backgroundColor: K.fg }} />}
     </View>
@@ -185,12 +330,16 @@ function WelcomeVisual() {
   const K = useK();
   return (
     <View style={{ alignItems: 'center', gap: 18 }}>
-      <View style={{ borderRadius: 26, shadowColor: '#c43a35', shadowOpacity: 0.6, shadowRadius: 30, elevation: 16 }}>
-        <LogoMark size={96} />
-      </View>
+      <Reveal>
+        <View style={{ borderRadius: 26, shadowColor: '#c43a35', shadowOpacity: 0.6, shadowRadius: 30, elevation: 16 }}>
+          <LogoMark size={96} />
+        </View>
+      </Reveal>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, maxWidth: 320 }}>
-        {['Save first', 'Daily budget', 'Investments', 'Broker import', 'Scan & Share', 'Insights', 'Widgets', 'Alerts'].map((t) => (
-          <Text key={t} style={{ color: K.fg2, fontFamily: F.uiMedium, fontSize: 12.5, borderWidth: 1, borderColor: K.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>{t}</Text>
+        {['Save first', 'Daily budget', 'Investments', 'Broker import', 'Scan & Share', 'Insights', 'Widgets', 'Alerts'].map((t, n) => (
+          <Reveal key={t} step={n * 0.6 + 1}>
+            <Text style={{ color: K.fg2, fontFamily: F.uiMedium, fontSize: 12.5, borderWidth: 1, borderColor: K.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>{t}</Text>
+          </Reveal>
         ))}
       </View>
     </View>
@@ -202,17 +351,16 @@ function SaveVisual() {
   return (
     <Card>
       <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 12 }}>Left to spend this month</Text>
-      <Text style={{ color: K.fg, fontFamily: F.uiSemibold, fontSize: 34, letterSpacing: -0.8 }}>₹32,271</Text>
-      <View style={{ flexDirection: 'row', height: 6, borderRadius: 3, overflow: 'hidden' }}>
-        <View style={{ flex: 20, backgroundColor: K.income }} />
-        <View style={{ flex: 38, backgroundColor: K.expense }} />
-        <View style={{ flex: 7, backgroundColor: K.info }} />
-        <View style={{ flex: 35, backgroundColor: K.fgA(0.08) }} />
+      <CountUp to={32271} style={{ color: K.fg, fontFamily: F.uiSemibold, fontSize: 34, letterSpacing: -0.8 }} />
+      <View style={{ flexDirection: 'row', height: 6, borderRadius: 3, overflow: 'hidden', backgroundColor: K.fgA(0.08) }}>
+        <Grow pct={20} color={K.income} delay={200} />
+        <Grow pct={38} color={K.expense} delay={500} />
+        <Grow pct={7} color={K.info} delay={800} />
       </View>
-      <Row k="Income" v="₹92,000" />
-      <Row k="Saved first · 20%" v="₹18,400" color={K.income} />
-      <Row k="Spent" v="₹35,141" />
-      <Row k="Left to spend" v="₹32,271" bold />
+      <Reveal step={1}><Row k="Income" v="₹92,000" /></Reveal>
+      <Reveal step={2}><Row k="Saved first · 20%" v="₹18,400" color={K.income} /></Reveal>
+      <Reveal step={3}><Row k="Spent" v="₹35,141" /></Reveal>
+      <Reveal step={4}><Row k="Left to spend" v="₹32,271" bold /></Reveal>
     </Card>
   );
 }
@@ -227,12 +375,14 @@ function BudgetVisual() {
         ))}
       </View>
       <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 12, marginTop: 4 }}>Safe to spend today</Text>
-      <Text style={{ color: K.income, fontFamily: F.display, fontSize: 44, letterSpacing: -1 }}>₹842</Text>
+      <CountUp to={842} style={{ color: K.income, fontFamily: F.display, fontSize: 44, letterSpacing: -1 }} />
       <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 12 }}>of ₹1,290 today · 12 days left</Text>
       <Bar pct={58} color={K.income} marker={60} />
       <View style={{ flexDirection: 'row', gap: 4, marginTop: 2 }}>
         {[1, 1, 2, 1, 0, 1, 1, 3, 1, 1, 1, 0, 1, 1].map((v, n) => (
-          <View key={n} style={{ flex: 1, height: 18, borderRadius: 4, backgroundColor: v === 2 ? 'rgba(232,180,92,0.3)' : v === 3 ? 'rgba(240,113,103,0.3)' : v === 0 ? K.fgA(0.06) : 'rgba(76,195,138,0.25)' }} />
+          <Reveal key={n} step={n * 0.35 + 1} style={{ flex: 1 }}>
+            <View style={{ height: 18, borderRadius: 4, backgroundColor: v === 2 ? 'rgba(232,180,92,0.3)' : v === 3 ? 'rgba(240,113,103,0.3)' : v === 0 ? K.fgA(0.06) : 'rgba(76,195,138,0.25)' }} />
+          </Reveal>
         ))}
       </View>
     </Card>
@@ -244,7 +394,7 @@ function PortfolioVisual() {
   return (
     <Card>
       <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 12 }}>Portfolio</Text>
-      <Text style={{ color: K.fg, fontFamily: F.uiSemibold, fontSize: 30, letterSpacing: -0.8 }}>₹8,34,076</Text>
+      <CountUp to={834076} style={{ color: K.fg, fontFamily: F.uiSemibold, fontSize: 30, letterSpacing: -0.8 }} />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <View>
           <Text style={{ color: K.subtle, fontFamily: F.ui, fontSize: 11 }}>1D returns</Text>
@@ -255,13 +405,15 @@ function PortfolioVisual() {
           <Text style={{ color: K.income, fontFamily: F.uiSemibold, fontSize: 13 }}>+₹1,40,080 (20.2%)</Text>
         </View>
       </View>
-      <View style={{ flexDirection: 'row', height: 8, borderRadius: 4, overflow: 'hidden', marginTop: 4 }}>
-        <View style={{ flex: 42, backgroundColor: '#84b6d8' }} />
-        <View style={{ flex: 35, backgroundColor: '#c94540' }} />
-        <View style={{ flex: 18, backgroundColor: '#d9b26f' }} />
-        <View style={{ flex: 5, backgroundColor: '#e8946a' }} />
+      <View style={{ flexDirection: 'row', height: 8, borderRadius: 4, overflow: 'hidden', marginTop: 4, backgroundColor: K.fgA(0.08) }}>
+        <Grow pct={42} color="#84b6d8" delay={300} />
+        <Grow pct={35} color="#c94540" delay={550} />
+        <Grow pct={18} color="#d9b26f" delay={800} />
+        <Grow pct={5} color="#e8946a" delay={1000} />
       </View>
-      <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 11.5 }}>Mutual funds · Stocks · Gold · Bonds   ·   XIRR +18.4%</Text>
+      <Reveal step={5}>
+        <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 11.5 }}>Mutual funds · Stocks · Gold · Bonds   ·   XIRR +18.4%</Text>
+      </Reveal>
     </Card>
   );
 }
@@ -285,8 +437,8 @@ function ImportVisual() {
         <Text style={{ flex: 1, color: K.fg2, fontFamily: F.ui, fontSize: 12 }} numberOfLines={1}>holdings-zerodha.xlsx</Text>
         <Text style={{ color: K.income, fontFamily: F.uiSemibold, fontSize: 10.5 }}>🔒 on this phone</Text>
       </View>
-      {rows.map(([n, d, v]) => (
-        <View key={n} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      {rows.map(([n, d, v], idx) => (
+        <Reveal key={n} step={idx * 1.5 + 1} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <View style={{ width: 16, height: 16, borderRadius: 4, backgroundColor: K.ink, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ color: K.inkFg, fontSize: 10, fontFamily: F.uiSemibold }}>✓</Text>
           </View>
@@ -295,9 +447,11 @@ function ImportVisual() {
             <Text style={{ color: K.subtle, fontFamily: F.ui, fontSize: 10.5 }}>{d}</Text>
           </View>
           <Text style={{ color: K.fg2, fontFamily: F.uiSemibold, fontSize: 12.5 }}>{v}</Text>
-        </View>
+        </Reveal>
       ))}
-      <Text style={{ color: K.inkFg, backgroundColor: K.ink, borderRadius: 12, overflow: 'hidden', textAlign: 'center', fontFamily: F.uiSemibold, fontSize: 13, paddingVertical: 9 }}>Import 3 holdings</Text>
+      <Reveal step={6}>
+        <Text style={{ color: K.inkFg, backgroundColor: K.ink, borderRadius: 12, overflow: 'hidden', textAlign: 'center', fontFamily: F.uiSemibold, fontSize: 13, paddingVertical: 9 }}>Import 3 holdings</Text>
+      </Reveal>
     </Card>
   );
 }
@@ -314,23 +468,28 @@ function ScanVisual() {
         <Text style={{ color: '#e8e8e8', fontFamily: F.ui, fontSize: 22 }}>₹159.44</Text>
         <Text style={{ color: '#9fdcb0', fontFamily: F.ui, fontSize: 9.5 }}>✓ Completed</Text>
         <Text style={{ color: '#e8e8e8', fontFamily: F.uiMedium, fontSize: 9.5, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 999, overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 3, marginTop: 4 }}>Share → ArthOS</Text>
+        <ScanLine height={150} />
       </View>
       <Text style={{ color: K.subtle, fontSize: 18 }}>→</Text>
       <View style={{ width: 150, backgroundColor: K.card, borderRadius: 20, padding: 12, gap: 6, borderWidth: 1, borderColor: K.line }}>
         <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 10 }}>New expense</Text>
-        <Text style={{ color: K.fg, fontFamily: F.uiSemibold, fontSize: 20 }}>₹159.44</Text>
+        <Reveal step={2}>
+          <Text style={{ color: K.fg, fontFamily: F.uiSemibold, fontSize: 20 }}>₹159.44</Text>
+        </Reveal>
         {[
           ['Merchant', 'Zomato'],
           ['Category', 'Food'],
           ['Paid with', 'UPI'],
           ['Date', '6 Nov'],
-        ].map(([k, v]) => (
-          <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+        ].map(([k, v], idx) => (
+          <Reveal key={k} step={idx + 3} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ color: K.subtle, fontFamily: F.ui, fontSize: 10 }}>{k}</Text>
             <Text style={{ color: K.fg2, fontFamily: F.uiMedium, fontSize: 10 }}>{v}</Text>
-          </View>
+          </Reveal>
         ))}
-        <Text style={{ color: K.inkFg, backgroundColor: K.ink, borderRadius: 10, overflow: 'hidden', textAlign: 'center', fontFamily: F.uiSemibold, fontSize: 11, paddingVertical: 6, marginTop: 2 }}>Save</Text>
+        <Reveal step={7}>
+          <Text style={{ color: K.inkFg, backgroundColor: K.ink, borderRadius: 10, overflow: 'hidden', textAlign: 'center', fontFamily: F.uiSemibold, fontSize: 11, paddingVertical: 6, marginTop: 2 }}>Save</Text>
+        </Reveal>
       </View>
     </View>
   );
@@ -345,20 +504,24 @@ function InsightsVisual() {
         <View style={{ width: 100, height: 100, alignItems: 'center', justifyContent: 'center' }}>
           <Svg width={100} height={100} viewBox="0 0 100 100" style={{ position: 'absolute', transform: [{ rotate: '150deg' }] }}>
             <Circle cx={50} cy={50} r={R} stroke={K.fgA(0.12)} strokeWidth={9} fill="none" strokeLinecap="round" strokeDasharray={`${arc} ${C}`} />
-            <Circle cx={50} cy={50} r={R} stroke={K.income} strokeWidth={9} fill="none" strokeLinecap="round" strokeDasharray={`${0.84 * arc} ${C}`} />
+            <ScoreArc R={R} C={C} arc={arc} score={0.84} color={K.income} />
           </Svg>
-          <Text style={{ color: K.fg, fontFamily: F.uiSemibold, fontSize: 28 }}>84</Text>
+          <CountUp to={84} prefix="" style={{ color: K.fg, fontFamily: F.uiSemibold, fontSize: 28 }} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 12 }}>Financial health</Text>
           <Text style={{ color: K.income, fontFamily: F.uiSemibold, fontSize: 19 }}>Excellent</Text>
         </View>
       </View>
-      <Text style={{ color: K.fg, fontFamily: F.uiMedium, fontSize: 12, borderWidth: 1, borderColor: 'rgba(232,180,92,0.35)', backgroundColor: 'rgba(232,180,92,0.08)', borderRadius: 999, overflow: 'hidden', paddingHorizontal: 12, paddingVertical: 6, alignSelf: 'flex-start' }}>On pace to overspend by ₹4,531</Text>
+      <Reveal step={4} style={{ alignSelf: 'flex-start' }}>
+        <Text style={{ color: K.fg, fontFamily: F.uiMedium, fontSize: 12, borderWidth: 1, borderColor: 'rgba(232,180,92,0.35)', backgroundColor: 'rgba(232,180,92,0.08)', borderRadius: 999, overflow: 'hidden', paddingHorizontal: 12, paddingVertical: 6 }}>On pace to overspend by ₹4,531</Text>
+      </Reveal>
+      <Reveal step={6}>
       <Text style={{ color: K.fg2, fontFamily: F.ui, fontSize: 13, lineHeight: 19 }}>
         <Text style={{ color: K.mark }}>✦ </Text>
         <Text style={{ fontFamily: F.uiSemibold, color: K.fg }}>Food</Text> is up <Text style={{ fontFamily: F.uiSemibold, color: K.fg }}>32%</Text> — ₹6,840 against a usual ₹5,180.
       </Text>
+      </Reveal>
     </Card>
   );
 }
@@ -367,12 +530,14 @@ function PhoneVisual() {
   const K = useK();
   return (
     <View style={{ width: 300, gap: 10 }}>
+      <Reveal>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: K.card2, borderWidth: 1, borderColor: K.line, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 10 }}>
         <LogoMark size={22} />
         <Text style={{ flex: 1, color: K.fg, fontFamily: F.uiMedium, fontSize: 13 }} numberOfLines={1}>On pace to overspend by ₹4,531</Text>
         <Text style={{ color: K.subtle, fontSize: 11 }}>pinned</Text>
       </View>
-      <View style={{ flexDirection: 'row', gap: 10 }}>
+      </Reveal>
+      <Reveal step={2} style={{ flexDirection: 'row', gap: 10 }}>
         <View style={{ flex: 1, backgroundColor: K.card, borderRadius: 20, padding: 12, gap: 4 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 10.5 }}>Safe today</Text>
@@ -386,15 +551,26 @@ function PhoneVisual() {
           <Text style={{ color: K.fg, backgroundColor: K.card2, borderRadius: 12, overflow: 'hidden', textAlign: 'center', fontFamily: F.uiSemibold, fontSize: 12, paddingVertical: 9 }}>Scan</Text>
           <Text style={{ color: K.fg, backgroundColor: K.card2, borderRadius: 12, overflow: 'hidden', textAlign: 'center', fontFamily: F.uiSemibold, fontSize: 12, paddingVertical: 9 }}>+ Income</Text>
         </View>
-      </View>
-      <View style={{ backgroundColor: K.card, borderRadius: 20, padding: 12, gap: 4 }}>
+      </Reveal>
+      <Reveal step={4} style={{ backgroundColor: K.card, borderRadius: 20, padding: 12, gap: 4 }}>
         <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 10.5 }}>Portfolio · 5:45 pm</Text>
         <Text style={{ color: K.fg, fontFamily: F.uiSemibold, fontSize: 20 }}>₹8,34,076</Text>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <Text style={{ color: K.income, fontFamily: F.uiSemibold, fontSize: 11 }}>1D +₹4,883 (0.6%)</Text>
           <Text style={{ color: K.income, fontFamily: F.uiSemibold, fontSize: 11 }}>Total +₹1,40,080</Text>
         </View>
-      </View>
+      </Reveal>
     </View>
   );
+}
+
+/** The health-score arc, filling to `score` (0–1) while the slide plays. */
+function ScoreArc({ R, C, arc, score, color }: { R: number; C: number; arc: number; score: number; color: string }) {
+  const p = useProgress(1100, 150);
+  const [f, setF] = useState(score);
+  useEffect(() => {
+    const id = p.addListener(({ value }) => setF(score * value));
+    return () => p.removeListener(id);
+  }, [p, score]);
+  return <Circle cx={50} cy={50} r={R} stroke={color} strokeWidth={9} fill="none" strokeLinecap="round" strokeDasharray={`${Math.max(0.001, f * arc)} ${C}`} />;
 }
