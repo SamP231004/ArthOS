@@ -15,6 +15,8 @@ export type User = {
   savingsValue: number;
   savingsStartingBalance: number;
   onboardingCompleted: boolean;
+  /** Gold funds and gold ETFs count as Gold (on unless turned off). */
+  goldFundsAsGold?: boolean;
   /** Sandbox account from "Explore the demo"; self-deletes at expiresAt. */
   demo?: boolean;
   expiresAt?: string;
@@ -24,13 +26,15 @@ export type User = {
 export type AuthResponse = { token: string; expiresAt: string; user: User };
 
 export const INCOME_TYPES = ["SALARY", "FREELANCE", "BONUS", "INTEREST", "DIVIDEND", "CASH", "REFUND", "OTHER"] as const;
-export type IncomeType = (typeof INCOME_TYPES)[number];
+/** A built-in (INCOME_TYPES) or one of the user's own income types — see lib/categories. */
+export type IncomeType = string;
 
 export const EXPENSE_CATEGORIES = [
   "FOOD", "GROCERIES", "TRANSPORT", "RENT", "UTILITIES", "SHOPPING", "ENTERTAINMENT",
   "HEALTH", "EDUCATION", "SUBSCRIPTIONS", "EMI", "TRAVEL", "PERSONAL_CARE", "GIFTS", "OTHER",
 ] as const;
-export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
+/** A built-in (EXPENSE_CATEGORIES) or one of the user's own categories — see lib/categories. */
+export type ExpenseCategory = string;
 
 export const PAYMENT_SOURCES = ["UPI", "CREDIT_CARD", "DEBIT_CARD", "CASH", "BANK_TRANSFER", "WALLET", "OTHER"] as const;
 export type PaymentSource = (typeof PAYMENT_SOURCES)[number];

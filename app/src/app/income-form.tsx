@@ -5,13 +5,14 @@ import { KeyboardAvoidingView, Switch, View } from 'react-native';
 import { DateField, isISODate } from '@/components/date-field';
 import { confirm } from '@/components/confirm';
 import { Screen } from '@/components/screen';
-import { Button, Chip, ErrorNote, Input, Loading, T } from '@/components/ui';
+import { Button, Chip, ErrorNote, FieldLabel, Input, Loading, T } from '@/components/ui';
 import { alpha, R, S, useTheme } from '@/theme';
 import { ApiError } from '@/lib/api';
-import { label, todayISO } from '@/lib/format';
+import { todayISO } from '@/lib/format';
 import { useDeleteIncome, useIncome, useSaveIncome } from '@/lib/queries';
 import { parseDraft, type IncomeDraft } from '@/lib/scan';
-import { INCOME_TYPES, type Income, type IncomeType } from '@/lib/types';
+import { useCategories } from '@/lib/categories';
+import { type Income, type IncomeType } from '@/lib/types';
 
 export default function IncomeFormScreen() {
   const { id, draft } = useLocalSearchParams<{ id?: string; draft?: string }>();
@@ -22,13 +23,14 @@ export default function IncomeFormScreen() {
 }
 
 function IncomeForm({ initial, draft }: { initial?: Income; draft?: IncomeDraft }) {
+  const types = useCategories('income');
   const { c } = useTheme();
   const save = useSaveIncome();
   const del = useDeleteIncome();
   const [f, setF] = useState({
     amount: (initial?.amount ?? draft?.amount)?.toString() ?? '',
     source: initial?.source ?? draft?.source ?? '',
-    type: (initial?.type ?? draft?.type ?? 'SALARY') as IncomeType,
+    type: (initial?.type ?? draft?.type ?? (types.visible.some((x) => x.key === 'SALARY') ? 'SALARY' : types.visible[0]?.key ?? 'OTHER')) as IncomeType,
     date: initial?.date ?? draft?.date ?? todayISO(),
     note: initial?.note ?? draft?.note ?? '',
     recurring: initial?.recurring ?? false,
@@ -58,6 +60,7 @@ function IncomeForm({ initial, draft }: { initial?: Income; draft?: IncomeDraft 
         {draft && <DraftNote />}
         <Input
           label="Amount"
+          required
           autoFocus={!initial}
           keyboardType="decimal-pad"
           value={f.amount}
@@ -66,15 +69,15 @@ function IncomeForm({ initial, draft }: { initial?: Income; draft?: IncomeDraft 
           error={fields.amount}
         />
         <View style={{ gap: S.sm }}>
-          <T variant="label">Type</T>
+          <FieldLabel text="Type" required />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.sm }}>
-            {INCOME_TYPES.map((t) => (
-              <Chip key={t} label={label(t)} active={f.type === t} onPress={() => setF({ ...f, type: t })} />
+            {types.options(f.type).map((t) => (
+              <Chip key={t.key} label={t.emoji ? `${t.emoji} ${t.label}` : t.label} active={f.type === t.key} onPress={() => setF({ ...f, type: t.key })} />
             ))}
           </View>
         </View>
-        <Input label="Source" placeholder="Employer, client, bank…" value={f.source} onChangeText={(source) => setF({ ...f, source })} maxLength={120} error={fields.source} />
-        <DateField value={f.date} onChange={(date) => setF({ ...f, date })} error={fields.date} />
+        <Input label="Source" required placeholder="Employer, client, bank…" value={f.source} onChangeText={(source) => setF({ ...f, source })} maxLength={120} error={fields.source} />
+        <DateField required value={f.date} onChange={(date) => setF({ ...f, date })} error={fields.date} />
         <Input label="Note" placeholder="Optional" value={f.note} onChangeText={(note) => setF({ ...f, note })} maxLength={500} />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <T>Repeats every month</T>

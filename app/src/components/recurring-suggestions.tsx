@@ -1,9 +1,10 @@
+import { useAnyCategoryLabel } from '@/lib/categories';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { T } from '@/components/ui';
-import { label, money } from '@/lib/format';
+import { money } from '@/lib/format';
 import { useMarkRecurring, useRecurringCandidates } from '@/lib/queries';
 import type { RecurringCandidate } from '@/lib/types';
 import { alpha, F, R, S, useTheme } from '@/theme';
@@ -12,6 +13,7 @@ const KEY = 'arthos-recurring-dismissed';
 
 /** "These came back every month — mark them recurring?" with a dismiss that's remembered on the device. */
 export function RecurringSuggestions({ kind, currency }: { kind: 'INCOME' | 'EXPENSE'; currency: string }) {
+  const catLabel = useAnyCategoryLabel(); // the user's names for categories
   const { c } = useTheme();
   const { data } = useRecurringCandidates();
   const mark = useMarkRecurring();
@@ -42,7 +44,7 @@ export function RecurringSuggestions({ kind, currency }: { kind: 'INCOME' | 'EXP
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={{ color: c.fg, fontFamily: F.uiMedium, fontSize: 14 }} numberOfLines={1}>{x.name}</Text>
             <Text style={{ color: c.subtle, fontFamily: F.ui, fontSize: 11.5 }} numberOfLines={1}>
-              ~{money(x.typicalAmount, currency)} · around the {ordinal(x.dayOfMonth)} · {x.months} months{x.tag ? ` · ${label(x.tag)}` : ''}
+              ~{money(x.typicalAmount, currency)} · around the {ordinal(x.dayOfMonth)} · {x.months} months{x.tag ? ` · ${catLabel(x.tag)}` : ''}
             </Text>
           </View>
           <Pressable

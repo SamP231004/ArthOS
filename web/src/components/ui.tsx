@@ -21,10 +21,14 @@ export function Button({ variant, size, loading, className = "", children, disab
   );
 }
 
-export function Field({ label, error, hint, children }: { label: string; error?: string; hint?: string; children: React.ReactNode }) {
+export function Field({ label, error, hint, required, children }: { label: string; error?: string; hint?: string; required?: boolean; children: React.ReactNode }) {
   return (
     <label className="block space-y-1.5">
-      <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-subtle">{label}</span>
+      <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-subtle">
+        {label}
+        {required && <span aria-hidden="true" className="ml-0.5 text-expense">*</span>}
+        {required && <span className="sr-only"> (required)</span>}
+      </span>
       {children}
       {error ? <span className="block text-xs text-expense">{error}</span> : hint ? <span className="block text-xs text-subtle">{hint}</span> : null}
     </label>

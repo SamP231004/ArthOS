@@ -14,11 +14,13 @@ import { currentMonth, dayLabel, label, money, shiftMonth, todayISO } from '@/li
 import { pctChange, sameDayIn, tagColor } from '@/lib/ledger';
 import { useIncomes, useSaveIncome } from '@/lib/queries';
 import { ruleLabel, setAside } from '@/lib/savings';
-import { INCOME_TYPES, type IncomeType } from '@/lib/types';
+import { useCategories } from '@/lib/categories';
+import { type IncomeType } from '@/lib/types';
 import { useMonth } from '@/lib/ui-store';
 import { S, useTheme } from '@/theme';
 
 export default function IncomeTab() {
+  const types = useCategories('income'); // the user's own names and income types
   const { c } = useTheme();
   const month = useMonth();
   const user = useAuth((s) => s.user);
@@ -36,7 +38,8 @@ export default function IncomeTab() {
   const change = pctChange(total, prevTotal);
   const rule = { mode: user?.savingsMode ?? 'PERCENT', value: user?.savingsValue ?? 20 } as const;
   const saved = setAside(rule, total);
-  const parts = INCOME_TYPES.map((t) => ({ key: t, label: label(t), amount: all.filter((i) => i.type === t).reduce((a, i) => a + i.amount, 0), color: tagColor(c, 'INCOME', t) })).filter((p) => p.amount > 0);
+  const keys = [...types.all.map((x) => x.key), ...new Set(all.map((i) => i.type).filter((k) => !types.all.some((x) => x.key === k)))];
+  const parts = keys.map((t) => ({ key: t, label: types.label(t), amount: all.filter((i) => i.type === t).reduce((a, i) => a + i.amount, 0), color: tagColor(c, 'INCOME', t) })).filter((p) => p.amount > 0);
   const rows = type ? all.filter((i) => i.type === type) : all;
 
   // last month's recurring income that hasn't been logged yet (current month only)
@@ -91,7 +94,7 @@ export default function IncomeTab() {
           items={[...all]
             .sort((x, y) => y.amount - x.amount)
             .slice(0, 3)
-            .map((i) => ({ id: i.id, name: i.source, meta: `${label(i.type)} · ${dayLabel(i.date)}`, amount: `+${fmt(i.amount)}`, color: tagColor(c, 'INCOME', i.type), onPress: () => router.push(`/income-form?id=${i.id}`) }))}
+            .map((i) => ({ id: i.id, name: i.source, meta: `${types.label(i.type)} · ${dayLabel(i.date)}`, amount: `+${fmt(i.amount)}`, color: tagColor(c, 'INCOME', i.type), onPress: () => router.push(`/income-form?id=${i.id}`) }))}
         />
       )}
 
@@ -109,7 +112,7 @@ export default function IncomeTab() {
               last={n === rows.length - 1}
               kind="INCOME"
               title={i.source}
-              subtitle={`${label(i.type)} · ${dayLabel(i.date)}${i.note ? ` · ${i.note}` : ''}`}
+              subtitle={`${types.label(i.type)} · ${dayLabel(i.date)}${i.note ? ` · ${i.note}` : ''}`}
               amount={fmt(i.amount)}
               badge={i.recurring ? 'Monthly' : undefined}
               color={tagColor(c, 'INCOME', i.type)}

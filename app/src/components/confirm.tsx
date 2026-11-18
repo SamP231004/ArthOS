@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Animated, Easing, Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 import { create } from 'zustand';
 
 import { alpha, F, R, S, useTheme } from '@/theme';
+
+/** Lucide's log-out and trash (ISC), the same icons the website uses for these actions. */
+const ICONS = {
+  'log-out': ['m16 17 5-5-5-5', 'M21 12H9', 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4'],
+  trash: ['M3 6h18', 'M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6', 'M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2', 'M10 11v6', 'M14 11v6'],
+};
 
 /**
  * Themed confirmation sheet, replacing Android's grey system dialog. Call `confirm({...})` from anywhere; it resolves
@@ -16,8 +23,8 @@ type Options = {
   cancelText?: string;
   /** danger = destructive action (red button and icon) */
   tone?: 'danger' | 'default';
-  /** A single glyph shown in the icon circle. */
-  icon?: string;
+  /** 'log-out' or 'trash' draw an icon; any other string is shown as a single glyph. */
+  icon?: 'log-out' | 'trash' | (string & {});
 };
 
 /** `closing` keeps the sheet mounted while it animates away. */
@@ -87,7 +94,15 @@ export function ConfirmHost() {
         <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: c.lineStrong }} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.md, marginTop: S.xs }}>
           <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: alpha(tone, 0.1), alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: tone, fontSize: 20, fontFamily: F.uiSemibold }}>{shown.icon ?? (danger ? '!' : '?')}</Text>
+            {shown.icon && shown.icon in ICONS ? (
+              <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={tone} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                {ICONS[shown.icon as keyof typeof ICONS].map((d) => (
+                  <Path key={d} d={d} />
+                ))}
+              </Svg>
+            ) : (
+              <Text style={{ color: tone, fontSize: 20, fontFamily: F.uiSemibold }}>{shown.icon ?? (danger ? '!' : '?')}</Text>
+            )}
           </View>
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={{ color: c.fg, fontFamily: F.display, fontSize: 24, letterSpacing: -0.4 }}>{shown.title}</Text>

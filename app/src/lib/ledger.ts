@@ -8,7 +8,10 @@ const SLOTS = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8'] as const;
 /** Chart colour for an expense category or income type, the same slot the website uses. */
 export function tagColor(c: Palette, kind: 'INCOME' | 'EXPENSE', tag: string): string {
   const list: readonly string[] = kind === 'INCOME' ? INCOME_TYPES : EXPENSE_CATEGORIES;
-  return c[SLOTS[Math.max(0, list.indexOf(tag)) % 8]];
+  const i = list.indexOf(tag);
+  // the user's own categories (not in the built-in list) get a steady colour from their key, as on the web
+  const n = i >= 0 ? i : [...tag].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+  return c[SLOTS[n % 8]];
 }
 
 export function initials(name: string): string {

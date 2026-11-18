@@ -5,13 +5,14 @@ import { KeyboardAvoidingView, Switch, View } from 'react-native';
 import { DateField, isISODate } from '@/components/date-field';
 import { confirm } from '@/components/confirm';
 import { Screen } from '@/components/screen';
-import { Button, Chip, ErrorNote, Input, Loading, T } from '@/components/ui';
+import { Button, Chip, ErrorNote, FieldLabel, Input, Loading, T } from '@/components/ui';
 import { alpha, R, S, useTheme } from '@/theme';
 import { ApiError } from '@/lib/api';
 import { label, todayISO } from '@/lib/format';
 import { useCategorySuggestion, useDeleteExpense, useExpense, useSaveExpense } from '@/lib/queries';
 import { parseDraft, type ExpenseDraft } from '@/lib/scan';
-import { EXPENSE_CATEGORIES, PAYMENT_SOURCES, type Expense, type ExpenseCategory, type PaymentSource } from '@/lib/types';
+import { useCategories } from '@/lib/categories';
+import { PAYMENT_SOURCES, type Expense, type ExpenseCategory, type PaymentSource } from '@/lib/types';
 
 export default function ExpenseFormScreen() {
   const { id, draft } = useLocalSearchParams<{ id?: string; draft?: string }>();
@@ -22,12 +23,13 @@ export default function ExpenseFormScreen() {
 }
 
 function ExpenseForm({ initial, draft }: { initial?: Expense; draft?: ExpenseDraft }) {
+  const cats = useCategories('expense');
   const { c } = useTheme();
   const save = useSaveExpense();
   const del = useDeleteExpense();
   const [f, setF] = useState({
     amount: (initial?.amount ?? draft?.amount)?.toString() ?? '',
-    category: (initial?.category ?? draft?.category ?? 'FOOD') as ExpenseCategory,
+    category: (initial?.category ?? draft?.category ?? (cats.visible.some((x) => x.key === 'FOOD') ? 'FOOD' : cats.visible[0]?.key ?? 'OTHER')) as ExpenseCategory,
     merchant: initial?.merchant ?? draft?.merchant ?? '',
     paymentSource: (initial?.paymentSource ?? draft?.paymentSource ?? 'UPI') as PaymentSource,
     date: initial?.date ?? draft?.date ?? todayISO(),
@@ -68,6 +70,7 @@ function ExpenseForm({ initial, draft }: { initial?: Expense; draft?: ExpenseDra
         {draft && <DraftNote />}
         <Input
           label="Amount"
+          required
           autoFocus={!initial}
           keyboardType="decimal-pad"
           value={f.amount}
@@ -76,23 +79,24 @@ function ExpenseForm({ initial, draft }: { initial?: Expense; draft?: ExpenseDra
           error={fields.amount}
         />
         <View style={{ gap: S.sm }}>
-          <T variant="label">Category</T>
+          <FieldLabel text="Category" required />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.sm }}>
-            {EXPENSE_CATEGORIES.map((c) => (
+            {/* the user's categories; a hidden one only if it's already on this entry */}
+            {cats.options(category).map((x) => (
               <Chip
-                key={c}
-                label={label(c)}
-                active={category === c}
+                key={x.key}
+                label={x.emoji ? `${x.emoji} ${x.label}` : x.label}
+                active={category === x.key}
                 onPress={() => {
                   setPicked(true);
-                  setF({ ...f, category: c });
+                  setF({ ...f, category: x.key });
                 }}
               />
             ))}
           </View>
         </View>
         <View style={{ gap: S.sm }}>
-          <T variant="label">Paid via</T>
+          <FieldLabel text="Paid via" required />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.sm }}>
             {PAYMENT_SOURCES.map((p) => (
               <Chip key={p} label={label(p)} active={f.paymentSource === p} onPress={() => setF({ ...f, paymentSource: p })} />
@@ -105,7 +109,7 @@ function ExpenseForm({ initial, draft }: { initial?: Expense; draft?: ExpenseDra
             ✦ {label(suggested)} picked {suggestion?.source === 'LEARNED' ? 'from how you categorised this merchant before' : 'for this merchant'} — tap a category to change it.
           </T>
         )}
-        <DateField value={f.date} onChange={(date) => setF({ ...f, date })} error={fields.date} />
+        <DateField required value={f.date} onChange={(date) => setF({ ...f, date })} error={fields.date} />
         <Input label="Note" placeholder="Optional" value={f.note} onChangeText={(note) => setF({ ...f, note })} maxLength={500} />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <T>Recurring (rent, subscription, EMI…)</T>

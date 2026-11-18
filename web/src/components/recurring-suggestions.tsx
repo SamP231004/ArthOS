@@ -1,4 +1,5 @@
 "use client";
+import { useAnyCategoryLabel } from "@/lib/categories";
 
 import { Repeat, X } from "lucide-react";
 import { useState } from "react";
@@ -18,6 +19,7 @@ function readDismissed(): string[] {
 
 /** Automatic recurring detection: "these come back every month — mark them recurring?" (or dismiss for good). */
 export function RecurringSuggestions({ kind, currency }: { kind: "INCOME" | "EXPENSE"; currency: string }) {
+  const catLabel = useAnyCategoryLabel(); // the user's names for categories
   const { data } = useRecurringCandidates();
   const mark = useMarkRecurring();
   const [dismissed, setDismissed] = useState<string[]>(() => (typeof window === "undefined" ? [] : readDismissed()));
@@ -47,7 +49,7 @@ export function RecurringSuggestions({ kind, currency }: { kind: "INCOME" | "EXP
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{c.name}</p>
               <p className="text-xs text-subtle">
-                ~{money(c.typicalAmount, currency)} · around the {ordinal(c.dayOfMonth)} · {c.months} months{c.tag ? ` · ${label(c.tag)}` : ""}
+                ~{money(c.typicalAmount, currency)} · around the {ordinal(c.dayOfMonth)} · {c.months} months{c.tag ? ` · ${catLabel(c.tag)}` : ""}
               </p>
             </div>
             <button

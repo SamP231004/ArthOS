@@ -13,9 +13,9 @@ import { useAuth } from "@/lib/auth-store";
 import { currentMonth, dayLabel, label, money, shiftMonth, todayISO } from "@/lib/format";
 import { useDeleteExpense, useExpenses, useSaveExpense } from "@/lib/queries";
 import { useMonth } from "@/lib/ui-store";
-import { EXPENSE_CATEGORIES, PAYMENT_SOURCES, type Expense, type ExpenseCategory, type PaymentSource } from "@/lib/types";
+import { useCategories } from "@/lib/categories";
+import { PAYMENT_SOURCES, type Expense, type ExpenseCategory, type PaymentSource } from "@/lib/types";
 
-const catColor = (c: ExpenseCategory) => `var(--c${(EXPENSE_CATEGORIES.indexOf(c) % 8) + 1})`;
 type Key = "date" | "merchant" | "category" | "paymentSource" | "amount";
 
 export default function ExpensesPage() {
@@ -26,6 +26,8 @@ export default function ExpensesPage() {
   const prev = useExpenses(shiftMonth(month, -1));
   const del = useDeleteExpense();
   const save = useSaveExpense();
+  const cats = useCategories("expense"); // the user's own names, colours and categories
+  const catColor = cats.color;
   const [editing, setEditing] = useState<Expense | null | undefined>(undefined);
   const [category, setCategory] = useState<ExpenseCategory | null>(null);
   const [via, setVia] = useState<PaymentSource | "">("");
@@ -34,7 +36,7 @@ export default function ExpensesPage() {
   const [sort, setSort] = useState<Sort<Key>>({ key: "date", dir: -1 });
 
   const all = useMemo(() => data ?? [], [data]);
-  const name = (e: Expense) => e.merchant ?? label(e.category);
+  const name = (e: Expense) => e.merchant ?? cats.label(e.category);
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
     const r = all.filter(
@@ -57,7 +59,9 @@ export default function ExpensesPage() {
   const total = all.reduce((s, e) => s + e.amount, 0);
   const prevTotal = (prev.data ?? []).reduce((s, e) => s + e.amount, 0);
   const days = new Set(all.map((e) => e.date)).size;
-  const byCat = EXPENSE_CATEGORIES.map((c) => ({ key: c, label: label(c), amount: all.filter((e) => e.category === c).reduce((s, e) => s + e.amount, 0), color: catColor(c) }))
+  // every category the user has, plus any key still on an entry but no longer in their list
+  const catKeys = [...cats.all.map((c) => c.key), ...new Set(all.map((e) => e.category).filter((k) => !cats.all.some((c) => c.key === k)))];
+  const byCat = catKeys.map((c) => ({ key: c, label: cats.label(c), amount: all.filter((e) => e.category === c).reduce((s, e) => s + e.amount, 0), color: catColor(c) }))
     .filter((p) => p.amount > 0)
     .sort((a, b) => b.amount - a.amount);
   const change = pctChange(total, prevTotal);
@@ -72,7 +76,7 @@ export default function ExpensesPage() {
         <MonthPicker />
         <ExportButton
           filename={`arthos-expenses-${month}.csv`}
-          rows={[["Date", "Merchant", "Category", "Paid via", "Recurring", "Amount", "Note"], ...rows.map((e) => [e.date, e.merchant ?? "", label(e.category), label(e.paymentSource), e.recurring ? "Yes" : "No", e.amount, e.note ?? ""])]}
+          rows={[["Date", "Merchant", "Category", "Paid via", "Recurring", "Amount", "Note"], ...rows.map((e) => [e.date, e.merchant ?? "", cats.label(e.category), label(e.paymentSource), e.recurring ? "Yes" : "No", e.amount, e.note ?? ""])]}
         />
         <ScanImport />
         <Button onClick={() => setEditing(null)}>
@@ -177,7 +181,7 @@ export default function ExpensesPage() {
                         </div>
                       </td>
                       <td className="px-3 py-3.5">
-                        <span className="inline-flex items-center gap-1.5 text-fg-2"><span className="h-2 w-2 rounded-full" style={{ background: catColor(e.category) }} />{label(e.category)}</span>
+                        <span className="inline-flex items-center gap-1.5 text-fg-2"><span className="h-2 w-2 rounded-full" style={{ background: catColor(e.category) }} />{cats.label(e.category)}</span>
                       </td>
                       <td className="px-3 py-3.5 text-muted">{label(e.paymentSource)}</td>
                       <td className="tabular px-3 py-3.5 text-right font-semibold">−{fmt(e.amount)}</td>
@@ -207,7 +211,7 @@ export default function ExpensesPage() {
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-[11px] font-semibold" style={{ background: `color-mix(in oklab, ${catColor(e.category)} 14%, transparent)`, color: catColor(e.category) }}>{initials(name(e))}</span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">{name(e)}</span>
-                      <span className="block truncate text-xs text-subtle">{label(e.category)} · {label(e.paymentSource)} · {dayLabel(e.date)}</span>
+                      <span className="block truncate text-xs text-subtle">{cats.label(e.category)} · {label(e.paymentSource)} · {dayLabel(e.date)}</span>
                     </span>
                     <span className="text-right">
                       <span className="tabular block font-semibold">−{fmt(e.amount)}</span>

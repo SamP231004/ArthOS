@@ -1,3 +1,4 @@
+import { useAnyCategoryLabel } from '@/lib/categories';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
@@ -7,7 +8,7 @@ import { MonthPicker } from '@/components/month-picker';
 import { Screen } from '@/components/screen';
 import { Card, ErrorNote, Loading, Segmented, T } from '@/components/ui';
 import { useAuth } from '@/lib/auth-store';
-import { dayLabel, label, money } from '@/lib/format';
+import { dayLabel, money } from '@/lib/format';
 import { healthColor } from '@/lib/health';
 import { useInsights } from '@/lib/queries';
 import type { Insights } from '@/lib/types';
@@ -189,6 +190,7 @@ function Health({ d }: { d: Insights }) {
 // ------------------------------------------------------------------ spending
 
 function Spending({ d, fmt }: { d: Insights; fmt: Fmt }) {
+  const catLabel = useAnyCategoryLabel(); // the user's names for categories
   const { c } = useTheme();
   const max = Math.max(...d.trends.map((t) => Math.max(t.thisMonth, t.typical)), 1);
   return (
@@ -217,7 +219,7 @@ function Spending({ d, fmt }: { d: Insights; fmt: Fmt }) {
             return (
               <View key={t.category} style={{ gap: 6 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ color: c.fg, fontFamily: F.uiMedium, fontSize: 14 }}>{label(t.category)}</Text>
+                  <Text style={{ color: c.fg, fontFamily: F.uiMedium, fontSize: 14 }}>{catLabel(t.category)}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ color: c.fg, fontFamily: F.uiSemibold, fontSize: 13.5, fontVariant: ['tabular-nums'] }}>{fmt(t.thisMonth)}</Text>
                     <Text style={{ width: 44, textAlign: 'right', color: notable ? (up ? c.expense : c.income) : c.subtle, fontFamily: F.uiSemibold, fontSize: 11.5 }}>
@@ -254,7 +256,7 @@ function Spending({ d, fmt }: { d: Insights; fmt: Fmt }) {
                 ) : null}
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: c.fg, fontFamily: F.uiMedium, fontSize: 14 }} numberOfLines={1}>{a.merchant}</Text>
-                  <T variant="small" numberOfLines={1}>{label(a.category)} · {dayLabel(a.date)}</T>
+                  <T variant="small" numberOfLines={1}>{catLabel(a.category)} · {dayLabel(a.date)}</T>
                 </View>
                 <Text style={{ color: c.fg, fontFamily: F.uiSemibold, fontSize: 14 }}>{fmt(a.amount)}</Text>
               </View>
@@ -269,6 +271,7 @@ function Spending({ d, fmt }: { d: Insights; fmt: Fmt }) {
 // ------------------------------------------------------------------ recurring
 
 function Recurring({ d, fmt }: { d: Insights; fmt: Fmt }) {
+  const catLabel = useAnyCategoryLabel(); // the user's names for categories
   const { c } = useTheme();
   const l = d.leakage;
   if (l.items.length === 0) {
@@ -301,7 +304,7 @@ function Recurring({ d, fmt }: { d: Insights; fmt: Fmt }) {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ color: c.fg, fontFamily: F.uiMedium, fontSize: 14 }} numberOfLines={1}>{i.name}</Text>
-              <T variant="small">{label(i.category)}{rise ? ` · was ${fmt(rise.before)}` : ''}</T>
+              <T variant="small">{catLabel(i.category)}{rise ? ` · was ${fmt(rise.before)}` : ''}</T>
             </View>
             <Text style={{ color: rise ? c.warn : c.fg, fontFamily: F.uiSemibold, fontSize: 14 }}>{fmt(i.amount)}</Text>
           </View>

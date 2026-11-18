@@ -171,16 +171,16 @@ function Form({ cls, onBack }: { cls: AssetClass; onBack: () => void }) {
 
         {cls === 'BOND' && (
           <View style={{ gap: S.md }}>
-            <Input label="Bond name" value={name} onChangeText={setName} placeholder="GOI 7.18% 2033" />
+            <Input label="Bond name" required value={name} onChangeText={setName} placeholder="GOI 7.18% 2033" />
             <View style={{ flexDirection: 'row', gap: S.sm }}>
               <Chip label="Government" active={bondType === 'GOVERNMENT'} onPress={() => setBondType('GOVERNMENT')} />
               <Chip label="Corporate" active={bondType === 'CORPORATE'} onPress={() => setBondType('CORPORATE')} />
             </View>
             <View style={{ flexDirection: 'row', gap: S.md }}>
-              <View style={{ flex: 1 }}><Input label="Face value" keyboardType="decimal-pad" value={faceValue} onChangeText={(t) => setFaceValue(num(t))} /></View>
-              <View style={{ flex: 1 }}><Input label="Coupon %" keyboardType="decimal-pad" value={coupon} onChangeText={(t) => setCoupon(num(t))} placeholder="7.18" /></View>
+              <View style={{ flex: 1 }}><Input label="Face value" required keyboardType="decimal-pad" value={faceValue} onChangeText={(t) => setFaceValue(num(t))} /></View>
+              <View style={{ flex: 1 }}><Input label="Coupon %" required keyboardType="decimal-pad" value={coupon} onChangeText={(t) => setCoupon(num(t))} placeholder="7.18" /></View>
             </View>
-            <DateField label="Maturity date" value={maturity} onChange={setMaturity} />
+            <DateField label="Maturity date" required value={maturity} onChange={setMaturity} />
           </View>
         )}
 
@@ -189,7 +189,7 @@ function Form({ cls, onBack }: { cls: AssetClass; onBack: () => void }) {
             <View style={{ flexDirection: 'row', gap: S.md }}>
               <View style={{ flex: 1 }}>
                 {cls === 'MUTUAL_FUND' ? (
-                  <Input label="Amount invested" keyboardType="decimal-pad" value={amount} onChangeText={(t) => setAmount(num(t))} hint={units != null && !qty ? `≈ ${units.toFixed(3)} units` : undefined} />
+                  <Input label="Amount invested" required keyboardType="decimal-pad" value={amount} onChangeText={(t) => setAmount(num(t))} hint={units != null && !qty ? `≈ ${units.toFixed(3)} units` : undefined} />
                 ) : (
                   <Input label={cls === 'GOLD' ? 'Grams' : cls === 'BOND' ? 'No. of bonds' : 'Shares'} keyboardType="decimal-pad" value={qty} onChangeText={(t) => setQty(num(t))} />
                 )}
@@ -199,7 +199,7 @@ function Form({ cls, onBack }: { cls: AssetClass; onBack: () => void }) {
               </View>
             </View>
             {cls === 'MUTUAL_FUND' && <Input label="…or units (optional)" keyboardType="decimal-pad" value={qty} onChangeText={(t) => setQty(num(t))} />}
-            <DateField label="Purchase date" value={date} onChange={(d) => { setDate(d); if (d !== todayISO()) setPrice(''); }} />
+            <DateField label="Purchase date" required value={date} onChange={(d) => { setDate(d); if (d !== todayISO()) setPrice(''); }} />
             {cls === 'BOND' && <Input label="Current price per bond (optional)" keyboardType="decimal-pad" value={manual} onChangeText={(t) => setManual(num(t))} hint="Bonds have no live feed — else valued at face value" />}
             <View style={{ gap: S.sm }}>
               <T variant="label">Time horizon</T>

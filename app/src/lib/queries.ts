@@ -77,11 +77,12 @@ export function useUpdateProfile() {
   const qc = useQueryClient();
   const setUser = useAuth((s) => s.setUser);
   return useMutation({
-    mutationFn: (patch: Partial<Pick<User, "name" | "currency" | "timezone" | "monthlyIncomeTarget" | "savingsMode" | "savingsValue" | "savingsStartingBalance" | "onboardingCompleted">>) =>
+    mutationFn: (patch: Partial<Pick<User, "name" | "currency" | "timezone" | "monthlyIncomeTarget" | "savingsMode" | "savingsValue" | "savingsStartingBalance" | "onboardingCompleted" | "goldFundsAsGold">>) =>
       api<User>("/api/users/me", { method: "PATCH", body: patch }),
     onSuccess: (user) => {
       setUser(user);
       qc.invalidateQueries({ queryKey: ["summary"] });
+      qc.invalidateQueries({ queryKey: ["portfolio"] }); // the gold setting regroups holdings
     },
   });
 }

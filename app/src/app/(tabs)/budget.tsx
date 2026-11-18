@@ -7,9 +7,10 @@ import { Screen } from '@/components/screen';
 import { Badge, Button, Card, Chip, ErrorNote, Input, Loading, T } from '@/components/ui';
 import { useAuth } from '@/lib/auth-store';
 import { explain, MODE_META, STATUS_META, warningFor, type Tone } from '@/lib/budget-meta';
-import { label, money, monthLabel } from '@/lib/format';
+import { money, monthLabel } from '@/lib/format';
 import { useBudget, useSaveBudget, useSummary } from '@/lib/queries';
-import { BUDGET_MODES, EXPENSE_CATEGORIES, type BudgetMode, type BudgetStatus, type ExpenseCategory } from '@/lib/types';
+import { useCategories } from '@/lib/categories';
+import { BUDGET_MODES, type BudgetMode, type BudgetStatus, type ExpenseCategory } from '@/lib/types';
 import { useMonth } from '@/lib/ui-store';
 import { alpha, F, R, S, useStyles, useTheme, type Palette } from '@/theme';
 
@@ -235,6 +236,7 @@ function Calendar({ b, fmt }: { b: BudgetStatus; fmt: (n: number) => string }) {
 }
 
 function BudgetEditor({ month, current, onDone, canCancel }: { month: string; current: BudgetStatus; onDone: () => void; canCancel: boolean }) {
+  const cats = useCategories('expense');
   const { c } = useTheme();
   const s = useStyles(make);
   const save = useSaveBudget(month);
@@ -248,7 +250,7 @@ function BudgetEditor({ month, current, onDone, canCancel }: { month: string; cu
         <T variant="title" style={{ fontSize: 26 }}>{current.configured ? 'Edit budget' : 'How much can you spend today?'}</T>
         <T variant="muted">Set one monthly limit. ArthOS turns it into a daily number and adjusts when real life happens.</T>
       </View>
-      <Input label="Monthly spending limit" keyboardType="decimal-pad" value={limit} onChangeText={(t) => setLimit(t.replace(/[^0-9.]/g, ''))} placeholder="30000" style={{ fontSize: 22, fontFamily: F.uiSemibold }} />
+      <Input label="Monthly spending limit" required keyboardType="decimal-pad" value={limit} onChangeText={(t) => setLimit(t.replace(/[^0-9.]/g, ''))} placeholder="30000" style={{ fontSize: 22, fontFamily: F.uiSemibold }} />
       <View style={{ gap: S.sm }}>
         <T variant="label">Mode</T>
         {BUDGET_MODES.map((m) => (
@@ -261,8 +263,9 @@ function BudgetEditor({ month, current, onDone, canCancel }: { month: string; cu
       <View style={{ gap: S.sm }}>
         <T variant="label">Don&apos;t count these fixed costs</T>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.sm }}>
-          {EXPENSE_CATEGORIES.map((cat) => (
-            <Chip key={cat} label={label(cat)} active={excluded.includes(cat)} onPress={() => setExcluded((xs) => (xs.includes(cat) ? xs.filter((x) => x !== cat) : [...xs, cat]))} />
+          {/* the user's categories (a hidden one only if it's already left out of the budget) */}
+          {cats.all.filter((x) => !x.hidden || excluded.includes(x.key)).map(({ key: cat }) => (
+            <Chip key={cat} label={cats.label(cat)} active={excluded.includes(cat)} onPress={() => setExcluded((xs) => (xs.includes(cat) ? xs.filter((x) => x !== cat) : [...xs, cat]))} />
           ))}
         </View>
       </View>

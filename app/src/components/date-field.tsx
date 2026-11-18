@@ -13,13 +13,14 @@ function yesterdayISO() {
 export const isISODate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(new Date(v).getTime());
 
 /** Date entry without a native picker dependency: quick chips + YYYY-MM-DD text. */
-export function DateField({ value, onChange, error, label = 'Date' }: { value: string; onChange: (v: string) => void; error?: string; label?: string }) {
+export function DateField({ value, onChange, error, label = 'Date', required }: { value: string; onChange: (v: string) => void; error?: string; label?: string; required?: boolean }) {
   const today = todayISO();
   const yesterday = yesterdayISO();
   return (
     <View style={{ gap: S.sm }}>
       <Input
         label={label}
+        required={required}
         value={value}
         onChangeText={onChange}
         placeholder="YYYY-MM-DD"

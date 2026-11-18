@@ -109,7 +109,10 @@ export function ExportButton({ filename, rows }: { filename: string; rows: (stri
 /** Chart colour for an expense category or income type, matching the Income/Expenses ledgers. */
 export function tagColor(kind: "INCOME" | "EXPENSE", tag: string): string {
   const list: readonly string[] = kind === "INCOME" ? INCOME_TYPES : EXPENSE_CATEGORIES;
-  return `var(--c${(Math.max(0, list.indexOf(tag)) % 8) + 1})`;
+  const i = list.indexOf(tag);
+  // the user's own categories (not in the built-in list) get a steady colour from their key
+  const n = i >= 0 ? i : [...tag].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+  return `var(--c${(n % 8) + 1})`;
 }
 
 export function initials(name: string) {

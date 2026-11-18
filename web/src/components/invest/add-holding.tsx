@@ -155,7 +155,7 @@ function HoldingForm({ cls, onBack, onDone }: { cls: AssetClass; onBack: () => v
 
       {cls === "BOND" && (
         <>
-          <Field label="Bond name">
+          <Field label="Bond name" required>
             <Input required value={name} onChange={(e) => setName(e.target.value)} placeholder="GOI 7.18% 2033 · or · XYZ NCD 8.4% 2028" maxLength={140} />
           </Field>
           <div className="grid grid-cols-2 gap-2">
@@ -163,9 +163,9 @@ function HoldingForm({ cls, onBack, onDone }: { cls: AssetClass; onBack: () => v
             <Chip active={bondType === "CORPORATE"} onClick={() => setBondType("CORPORATE")}>Corporate</Chip>
           </div>
           <div className="grid grid-cols-3 gap-3">
-            <Field label="Face value"><Input type="number" min="0.01" step="0.01" required value={faceValue} onChange={(e) => setFaceValue(e.target.value)} /></Field>
-            <Field label="Coupon %"><Input type="number" min="0" max="50" step="0.01" required value={coupon} onChange={(e) => setCoupon(e.target.value)} placeholder="7.18" /></Field>
-            <Field label="Maturity"><Input type="date" required value={maturity} onChange={(e) => setMaturity(e.target.value)} /></Field>
+            <Field label="Face value" required><Input type="number" min="0.01" step="0.01" required value={faceValue} onChange={(e) => setFaceValue(e.target.value)} /></Field>
+            <Field label="Coupon %" required><Input type="number" min="0" max="50" step="0.01" required value={coupon} onChange={(e) => setCoupon(e.target.value)} placeholder="7.18" /></Field>
+            <Field label="Maturity" required><Input type="date" required value={maturity} onChange={(e) => setMaturity(e.target.value)} /></Field>
           </div>
         </>
       )}
@@ -174,7 +174,7 @@ function HoldingForm({ cls, onBack, onDone }: { cls: AssetClass; onBack: () => v
         <>
           <div className="grid grid-cols-3 gap-3">
             {cls === "MUTUAL_FUND" ? (
-              <Field label="Amount invested" hint={units != null && !qty ? `≈ ${units.toFixed(3)} units` : undefined}>
+              <Field label="Amount invested" required hint={units != null && !qty ? `≈ ${units.toFixed(3)} units` : undefined}>
                 <Input type="number" min="1" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="10000" />
               </Field>
             ) : (
@@ -185,7 +185,7 @@ function HoldingForm({ cls, onBack, onDone }: { cls: AssetClass; onBack: () => v
             <Field label={cls === "GOLD" ? "Price / gram" : cls === "MUTUAL_FUND" ? "NAV paid" : "Price paid"}>
               <Input type="number" min="0" step="any" required value={effectivePrice} onChange={(e) => setPrice(e.target.value)} />
             </Field>
-            <Field label="Date">
+            <Field label="Date" required>
               <Input type="date" required max={todayISO()} value={date} onChange={(e) => { setDate(e.target.value); if (e.target.value !== todayISO()) setPrice(""); }} />
             </Field>
           </div>

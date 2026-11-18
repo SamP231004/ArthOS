@@ -4,11 +4,10 @@ import { ScanLine, Sparkles } from "lucide-react";
 import { useDeferredValue, useState } from "react";
 import { Button, ErrorNote, Field, Input, Modal, Select } from "./ui";
 import { ApiError } from "@/lib/api";
+import { useCategories } from "@/lib/categories";
 import { label, todayISO } from "@/lib/format";
 import { useCategorySuggestion, useDeleteExpense, useDeleteIncome, useSaveExpense, useSaveIncome } from "@/lib/queries";
 import {
-  EXPENSE_CATEGORIES,
-  INCOME_TYPES,
   PAYMENT_SOURCES,
   type Expense,
   type ExpenseCategory,
@@ -54,10 +53,11 @@ export function IncomeModal({ open, onClose, initial, draft }: { open: boolean; 
 function IncomeForm({ initial, draft, onDone }: { initial?: Income | null; draft?: Partial<IncomeInput>; onDone: () => void }) {
   const save = useSaveIncome();
   const del = useDeleteIncome();
+  const types = useCategories("income");
   const [f, setF] = useState({
     amount: (initial?.amount ?? draft?.amount)?.toString() ?? "",
     source: initial?.source ?? draft?.source ?? "",
-    type: (initial?.type ?? draft?.type ?? "SALARY") as IncomeType,
+    type: (initial?.type ?? draft?.type ?? (types.visible.some((t) => t.key === "SALARY") ? "SALARY" : types.visible[0]?.key ?? "OTHER")) as IncomeType,
     date: initial?.date ?? draft?.date ?? todayISO(),
     note: initial?.note ?? draft?.note ?? "",
     recurring: initial?.recurring ?? false,
@@ -77,22 +77,22 @@ function IncomeForm({ initial, draft, onDone }: { initial?: Income | null; draft
   return (
     <form onSubmit={submit} className="space-y-4">
       {draft && <DraftNote />}
-      <Field label="Amount" error={err.fields.amount}>
+      <Field label="Amount" required error={err.fields.amount}>
         <Input autoFocus type="number" inputMode="decimal" min="0.01" step="0.01" required value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} className="tabular !py-3 text-2xl font-semibold" />
       </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Type">
+        <Field label="Type" required>
           <Select value={f.type} onChange={(e) => setF({ ...f, type: e.target.value as IncomeType })}>
-            {INCOME_TYPES.map((t) => (
-              <option key={t} value={t}>{label(t)}</option>
+            {types.options(f.type).map((t) => (
+              <option key={t.key} value={t.key}>{t.emoji ? `${t.emoji}  ` : ""}{t.label}</option>
             ))}
           </Select>
         </Field>
-        <Field label="Date" error={err.fields.date}>
+        <Field label="Date" required error={err.fields.date}>
           <Input type="date" required value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} />
         </Field>
       </div>
-      <Field label="Source" error={err.fields.source}>
+      <Field label="Source" required error={err.fields.source}>
         <Input required maxLength={120} placeholder="Employer, client, bank…" value={f.source} onChange={(e) => setF({ ...f, source: e.target.value })} />
       </Field>
       <Field label="Note" error={err.fields.note}>
@@ -142,9 +142,10 @@ const QUICK_CATEGORIES: ExpenseCategory[] = ["FOOD", "GROCERIES", "TRANSPORT", "
 function ExpenseForm({ initial, draft, onDone }: { initial?: Expense | null; draft?: Partial<ExpenseInput>; onDone: () => void }) {
   const save = useSaveExpense();
   const del = useDeleteExpense();
+  const cats = useCategories("expense");
   const [f, setF] = useState({
     amount: (initial?.amount ?? draft?.amount)?.toString() ?? "",
-    category: (initial?.category ?? draft?.category ?? "FOOD") as ExpenseCategory,
+    category: (initial?.category ?? draft?.category ?? (cats.visible.some((c) => c.key === "FOOD") ? "FOOD" : cats.visible[0]?.key ?? "OTHER")) as ExpenseCategory,
     merchant: initial?.merchant ?? draft?.merchant ?? "",
     paymentSource: (initial?.paymentSource ?? draft?.paymentSource ?? "UPI") as PaymentSource,
     date: initial?.date ?? draft?.date ?? todayISO(),
@@ -157,6 +158,8 @@ function ExpenseForm({ initial, draft, onDone }: { initial?: Expense | null; dra
   const suggestion = useCategorySuggestion(picked ? "" : merchantQuery).data;
   const suggested = !picked && suggestion?.category ? suggestion.category : undefined;
   const category = suggested ?? f.category;
+  const quick = [...QUICK_CATEGORIES.filter((c) => cats.visible.some((v) => v.key === c)), ...cats.visible.filter((c) => !c.builtIn).map((c) => c.key)].slice(0, 9);
+  const more = cats.options(category).filter((c) => !quick.includes(c.key));
   const pick = (c: ExpenseCategory) => {
     setPicked(true);
     setF({ ...f, category: c });
@@ -179,44 +182,46 @@ function ExpenseForm({ initial, draft, onDone }: { initial?: Expense | null; dra
   return (
     <form onSubmit={submit} className="space-y-4">
       {draft && <DraftNote />}
-      <Field label="Amount" error={err.fields.amount}>
+      <Field label="Amount" required error={err.fields.amount}>
         <Input autoFocus type="number" inputMode="decimal" min="0.01" step="0.01" required value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} className="tabular !py-3 text-2xl font-semibold" />
       </Field>
       <div>
-        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-subtle">Category</span>
+        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-subtle">
+          Category<span aria-hidden="true" className="ml-0.5 text-expense">*</span>
+        </span>
         <div className="mt-1.5 flex flex-wrap gap-2">
-          {QUICK_CATEGORIES.map((c) => (
+          {quick.map((c) => (
             <button
               type="button"
               key={c}
               onClick={() => pick(c)}
               className={`rounded-full border px-3 py-1 text-xs transition ${category === c ? "border-brand bg-brand/15 text-brand" : "border-line-strong text-muted hover:text-fg"}`}
             >
-              {label(c)}
+              {cats.emoji(c) ? `${cats.emoji(c)} ` : ""}{cats.label(c)}
             </button>
           ))}
           <select
             aria-label="More categories"
-            value={QUICK_CATEGORIES.includes(category) ? "" : category}
+            value={quick.includes(category) ? "" : category}
             onChange={(e) => e.target.value && pick(e.target.value as ExpenseCategory)}
-            className={`rounded-full border bg-transparent px-3 py-1 text-xs outline-none transition ${QUICK_CATEGORIES.includes(category) ? "border-line-strong text-muted" : "border-brand bg-brand/15 text-brand"}`}
+            className={`rounded-full border bg-transparent px-3 py-1 text-xs outline-none transition ${quick.includes(category) ? "border-line-strong text-muted" : "border-brand bg-brand/15 text-brand"}`}
           >
             <option value="">More…</option>
-            {EXPENSE_CATEGORIES.filter((c) => !QUICK_CATEGORIES.includes(c)).map((c) => (
-              <option key={c} value={c}>{label(c)}</option>
+            {more.map((c) => (
+              <option key={c.key} value={c.key}>{c.emoji ? `${c.emoji}  ` : ""}{c.label}</option>
             ))}
           </select>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Paid via">
+        <Field label="Paid via" required>
           <Select value={f.paymentSource} onChange={(e) => setF({ ...f, paymentSource: e.target.value as PaymentSource })}>
             {PAYMENT_SOURCES.map((p) => (
               <option key={p} value={p}>{label(p)}</option>
             ))}
           </Select>
         </Field>
-        <Field label="Date" error={err.fields.date}>
+        <Field label="Date" required error={err.fields.date}>
           <Input type="date" required value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} />
         </Field>
       </div>

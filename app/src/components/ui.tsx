@@ -78,12 +78,12 @@ export function Button({
   );
 }
 
-export function Input({ label, error, hint, style, accessory, ...rest }: TextInputProps & { label: string; error?: string; hint?: string; accessory?: React.ReactNode }) {
+export function Input({ label, error, hint, style, accessory, required, ...rest }: TextInputProps & { label: string; error?: string; hint?: string; accessory?: React.ReactNode; required?: boolean }) {
   const { c } = useTheme();
   const s = useStyles(makeField);
   return (
     <View style={{ gap: 6 }}>
-      <T variant="label">{label}</T>
+      <FieldLabel text={label} required={required} />
       <View style={{ justifyContent: 'center' }}>
         <TextInput placeholderTextColor={c.subtle} style={[s.input, error ? { borderColor: c.expense } : null, accessory ? { paddingRight: 64 } : null, style]} {...rest} />
         {accessory ? <View style={{ position: 'absolute', right: 6 }}>{accessory}</View> : null}
@@ -208,3 +208,14 @@ const makeCard = (c: Palette) =>
     card: { backgroundColor: c.surface, borderColor: c.line, borderWidth: 1, borderRadius: R.xl, padding: S.lg, overflow: 'hidden' },
     glowBorder: { borderColor: `${c.glow}0.35)`, borderRadius: R.xxl, padding: S.xl },
   });
+
+/** A form field's caption; `required` adds a red asterisk (read out as "required"). */
+export function FieldLabel({ text, required }: { text: string; required?: boolean }) {
+  const { c } = useTheme();
+  return (
+    <T variant="label" accessibilityLabel={required ? `${text}, required` : text}>
+      {text}
+      {required ? <Text style={{ color: c.expense }}> *</Text> : null}
+    </T>
+  );
+}

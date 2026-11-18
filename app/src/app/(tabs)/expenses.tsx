@@ -13,14 +13,16 @@ import { useAuth } from '@/lib/auth-store';
 import { currentMonth, dayLabel, label, money, shiftMonth, todayISO } from '@/lib/format';
 import { pctChange, sameDayIn, tagColor } from '@/lib/ledger';
 import { useExpenses, useSaveExpense } from '@/lib/queries';
-import { EXPENSE_CATEGORIES, type Expense, type ExpenseCategory } from '@/lib/types';
+import { useCategories } from '@/lib/categories';
+import { type Expense, type ExpenseCategory } from '@/lib/types';
 import { useMonth } from '@/lib/ui-store';
 import { alpha, F, R, S, useTheme } from '@/theme';
 
 type SortKey = 'date' | 'amount';
-const name = (e: Expense) => e.merchant ?? label(e.category);
 
 export default function ExpensesTab() {
+  const cats = useCategories('expense'); // the user's own names and categories
+  const name = (e: Expense) => e.merchant ?? cats.label(e.category);
   const { c } = useTheme();
   const month = useMonth();
   const cur = useAuth((s) => s.user?.currency ?? 'INR');
@@ -40,7 +42,9 @@ export default function ExpensesTab() {
   const prevTotal = (prev.data ?? []).reduce((a, e) => a + e.amount, 0);
   const change = pctChange(total, prevTotal);
   const activeDays = new Set(all.map((e) => e.date)).size;
-  const parts = EXPENSE_CATEGORIES.map((k) => ({ key: k, label: label(k), amount: all.filter((e) => e.category === k).reduce((a, e) => a + e.amount, 0), color: tagColor(c, 'EXPENSE', k) }))
+  // every category the user has, plus any key still on an entry but no longer in their list
+  const keys = [...cats.all.map((x) => x.key), ...new Set(all.map((e) => e.category).filter((k) => !cats.all.some((x) => x.key === k)))];
+  const parts = keys.map((k) => ({ key: k, label: cats.label(k), amount: all.filter((e) => e.category === k).reduce((a, e) => a + e.amount, 0), color: tagColor(c, 'EXPENSE', k) }))
     .filter((p) => p.amount > 0)
     .sort((a, b) => b.amount - a.amount);
   const top = parts[0];
@@ -72,7 +76,7 @@ export default function ExpensesTab() {
       last={n === list.length - 1}
       kind="EXPENSE"
       title={name(e)}
-      subtitle={`${label(e.category)} · ${label(e.paymentSource)}${sort === 'amount' ? ` · ${dayLabel(e.date)}` : ''}${e.note ? ` · ${e.note}` : ''}`}
+      subtitle={`${cats.label(e.category)} · ${label(e.paymentSource)}${sort === 'amount' ? ` · ${dayLabel(e.date)}` : ''}${e.note ? ` · ${e.note}` : ''}`}
       amount={fmt(e.amount)}
       badge={e.recurring ? 'Recurring' : undefined}
       color={tagColor(c, 'EXPENSE', e.category)}
@@ -117,7 +121,7 @@ export default function ExpensesTab() {
         items={[...all]
           .sort((x, y) => y.amount - x.amount)
           .slice(0, 3)
-          .map((e) => ({ id: e.id, name: name(e), meta: `${label(e.category)} · ${dayLabel(e.date)}`, amount: `−${fmt(e.amount)}`, color: tagColor(c, 'EXPENSE', e.category), onPress: () => router.push(`/expense-form?id=${e.id}`) }))}
+          .map((e) => ({ id: e.id, name: name(e), meta: `${cats.label(e.category)} · ${dayLabel(e.date)}`, amount: `−${fmt(e.amount)}`, color: tagColor(c, 'EXPENSE', e.category), onPress: () => router.push(`/expense-form?id=${e.id}`) }))}
       />
 
       <TextInput

@@ -1,7 +1,8 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronRight, Globe2, LayoutGrid, LogOut, Palette, PiggyBank, Smartphone, Trash2, UserRound } from "lucide-react";
+import { Check, ChevronRight, Coins, Globe2, LayoutGrid, LogOut, Palette, PiggyBank, Smartphone, Tags, Trash2, UserRound } from "lucide-react";
+import { CategoryManager } from "@/components/settings/category-manager";
 import Link from "next/link";
 import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
@@ -112,28 +113,29 @@ export default function SettingsPage() {
       </section>
 
       <div className="grid items-start gap-6 lg:grid-cols-2">
-        <Card icon={UserRound} title="Profile" desc="How ArthOS greets you.">
-          <Field label="Full name">
-            <Input required maxLength={80} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
-          </Field>
-          <Field label="Email" hint={user.demo ? "Demo accounts use a generated address" : "Email can't be changed yet"}>
-            <Input value={user.email} disabled />
-          </Field>
-        </Card>
-
-        <Card icon={Palette} title="Appearance" desc="Applies on this device; the app has its own switch.">
-          <ThemePicker />
-        </Card>
-
-        <Card icon={PiggyBank} title="Save first" desc="Set aside the moment income arrives. Budgets and “left to spend” use what remains.">
-          <SavingsRuleField mode={f.savingsMode} value={f.savingsValue} currency={f.currency} onChange={(savingsMode, savingsValue) => setF({ ...f, savingsMode, savingsValue })} />
-          <SaveFirstPreview mode={f.savingsMode} value={Number(f.savingsValue) || 0} currency={f.currency} />
-          <Field label="Savings you already had" hint="Opens your savings account; each month's saved-first amount is added and carried forward.">
-            <Input type="number" min={0} step="any" inputMode="decimal" value={f.startingBalance} onChange={(e) => setF({ ...f, startingBalance: e.target.value })} className="tabular" />
-          </Field>
-        </Card>
-
+        {/* left: everyday preferences · right: the long category list, devices and the account */}
         <div className="space-y-6">
+          <Card icon={UserRound} title="Profile" desc="How ArthOS greets you.">
+            <Field label="Full name">
+              <Input required maxLength={80} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+            </Field>
+            <Field label="Email" hint={user.demo ? "Demo accounts use a generated address" : "Email can't be changed yet"}>
+              <Input value={user.email} disabled />
+            </Field>
+          </Card>
+
+          <Card icon={Palette} title="Appearance" desc="Applies on this device; the app has its own switch.">
+            <ThemePicker />
+          </Card>
+
+          <Card icon={PiggyBank} title="Save first" desc="Set aside the moment income arrives. Budgets and “left to spend” use what remains.">
+            <SavingsRuleField mode={f.savingsMode} value={f.savingsValue} currency={f.currency} onChange={(savingsMode, savingsValue) => setF({ ...f, savingsMode, savingsValue })} />
+            <SaveFirstPreview mode={f.savingsMode} value={Number(f.savingsValue) || 0} currency={f.currency} />
+            <Field label="Savings you already had" hint="Opens your savings account; each month's saved-first amount is added and carried forward.">
+              <Input type="number" min={0} step="any" inputMode="decimal" value={f.startingBalance} onChange={(e) => setF({ ...f, startingBalance: e.target.value })} className="tabular" />
+            </Field>
+          </Card>
+
           <Card icon={Globe2} title="Money & region" desc="How amounts are shown, and when your day rolls over.">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Currency">
@@ -151,6 +153,15 @@ export default function SettingsPage() {
                 </Select>
               </Field>
             </div>
+          </Card>
+
+          <Card icon={Coins} title="Investments" desc="How your portfolio is grouped.">
+            <GoldFundsToggle />
+          </Card>
+        </div>
+        <div className="space-y-6">
+          <Card icon={Tags} title="Categories" desc="Keep the ones you use, rename them, or add your own.">
+            <CategoryManager />
           </Card>
 
           <Card icon={Smartphone} title="On your phone" desc="The Android app shares this account.">
@@ -282,6 +293,37 @@ function SaveFirstPreview({ mode, value, currency }: { mode: string; value: numb
         <span className="tabular font-medium text-income">{fmt(saved)}</span> saved first,{" "}
         <span className="tabular font-medium text-fg">{fmt(income - saved)}</span> to spend.
       </p>
+    </div>
+  );
+}
+
+/** Gold funds and gold ETFs under Gold (still valued by NAV / market price). Saves as soon as it's flipped. */
+function GoldFundsToggle() {
+  const user = useAuth((s) => s.user)!;
+  const update = useUpdateProfile();
+  const on = user.goldFundsAsGold ?? true;
+  return (
+    <div>
+      <div className="flex items-start gap-4">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium">Count gold funds as Gold</p>
+          <p className="mt-0.5 text-xs text-muted">
+            Gold mutual funds and gold ETFs (like SBI Gold Fund or GOLDBEES) sit under Gold in your tabs and allocation. Their value still comes from NAV or market price.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={on}
+          aria-label="Count gold funds as Gold"
+          disabled={update.isPending}
+          onClick={() => update.mutate({ goldFundsAsGold: !on })}
+          className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition ${on ? "bg-brand" : "bg-fg/15"} disabled:opacity-60`}
+        >
+          <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${on ? "left-[1.375rem]" : "left-0.5"}`} />
+        </button>
+      </div>
+      <p className="mt-2 text-xs text-subtle">A single holding can still be moved by hand from its settings (“Counts as”).</p>
     </div>
   );
 }

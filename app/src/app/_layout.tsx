@@ -133,6 +133,7 @@ function AppStack({ fontsLoaded, queryClient }: { fontsLoaded: boolean; queryCli
           <Stack.Screen name="scan" options={{ ...modal, title: 'Scan a screenshot' }} />
           <Stack.Screen name="holding" options={{ ...modal, title: 'Holding' }} />
           <Stack.Screen name="settings" options={{ ...modal, presentation: 'card', title: 'Settings' }} />
+          <Stack.Screen name="categories" options={{ ...modal, presentation: 'card', title: 'Categories' }} />
         </Stack.Protected>
         {(signedIn || tourSeen) && <Stack.Screen name="walkthrough" options={{ animation: 'fade' }} />}
       </Stack>

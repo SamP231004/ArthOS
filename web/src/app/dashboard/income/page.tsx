@@ -14,9 +14,9 @@ import { useAuth } from "@/lib/auth-store";
 import { currentMonth, dayLabel, label, money, shiftMonth, todayISO } from "@/lib/format";
 import { useDeleteIncome, useIncomes, useSaveIncome } from "@/lib/queries";
 import { useMonth } from "@/lib/ui-store";
-import { INCOME_TYPES, type Income, type IncomeType } from "@/lib/types";
+import { useCategories } from "@/lib/categories";
+import { type Income, type IncomeType } from "@/lib/types";
 
-const typeColor = (t: IncomeType) => `var(--c${(INCOME_TYPES.indexOf(t) % 8) + 1})`;
 type Key = "date" | "source" | "type" | "amount";
 
 export default function IncomePage() {
@@ -28,6 +28,8 @@ export default function IncomePage() {
   const prev = useIncomes(shiftMonth(month, -1));
   const del = useDeleteIncome();
   const save = useSaveIncome();
+  const types = useCategories("income"); // the user's own names and income types
+  const typeColor = types.color;
   const [editing, setEditing] = useState<Income | null | undefined>(undefined);
   const [type, setType] = useState<IncomeType | null>(null);
   const [q, setQ] = useState("");
@@ -59,7 +61,8 @@ export default function IncomePage() {
   const change = pctChange(total, prevTotal);
   const shownTotal = rows.reduce((s, i) => s + i.amount, 0);
 
-  const parts = INCOME_TYPES.map((t) => ({ key: t, label: label(t), amount: all.filter((i) => i.type === t).reduce((s, i) => s + i.amount, 0), color: typeColor(t) })).filter((p) => p.amount > 0);
+  const typeKeys = [...types.all.map((c) => c.key), ...new Set(all.map((i) => i.type).filter((k) => !types.all.some((c) => c.key === k)))];
+  const parts = typeKeys.map((t) => ({ key: t, label: types.label(t), amount: all.filter((i) => i.type === t).reduce((s, i) => s + i.amount, 0), color: typeColor(t) })).filter((p) => p.amount > 0);
 
   // Recurring entries from last month that haven't been logged this month yet.
   const pending = month === currentMonth()
@@ -70,7 +73,7 @@ export default function IncomePage() {
     <div className="space-y-6">
       <PageHeader title="Income" subtitle="Everything coming in this month — one-time or recurring.">
         <MonthPicker />
-        <ExportButton filename={`arthos-income-${month}.csv`} rows={[["Date", "Source", "Type", "Recurring", "Amount", "Note"], ...rows.map((i) => [i.date, i.source, label(i.type), i.recurring ? "Yes" : "No", i.amount, i.note ?? ""])]} />
+        <ExportButton filename={`arthos-income-${month}.csv`} rows={[["Date", "Source", "Type", "Recurring", "Amount", "Note"], ...rows.map((i) => [i.date, i.source, types.label(i.type), i.recurring ? "Yes" : "No", i.amount, i.note ?? ""])]} />
         <ScanImport />
         <Button onClick={() => setEditing(null)}>
           <Plus size={16} /> Add income
@@ -169,7 +172,7 @@ export default function IncomePage() {
                         </div>
                       </td>
                       <td className="px-3 py-3.5">
-                        <span className="inline-flex items-center gap-1.5 text-fg-2"><span className="h-2 w-2 rounded-full" style={{ background: typeColor(i.type) }} />{label(i.type)}</span>
+                        <span className="inline-flex items-center gap-1.5 text-fg-2"><span className="h-2 w-2 rounded-full" style={{ background: typeColor(i.type) }} />{types.label(i.type)}</span>
                       </td>
                       <td className="px-3 py-3.5">{i.recurring ? <RecurringBadge /> : <span className="text-xs text-subtle">One-time</span>}</td>
                       <td className="tabular px-3 py-3.5 text-right font-semibold text-income">+{fmt(i.amount)}</td>
@@ -200,7 +203,7 @@ export default function IncomePage() {
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-[11px] font-semibold" style={{ background: `color-mix(in oklab, ${typeColor(i.type)} 14%, transparent)`, color: typeColor(i.type) }}>{initials(i.source)}</span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">{i.source}</span>
-                      <span className="block truncate text-xs text-subtle">{label(i.type)} · {dayLabel(i.date)}</span>
+                      <span className="block truncate text-xs text-subtle">{types.label(i.type)} · {dayLabel(i.date)}</span>
                     </span>
                     <span className="text-right">
                       <span className="tabular block font-semibold text-income">+{fmt(i.amount)}</span>

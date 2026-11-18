@@ -57,7 +57,7 @@ const SLIDES: Slide[] = [
   { eyebrow: 'Budget', title: 'One number for today', body: 'Your monthly limit becomes a single daily number that adapts when life happens. Rent and EMIs stay out of it.', Visual: BudgetVisual },
   { eyebrow: 'Investments', title: 'Every rupee that grows', body: 'Stocks, mutual funds, gold and bonds at live prices — with 1-day and total returns, XIRR and allocation.', Visual: PortfolioVisual },
   { eyebrow: 'Import', title: 'Years of investing, in one upload', body: 'Download your holdings or tradebook from Zerodha, Groww or any broker — or your CAS for every mutual fund — and import it. The file is read on your phone and never uploaded.', Visual: ImportVisual },
-  { eyebrow: 'Scan & Share', title: 'Share a screenshot. That’s the entry.', body: 'From GPay, PhonePe or your bank app, tap Share → ArthOS. Amount, merchant, date and category fill themselves in. The screenshot is read on your phone; only the text is used to fill in the details.', Visual: ScanVisual },
+  { eyebrow: 'Scan & Share', title: 'Share a screenshot. That’s the entry.', body: 'On any payment in Google Pay, PhonePe, Paytm or your bank app, tap Share and pick ArthOS. Amount, merchant, date and category fill themselves in. The screenshot is read on your phone; only the text is used to fill in the details.', Visual: ScanVisual },
   { eyebrow: 'Insights', title: 'A score that explains itself', body: 'Your month in plain words, a 100-point health score, unusual spending and subscriptions that add up — no AI, just clear rules.', Visual: InsightsVisual },
   { eyebrow: 'On your phone', title: 'Your money on your home screen', body: 'Widgets you can glance at (tap the eye to hide amounts), a pinned alert when you’re over budget, and bill reminders on the due date.', Visual: PhoneVisual },
 ];
@@ -253,25 +253,6 @@ function Grow({ pct, color, height = '100%', delay = 200 }: { pct: number; color
   return <Animated.View style={{ height, borderRadius: 3, backgroundColor: color, width: p.interpolate({ inputRange: [0, 1], outputRange: ['0%', `${pct}%`] }) }} />;
 }
 
-/** A soft light sweeping down a card, as if it's being read. */
-function ScanLine({ height }: { height: number }) {
-  const { active, calm } = useContext(Active);
-  const [y] = useState(() => new Animated.Value(0));
-  useEffect(() => {
-    if (!active || calm) return;
-    const loop = Animated.loop(Animated.timing(y, { toValue: 1, duration: 1600, easing: Easing.inOut(Easing.quad), useNativeDriver: true }));
-    loop.start();
-    return () => loop.stop();
-  }, [active, calm, y]);
-  if (calm) return null;
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={{ position: 'absolute', left: 6, right: 6, top: 0, height: 2, borderRadius: 1, backgroundColor: 'rgba(120,220,170,0.9)', shadowColor: '#4cc38a', shadowOpacity: 0.9, shadowRadius: 8, transform: [{ translateY: y.interpolate({ inputRange: [0, 1], outputRange: [8, height - 10] }) }] }}
-    />
-  );
-}
-
 function RoundButton({ label, a11y, onPress, K, filled }: { label: string; a11y: string; onPress: () => void; K: ReturnType<typeof useK>; filled?: boolean }) {
   return (
     <Pressable
@@ -458,23 +439,58 @@ function ImportVisual() {
 
 function ScanVisual() {
   const K = useK();
+  // generic share targets (emoji, no other company's logo); ArthOS is the one being picked
+  const targets = ['★', '🖨️ Print', '📶 Bluetooth', '🔗 Copy'];
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      <View style={{ width: 130, backgroundColor: '#121212', borderRadius: 20, padding: 12, alignItems: 'center', gap: 4, borderWidth: 1, borderColor: K.line }}>
-        <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#3a6ea5', alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: '#fff', fontFamily: F.uiSemibold }}>Z</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      {/* the payment app's success screen, with Android's share sheet sliding up over it */}
+      <View style={{ width: 150, height: 200, backgroundColor: '#121212', borderRadius: 22, borderWidth: 1, borderColor: K.line, overflow: 'hidden' }}>
+        <View style={{ alignItems: 'center', paddingTop: 14, gap: 3, opacity: 0.6 }}>
+          <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#3a4a8a', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#fff', fontFamily: F.uiSemibold, fontSize: 12 }}>Z</Text>
+          </View>
+          <Text style={{ color: '#e8e8e8', fontFamily: F.ui, fontSize: 9.5 }}>To Zomato</Text>
+          <Text style={{ color: '#e8e8e8', fontFamily: F.ui, fontSize: 22 }}>₹159</Text>
+          <Text style={{ color: '#9fdcb0', fontFamily: F.ui, fontSize: 9 }}>✓ Completed</Text>
         </View>
-        <Text style={{ color: '#e8e8e8', fontFamily: F.ui, fontSize: 10 }}>To Zomato</Text>
-        <Text style={{ color: '#e8e8e8', fontFamily: F.ui, fontSize: 22 }}>₹159.44</Text>
-        <Text style={{ color: '#9fdcb0', fontFamily: F.ui, fontSize: 9.5 }}>✓ Completed</Text>
-        <Text style={{ color: '#e8e8e8', fontFamily: F.uiMedium, fontSize: 9.5, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 999, overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 3, marginTop: 4 }}>Share → ArthOS</Text>
-        <ScanLine height={150} />
+        <Reveal step={1} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#1c1f24', borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingHorizontal: 6, paddingTop: 5, paddingBottom: 8 }}>
+          <View style={{ alignSelf: 'center', width: 22, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.25)' }} />
+          <Text style={{ color: '#bdbdbd', fontFamily: F.uiMedium, fontSize: 8.5, textAlign: 'center', marginTop: 4 }}>Share screenshot</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 6, marginTop: 6 }}>
+            {targets.map((t) => {
+              const arthos = t === '★';
+              const [icon, ...label] = t.split(' ');
+              return (
+                <View key={t} style={{ width: '25%', alignItems: 'center', gap: 2 }}>
+                  {arthos ? (
+                    <Reveal step={3}>
+                      {/* the logo clipped to a full circle, like the other targets, with the ring hugging it */}
+                      <View style={{ width: 28, height: 28, borderRadius: 14, overflow: 'hidden', borderWidth: 2, borderColor: K.mark }}>
+                        <View style={{ margin: -2 }}>
+                          <LogoMark size={28} />
+                        </View>
+                      </View>
+                    </Reveal>
+                  ) : (
+                    <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ fontSize: 11 }}>{icon}</Text>
+                    </View>
+                  )}
+                  <Text numberOfLines={1} style={{ color: arthos ? '#fff' : '#cfcfcf', fontFamily: arthos ? F.uiSemibold : F.ui, fontSize: 7.5 }}>{arthos ? 'ArthOS' : label.join(' ')}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </Reveal>
       </View>
-      <Text style={{ color: K.subtle, fontSize: 18 }}>→</Text>
-      <View style={{ width: 150, backgroundColor: K.card, borderRadius: 20, padding: 12, gap: 6, borderWidth: 1, borderColor: K.line }}>
-        <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 10 }}>New expense</Text>
-        <Reveal step={2}>
-          <Text style={{ color: K.fg, fontFamily: F.uiSemibold, fontSize: 20 }}>₹159.44</Text>
+      <Reveal step={4}>
+        <Text style={{ color: K.subtle, fontSize: 16 }}>→</Text>
+      </Reveal>
+      {/* ArthOS: the expense, filled in */}
+      <View style={{ width: 130, backgroundColor: K.card, borderRadius: 20, padding: 11, gap: 5, borderWidth: 1, borderColor: K.line }}>
+        <Text style={{ color: K.muted, fontFamily: F.ui, fontSize: 9.5 }}>New expense</Text>
+        <Reveal step={5}>
+          <Text style={{ color: K.fg, fontFamily: F.uiSemibold, fontSize: 19 }}>₹159</Text>
         </Reveal>
         {[
           ['Merchant', 'Zomato'],
@@ -482,13 +498,13 @@ function ScanVisual() {
           ['Paid with', 'UPI'],
           ['Date', '6 Nov'],
         ].map(([k, v], idx) => (
-          <Reveal key={k} step={idx + 3} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={{ color: K.subtle, fontFamily: F.ui, fontSize: 10 }}>{k}</Text>
-            <Text style={{ color: K.fg2, fontFamily: F.uiMedium, fontSize: 10 }}>{v}</Text>
+          <Reveal key={k} step={idx + 6} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text style={{ color: K.subtle, fontFamily: F.ui, fontSize: 9.5 }}>{k}</Text>
+            <Text style={{ color: K.fg2, fontFamily: F.uiMedium, fontSize: 9.5 }}>{v}</Text>
           </Reveal>
         ))}
-        <Reveal step={7}>
-          <Text style={{ color: K.inkFg, backgroundColor: K.ink, borderRadius: 10, overflow: 'hidden', textAlign: 'center', fontFamily: F.uiSemibold, fontSize: 11, paddingVertical: 6, marginTop: 2 }}>Save</Text>
+        <Reveal step={10}>
+          <Text style={{ color: K.inkFg, backgroundColor: K.ink, borderRadius: 10, overflow: 'hidden', textAlign: 'center', fontFamily: F.uiSemibold, fontSize: 10.5, paddingVertical: 6, marginTop: 2 }}>Save</Text>
         </Reveal>
       </View>
     </View>

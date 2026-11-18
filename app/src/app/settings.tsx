@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Image, Linking, Pressable, Switch, Text, View } from 'react-native';
 
@@ -122,6 +122,40 @@ export default function SettingsScreen() {
         </View>
       </Card>
 
+      {/* categories */}
+      <Pressable onPress={() => router.push('/categories' as Href)} accessibilityRole="button">
+        <Card style={{ flexDirection: 'row', alignItems: 'center', gap: S.md }}>
+          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: alpha(c.brand, 0.12), alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 17 }}>🏷️</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <T style={{ fontSize: 15 }}>Categories</T>
+            <T variant="small">Keep the ones you use, rename them, or add your own.</T>
+          </View>
+          <Text style={{ color: c.subtle, fontSize: 20 }}>›</Text>
+        </Card>
+      </Pressable>
+
+      {/* investments */}
+      <Card style={{ gap: S.md }}>
+        <T variant="label">Investments</T>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.md }}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <T style={{ fontSize: 15 }}>Count gold funds as Gold</T>
+            <T variant="small">Gold mutual funds and gold ETFs (like SBI Gold Fund or GOLDBEES) sit under Gold in your tabs and allocation. Their value still comes from NAV or market price.</T>
+          </View>
+          <Switch
+            value={user.goldFundsAsGold ?? true}
+            disabled={update.isPending}
+            onValueChange={(v) => update.mutate({ goldFundsAsGold: v })}
+            trackColor={{ true: alpha(c.brand, 0.45), false: c.lineStrong }}
+            thumbColor={(user.goldFundsAsGold ?? true) ? c.brand : c.subtle}
+            accessibilityLabel="Count gold funds as Gold"
+          />
+        </View>
+        <T variant="small">A single holding can still be moved by hand from its settings (“Counts as”).</T>
+      </Card>
+
       {/* save first */}
       <Card style={{ gap: S.md }}>
         <T variant="label">Save first</T>
@@ -197,7 +231,7 @@ export default function SettingsScreen() {
         title="Sign out"
         variant="danger"
         onPress={() =>
-          confirm({ title: 'Sign out?', body: 'Your data stays safe in your account — sign back in anytime, on the app or the web.', confirmText: 'Sign out', tone: 'danger', icon: '↪' }).then(
+          confirm({ title: 'Sign out?', body: 'Your data stays safe in your account — sign back in anytime, on the app or the web.', confirmText: 'Sign out', tone: 'danger', icon: 'log-out' }).then(
             (ok) => ok && signOut(),
           )
         }
@@ -209,7 +243,7 @@ export default function SettingsScreen() {
             body: 'This permanently erases your account and everything in it — income, expenses, budgets, investments and settings — on the app and the web. It can’t be undone.',
             confirmText: 'Delete forever',
             tone: 'danger',
-            icon: '✕',
+            icon: 'trash',
           });
           if (!ok) return;
           try {

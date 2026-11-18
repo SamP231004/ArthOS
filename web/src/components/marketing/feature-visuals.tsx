@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowRight, Bell, Check, Eye, RotateCw, ScanLine, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowRight, Bell, Bluetooth, Check, Copy, Eye, Printer, RotateCw, ScanLine, Sparkles } from "lucide-react";
 import { LogoMark } from "../logo";
 
 /**
@@ -108,48 +108,90 @@ export function PortfolioVisual() {
 // ───────────────────────────────────────── scan & share
 
 export function ScanVisual() {
+  const step = (n: number, t: string) => (
+    <p className="mb-3 flex items-center justify-center gap-2 text-xs text-muted">
+      <span className="grid h-5 w-5 place-items-center rounded-full bg-mark/15 text-[11px] font-semibold text-mark">{n}</span>
+      {t}
+    </p>
+  );
+  // generic share targets — plain icons, no other company's logo; ArthOS is the one being picked
+  const targets: [typeof Printer | null, string][] = [
+    [null, "ArthOS"],
+    [Printer, "Print"],
+    [Bluetooth, "Bluetooth"],
+    [Copy, "Copy"],
+  ];
   return (
-    <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-stretch sm:justify-center">
-      {/* a payment app's success screen */}
-      <div className="w-56 shrink-0 rounded-[1.75rem] border border-line-strong bg-[#121212] p-4 text-center text-[#e8e8e8] shadow-2xl">
-        <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-[#3a6ea5] text-lg font-semibold">Z</div>
-        <p className="mt-2 text-xs">To Zomato</p>
-        <p className="mt-1 text-3xl font-light tracking-tight">₹159.44</p>
-        <p className="mt-2 inline-flex items-center gap-1 text-[10px] text-[#9fdcb0]"><Check size={10} /> Completed</p>
-        <p className="mt-1 text-[10px] text-[#9a9a9a]">6 Nov 2026, 1:04 pm</p>
-        <div className="mt-3 space-y-1 rounded-xl border border-white/10 p-2.5 text-left text-[9.5px] text-[#bdbdbd]">
-          <p>UPI transaction ID</p>
-          <p className="text-[#8a8a8a]">4312 9876 5432</p>
-          <p className="pt-1">To: ZOMATO</p>
+    <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-end lg:justify-center">
+      {/* 1–2: a payment app's success screen, with Android's share sheet opened over it */}
+      <div>
+        {step(1, "Open the payment, tap Share")}
+        <div className="relative h-[23rem] w-64 shrink-0 overflow-hidden rounded-[2rem] border border-line-strong bg-[#121212] text-[#e8e8e8] shadow-2xl">
+          <div className="px-4 pt-6 text-center opacity-60">
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#3a4a8a] text-lg font-semibold">Z</div>
+            <p className="mt-2 text-sm">To Zomato</p>
+            <p className="mt-1 text-4xl font-light tracking-tight">₹159</p>
+            <p className="mt-2 inline-flex items-center gap-1 text-[11px] text-[#9fdcb0]"><Check size={11} /> Completed</p>
+            <p className="mt-1 text-[10px] text-[#9a9a9a]">6 Nov 2026, 1:04 pm</p>
+          </div>
+          <div className="absolute inset-x-0 bottom-0 rounded-t-[1.5rem] border-t border-white/10 bg-[#1c1f24] px-3 pb-4 pt-2">
+            <div className="mx-auto h-1 w-8 rounded-full bg-white/25" />
+            <div className="mx-auto mt-3 h-24 w-36 overflow-hidden rounded-xl border border-white/15 bg-[#121212] p-2 text-center text-[7px] text-[#bdbdbd]">
+              <p>To Zomato</p>
+              <p className="text-base font-light text-[#e8e8e8]">₹159</p>
+              <p className="text-[#9fdcb0]">✓ Completed</p>
+              <div className="mt-1 rounded border border-white/10 p-1 text-left">Payment of ₹159 completed</div>
+            </div>
+            <div className="mt-3 grid grid-cols-4 gap-y-2.5 text-center text-[9px] text-[#d8d8d8]">
+              {targets.map(([Icon, label]) => (
+                <div key={label} className="flex flex-col items-center gap-1">
+                  {Icon ? (
+                    <span className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-[#cfd6e4]"><Icon size={15} /></span>
+                  ) : (
+                    <span className="relative grid h-9 w-9 place-items-center">
+                      <span className="absolute inset-[-3px] animate-ping rounded-full border-2 border-mark/60" />
+                      {/* the logo clipped to a full circle, like the other share targets, with the ring hugging it */}
+                      <span className="block h-9 w-9 overflow-hidden rounded-full ring-2 ring-mark ring-offset-0">
+                        <LogoMark size={36} />
+                      </span>
+                    </span>
+                  )}
+                  <span className={Icon ? "" : "font-semibold text-white"}>{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[10px]">Share → <span className="font-semibold">ArthOS</span></p>
+        <div className="mt-3">{step(2, "Pick ArthOS from the share sheet")}</div>
       </div>
 
-      <div className="grid place-items-center text-subtle">
-        <span className="hidden sm:block"><ArrowRight size={20} /></span>
-        <span className="sm:hidden"><ArrowDown size={20} /></span>
+      <div className="grid place-items-center text-subtle lg:mb-40">
+        <span className="hidden lg:block"><ArrowRight size={20} /></span>
+        <span className="lg:hidden"><ArrowDown size={20} /></span>
         <span className="mt-1 flex items-center gap-1 text-[10px]"><ScanLine size={11} /> read on your phone</span>
       </div>
 
-      {/* ArthOS: the pre-filled expense */}
-      <div className="panel w-64 shrink-0 p-5">
-        <p className="text-xs text-muted">New expense · from screenshot</p>
-        <p className="tabular mt-2 text-3xl font-semibold tracking-tight">₹159.44</p>
-        <div className="mt-4 space-y-2 text-sm">
-          {[
-            ["Merchant", "Zomato"],
-            ["Category", "Food · learned"],
-            ["Paid with", "UPI"],
-            ["Date", "6 Nov, 1:04 pm"],
-            ["Reference", "431298765432"],
-          ].map(([k, v]) => (
-            <div key={k} className="flex justify-between gap-3">
-              <span className="text-subtle">{k}</span>
-              <span className="truncate font-medium">{v}</span>
-            </div>
-          ))}
+      {/* 3: ArthOS, the pre-filled expense */}
+      <div>
+        {step(3, "Check it, save it")}
+        <div className="panel w-64 shrink-0 p-5">
+          <p className="text-xs text-muted">New expense · from screenshot</p>
+          <p className="tabular mt-2 text-3xl font-semibold tracking-tight">₹159</p>
+          <div className="mt-4 space-y-2 text-sm">
+            {[
+              ["Merchant", "Zomato"],
+              ["Category", "Food · learned"],
+              ["Paid with", "UPI"],
+              ["Date", "6 Nov, 1:04 pm"],
+            ].map(([k, v]) => (
+              <div key={k} className="flex justify-between gap-3">
+                <span className="text-subtle">{k}</span>
+                <span className="truncate font-medium">{v}</span>
+              </div>
+            ))}
+          </div>
+          <div className="btn-primary mt-5 grid place-items-center rounded-xl py-2.5 text-sm font-medium">Save expense</div>
         </div>
-        <div className="btn-primary mt-5 grid place-items-center rounded-xl py-2.5 text-sm font-medium">Save expense</div>
       </div>
     </div>
   );

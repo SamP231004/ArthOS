@@ -6,7 +6,8 @@ import { MODE_META } from "./budget-meta";
 import { Button, ErrorNote, Field, Input, Modal } from "../ui";
 import { label, monthLabel } from "@/lib/format";
 import { useDeleteBudget, useSaveBudget } from "@/lib/queries";
-import { BUDGET_MODES, EXPENSE_CATEGORIES, type BudgetMode, type BudgetStatus, type ExpenseCategory } from "@/lib/types";
+import { useCategories } from "@/lib/categories";
+import { BUDGET_MODES, type BudgetMode, type BudgetStatus, type ExpenseCategory } from "@/lib/types";
 
 const DEFAULT_EXCLUDED: ExpenseCategory[] = ["RENT", "EMI"];
 
@@ -26,6 +27,9 @@ function BudgetForm({ month, current, onDone }: { month: string; current?: Budge
   const [mode, setMode] = useState<BudgetMode>(configured ? current!.mode : "ADAPTIVE_DAILY");
   const [excluded, setExcluded] = useState<ExpenseCategory[]>(configured ? current!.excludedCategories : DEFAULT_EXCLUDED);
 
+  const cats = useCategories("expense");
+  // the user's categories (hidden ones only if they're already left out of the budget)
+  const choices = cats.all.filter((c) => !c.hidden || excluded.includes(c.key)).map((c) => c.key);
   const toggle = (c: ExpenseCategory) => setExcluded((xs) => (xs.includes(c) ? xs.filter((x) => x !== c) : [...xs, c]));
 
   async function submit(e: React.FormEvent) {
@@ -41,7 +45,7 @@ function BudgetForm({ month, current, onDone }: { month: string; current?: Budge
   const err = save.error ?? del.error;
   return (
     <form onSubmit={submit} className="space-y-6">
-      <Field label="Monthly spending limit" hint="Everyday spending — fixed costs you exclude below don't count against it.">
+      <Field label="Monthly spending limit" required hint="Everyday spending — fixed costs you exclude below don't count against it.">
         <Input type="number" inputMode="decimal" min={1} step="1" required autoFocus value={limit} onChange={(e) => setLimit(e.target.value)} className="tabular !py-3 text-2xl font-semibold" placeholder="30000" />
       </Field>
 
@@ -77,7 +81,7 @@ function BudgetForm({ month, current, onDone }: { month: string; current?: Budge
       <div>
         <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-subtle">Don&apos;t count these fixed costs</span>
         <div className="mt-2 flex flex-wrap gap-2">
-          {EXPENSE_CATEGORIES.map((c) => {
+          {choices.map((c) => {
             const on = excluded.includes(c);
             return (
               <button
@@ -86,7 +90,7 @@ function BudgetForm({ month, current, onDone }: { month: string; current?: Budge
                 onClick={() => toggle(c)}
                 className={`rounded-full border px-3 py-1 text-xs transition ${on ? "border-brand bg-brand/10 text-brand" : "border-line-strong text-muted hover:text-fg"}`}
               >
-                {label(c)}
+                {cats.label(c)}
               </button>
             );
           })}

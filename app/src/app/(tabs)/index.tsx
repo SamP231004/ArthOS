@@ -1,3 +1,4 @@
+import { useAnyCategoryLabel } from '@/lib/categories';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -53,6 +54,7 @@ export default function Home() {
 }
 
 function Summary({ s }: { s: MonthSummary }) {
+  const catLabel = useAnyCategoryLabel(); // the user's names for categories
   const { c } = useTheme();
   const st = useStyles(make);
   const cur = s.currency;
@@ -72,7 +74,7 @@ function Summary({ s }: { s: MonthSummary }) {
           {paise ? <Text style={st.paise}>.{paise}</Text> : null}
         </Text>
         <FlowBar s={s} fmt={fmt} />
-        <T style={{ color: c.fg2, fontSize: 14 }}>✦ {insight(s, fmt)}</T>
+        <T style={{ color: c.fg2, fontSize: 14 }}>✦ {insight(s, fmt, catLabel)}</T>
         <Meter label="Spendable used" value={spentPct} color={spentPct >= 90 ? c.expense : spentPct >= 70 ? c.warn : c.income} />
         <Meter label="Month elapsed" value={monthPct} color={alpha(c.fg, 0.3)} display={`${s.daysElapsed} of ${s.daysInMonth} days`} />
       </Card>
@@ -125,7 +127,7 @@ function Summary({ s }: { s: MonthSummary }) {
                 last={n === s.recent.length - 1}
                 kind={r.kind}
                 title={r.label}
-                subtitle={`${label(r.tag)} · ${dayLabel(r.date)}`}
+                subtitle={`${catLabel(r.tag)} · ${dayLabel(r.date)}`}
                 amount={money(r.amount, cur)}
                 color={tagColor(c, r.kind, r.tag)}
                 onPress={() => router.push(r.kind === 'INCOME' ? `/income-form?id=${r.id}` : `/expense-form?id=${r.id}`)}
@@ -285,7 +287,7 @@ function Meter({ label: l, value, color, display }: { label: string; value: numb
   );
 }
 
-function insight(s: MonthSummary, fmt: (n: number) => string): string {
+function insight(s: MonthSummary, fmt: (n: number) => string, catLabel: (k: string) => string = label): string {
   if (s.incomeCount === 0 && s.expenseCount === 0) return 'Start logging to see where your month stands.';
   if (s.totalIncome === 0) return 'No income yet. When it lands, your savings are set aside first and the rest is yours to spend.';
   if (s.net < 0) return "You've spent more than you've earned — your savings are gone and then some.";
@@ -297,7 +299,7 @@ function insight(s: MonthSummary, fmt: (n: number) => string): string {
   if (fromSavings > 0) return `${fmt(fromSavings)} invested from savings — ${fmt(Math.max(balance, 0))} still in your savings account.`;
   if (balance > 0 && s.savedFirst > 0) return `${fmt(s.savedFirst)} saved first — your savings account holds ${fmt(balance)}, ready to invest.`;
   const top = s.expenseByCategory[0];
-  if (top && top.share >= 40) return `Savings are safe. ${label(top.category)} is ${top.share}% of your spending.`;
+  if (top && top.share >= 40) return `Savings are safe. ${catLabel(top.category)} is ${top.share}% of your spending.`;
   return `Savings are safe — ${fmt(s.leftToSpend)} is yours to spend, guilt-free.`;
 }
 

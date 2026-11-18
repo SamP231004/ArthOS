@@ -1,4 +1,5 @@
 "use client";
+import { useAnyCategoryLabel } from "@/lib/categories";
 
 import { ArrowDownLeft, ArrowRight, ArrowUpRight, Plus, Sparkles, Wallet } from "lucide-react";
 import Link from "next/link";
@@ -74,6 +75,7 @@ function LoadingState() {
 }
 
 function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "expense") => void }) {
+  const catLabel = useAnyCategoryLabel(); // the user's names for categories
   const cur = s.currency;
   const fmt = (n: number) => money(n, cur);
   const empty = s.incomeCount === 0 && s.expenseCount === 0;
@@ -113,7 +115,7 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
 
             <p className="mt-5 flex items-start gap-2 text-sm leading-relaxed text-fg-2">
               <Sparkles size={15} className="mt-0.5 shrink-0 text-mark" />
-              {insight(s, fmt)}
+              {insight(s, fmt, catLabel)}
             </p>
 
             <div className="mt-6 space-y-3">
@@ -176,7 +178,7 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
                 {s.expenseByCategory.slice(0, 7).map((c, i) => (
                   <li key={c.category} className="flex items-center gap-3 text-sm">
                     <span className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }} />
-                    <span className="flex-1 text-fg-2">{label(c.category)}</span>
+                    <span className="flex-1 text-fg-2">{catLabel(c.category)}</span>
                     <span className="tabular text-subtle">{c.share}%</span>
                     <span className="tabular w-24 text-right">{fmt(c.amount)}</span>
                   </li>
@@ -202,6 +204,7 @@ function SummaryView({ s, onAdd }: { s: MonthSummary; onAdd: (m: "income" | "exp
 
 /** The latest entries across income and expenses, in the same ledger style as the Income/Expenses pages. */
 function RecentActivity({ s, fmt }: { s: MonthSummary; fmt: (n: number) => string }) {
+  const catLabel = useAnyCategoryLabel(); // the user's names for categories
   const [kind, setKind] = useState<"ALL" | "INCOME" | "EXPENSE">("ALL");
   const rows = s.recent.filter((r) => kind === "ALL" || r.kind === kind);
   const net = rows.reduce((a, r) => a + (r.kind === "INCOME" ? r.amount : -r.amount), 0);
@@ -272,7 +275,7 @@ function RecentActivity({ s, fmt }: { s: MonthSummary; fmt: (n: number) => strin
                         </div>
                       </td>
                       <td className="px-3 py-3.5">
-                        <span className="inline-flex items-center gap-1.5 text-fg-2"><span className="h-2 w-2 rounded-full" style={{ background: color }} />{label(r.tag)}</span>
+                        <span className="inline-flex items-center gap-1.5 text-fg-2"><span className="h-2 w-2 rounded-full" style={{ background: color }} />{catLabel(r.tag)}</span>
                       </td>
                       <td className="px-3 py-3.5">
                         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${income ? "bg-income/10 text-income" : "bg-expense/10 text-expense"}`}>
@@ -309,7 +312,7 @@ function RecentActivity({ s, fmt }: { s: MonthSummary; fmt: (n: number) => strin
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-[11px] font-semibold" style={{ background: `color-mix(in oklab, ${color} 14%, transparent)`, color }}>{initials(r.label)}</span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{r.label}</span>
-                      <span className="block truncate text-xs text-subtle">{label(r.tag)} · {dayLabel(r.date)}</span>
+                      <span className="block truncate text-xs text-subtle">{catLabel(r.tag)} · {dayLabel(r.date)}</span>
                     </span>
                     <span className={`tabular text-sm font-semibold ${income ? "text-income" : ""}`}>{income ? "+" : "−"}{fmt(r.amount)}</span>
                   </Link>
@@ -343,8 +346,8 @@ function Meter({ label, value, tone, display }: { label: string; value: number; 
   );
 }
 
-function insight(s: MonthSummary, fmt: (n: number) => string): string {
-  const lever = label(s.expenseByCategory[0]?.category ?? "OTHER").toLowerCase();
+function insight(s: MonthSummary, fmt: (n: number) => string, catLabel: (k: string) => string = label): string {
+  const lever = catLabel(s.expenseByCategory[0]?.category ?? "OTHER").toLowerCase();
   if (s.totalIncome === 0) return "No income yet this month. When it lands, your savings are set aside first and the rest becomes your spending money.";
   if (s.net < 0) return `You've spent more than you've earned this month — your savings are gone and then some. Biggest lever: ${lever}.`;
   if (s.leftToSpend < 0) return `You've dipped ${fmt(-s.leftToSpend)} into the ${fmt(s.savedFirst)} you set aside. Biggest lever: ${lever}.`;
@@ -355,7 +358,7 @@ function insight(s: MonthSummary, fmt: (n: number) => string): string {
   if (fromSavings > 0) return `${fmt(fromSavings)} invested from savings this month — ${fmt(Math.max(balance, 0))} still in your savings account to put to work.`;
   if (balance > 0 && s.savedFirst > 0) return `${fmt(s.savedFirst)} saved first this month — your savings account now holds ${fmt(balance)}, ready to invest.`;
   const top = s.expenseByCategory[0];
-  if (top && top.share >= 40) return `Savings are safe. ${label(top.category)} is ${top.share}% of your spending — your largest fixed lever.`;
+  if (top && top.share >= 40) return `Savings are safe. ${catLabel(top.category)} is ${top.share}% of your spending — your largest fixed lever.`;
   return `Savings are safe — ${fmt(s.leftToSpend)} is yours to spend, guilt-free.`;
 }
 

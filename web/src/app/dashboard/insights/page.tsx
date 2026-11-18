@@ -1,4 +1,5 @@
 "use client";
+import { useAnyCategoryLabel } from "@/lib/categories";
 
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, CalendarClock, ChevronRight, Lightbulb, Repeat, ScanSearch, Sparkles, Zap } from "lucide-react";
 import { useState } from "react";
@@ -198,6 +199,7 @@ function MonthStory({ d }: { d: Insights; fmt: Fmt }) {
 
 /** One bar per category: this month's spend, with a marker where "usual" sits on the same scale. */
 function Categories({ d, fmt }: { d: Insights; fmt: Fmt }) {
+  const catLabel = useAnyCategoryLabel(); // the user's names for categories
   const max = Math.max(...d.trends.map((t) => Math.max(t.thisMonth, t.typical)), 1);
   return (
     <section className="panel p-6">
@@ -222,7 +224,7 @@ function Categories({ d, fmt }: { d: Insights; fmt: Fmt }) {
             return (
               <li key={t.category}>
                 <div className="flex items-baseline justify-between gap-3 text-sm">
-                  <span className="font-medium">{label(t.category)}</span>
+                  <span className="font-medium">{catLabel(t.category)}</span>
                   <span className="flex items-center gap-2">
                     <span className="tabular font-medium">{fmt(t.thisMonth)}</span>
                     {notable ? (
@@ -275,6 +277,7 @@ function Suggestions({ d, fmt }: { d: Insights; fmt: Fmt }) {
 }
 
 function Unusual({ d, fmt }: { d: Insights; fmt: Fmt }) {
+  const catLabel = useAnyCategoryLabel(); // the user's names for categories
   return (
     <section className="panel p-6">
       <h2 className="flex items-center gap-2 font-medium">
@@ -291,7 +294,7 @@ function Unusual({ d, fmt }: { d: Insights; fmt: Fmt }) {
                 {times && <span className="tabular grid h-10 w-12 shrink-0 place-items-center rounded-lg bg-warn/10 text-xs font-semibold text-warn">{times}</span>}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{a.merchant}</p>
-                  <p className="truncate text-xs text-subtle">{label(a.category)} · {dayLabel(a.date)}</p>
+                  <p className="truncate text-xs text-subtle">{catLabel(a.category)} · {dayLabel(a.date)}</p>
                 </div>
                 <span className="tabular shrink-0 text-sm font-semibold">{fmt(a.amount)}</span>
               </li>
@@ -304,6 +307,7 @@ function Unusual({ d, fmt }: { d: Insights; fmt: Fmt }) {
 }
 
 function Subscriptions({ d, fmt }: { d: Insights; fmt: Fmt }) {
+  const catLabel = useAnyCategoryLabel(); // the user's names for categories
   const l = d.leakage;
   return (
     <section className="panel p-6">
@@ -332,7 +336,7 @@ function Subscriptions({ d, fmt }: { d: Insights; fmt: Fmt }) {
                   <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-info/10 text-xs font-semibold text-info">{i.name.charAt(0).toUpperCase()}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{i.name}</span>
-                    <span className="block text-[11px] text-subtle">{label(i.category)}</span>
+                    <span className="block text-[11px] text-subtle">{catLabel(i.category)}</span>
                   </span>
                   {rise && <span className="tabular rounded-full bg-warn/10 px-1.5 py-0.5 text-[10px] font-medium text-warn">▲ was {fmt(rise.before)}</span>}
                   <span className="tabular shrink-0">{fmt(i.amount)}</span>

@@ -236,7 +236,7 @@ export default function Home() {
                   Share a payment screenshot. <span className="italic text-accent">That&apos;s the entry.</span>
                 </h2>
                 <p className="mt-4 text-muted">
-                  From GPay, PhonePe, Paytm or your bank app, tap <span className="text-fg">Share → ArthOS</span>. The amount, merchant, date, reference and category fill themselves in — you just confirm.
+                  From Google Pay, PhonePe, Paytm or your bank app, tap <span className="text-fg">Share → ArthOS</span>. The amount, merchant, date, reference and category fill themselves in — you just confirm.
                 </p>
               </div>
               <div className="mt-14">
