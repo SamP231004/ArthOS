@@ -29,7 +29,7 @@ class InsightsCalculatorTest {
         Expense x = new Expense();
         x.setId(id);
         x.setAmount(BigDecimal.valueOf(amount));
-        x.setCategory(c);
+        x.setCategory(c.name());
         x.setMerchant(merchant);
         x.setDate(d);
         x.setMonthKey(YearMonth.from(d).toString());
@@ -40,7 +40,7 @@ class InsightsCalculatorTest {
     private static Income salary(LocalDate d) {
         Income i = new Income();
         i.setAmount(BigDecimal.valueOf(100_000));
-        i.setType(IncomeType.SALARY);
+        i.setType(IncomeType.SALARY.name());
         i.setSource("Employer");
         i.setDate(d);
         return i;
@@ -50,10 +50,10 @@ class InsightsCalculatorTest {
         List<Income> in = new ArrayList<>();
         for (int i = 0; i <= 3; i++) in.add(salary(NOV.minusMonths(i).atDay(1)));
         List<Expense> nov = ex.stream().filter(x -> YearMonth.from(x.getDate()).equals(NOV)).toList();
-        BudgetStatus budget = BudgetCalculator.calculate(NOV, TODAY, BigDecimal.valueOf(30_000), BudgetMode.ADAPTIVE_DAILY, List.of(ExpenseCategory.RENT), nov, null);
+        BudgetStatus budget = BudgetCalculator.calculate(NOV, TODAY, BigDecimal.valueOf(30_000), BudgetMode.ADAPTIVE_DAILY, List.of(ExpenseCategory.RENT.name()), nov, null);
         SavingsAccount acct = new SavingsAccount("2026-11", BigDecimal.ZERO, savingsBalance, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 savingsBalance, BigDecimal.ZERO, List.of());
-        return InsightsCalculator.calculate(new InsightsCalculator.Input(NOV, TODAY, "INR", SavingsRule.DEFAULT, ex, in, budget, acct, buys));
+        return InsightsCalculator.calculate(new InsightsCalculator.Input(NOV, TODAY, "INR", SavingsRule.DEFAULT, ex, in, budget, acct, buys, java.util.Map.of()));
     }
 
     @Test
@@ -76,7 +76,7 @@ class InsightsCalculatorTest {
 
         assertTrue(r.current());
         // food: 15 orders so far vs 5 by the 15th in earlier months → flagged as up
-        var food = r.trends().stream().filter(t -> t.category() == ExpenseCategory.FOOD).findFirst().orElseThrow();
+        var food = r.trends().stream().filter(t -> ExpenseCategory.FOOD.name().equals(t.category())).findFirst().orElseThrow();
         assertEquals(0, BigDecimal.valueOf(4_500).compareTo(food.thisMonth()));
         assertEquals(0, BigDecimal.valueOf(1_500).compareTo(food.typical()));
         assertTrue(r.summary().stream().anyMatch(s -> s.startsWith("Food is up")), () -> String.join(" | ", r.summary()));

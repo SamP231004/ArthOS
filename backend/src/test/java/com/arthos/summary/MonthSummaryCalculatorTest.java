@@ -103,7 +103,7 @@ class MonthSummaryCalculatorTest {
     private static Income income(String amount, IncomeType type, int day) {
         Income i = new Income();
         i.setAmount(new BigDecimal(amount));
-        i.setType(type);
+        i.setType(type.name());
         i.setSource(type.name());
         i.setDate(NOV.atDay(day));
         return i;
@@ -116,7 +116,7 @@ class MonthSummaryCalculatorTest {
     private static Expense expense(String amount, ExpenseCategory cat, LocalDate date) {
         Expense e = new Expense();
         e.setAmount(new BigDecimal(amount));
-        e.setCategory(cat);
+        e.setCategory(cat.name());
         e.setPaymentSource(PaymentSource.UPI);
         e.setDate(date);
         return e;

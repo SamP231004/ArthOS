@@ -35,6 +35,12 @@ public final class PortfolioCalculator {
 
     public static PortfolioView calculate(List<Holding> holdings, Map<String, Quote> quotes,
                                           Map<String, List<PricePoint>> histories, LocalDate today, String range) {
+        return calculate(holdings, quotes, histories, today, range, true);
+    }
+
+    /** @param goldFundsAsGold the user's setting: gold funds and gold ETFs count as Gold */
+    public static PortfolioView calculate(List<Holding> holdings, Map<String, Quote> quotes,
+                                          Map<String, List<PricePoint>> histories, LocalDate today, String range, boolean goldFundsAsGold) {
         List<Computed> computed = holdings.stream().map(h -> compute(h, quotes, histories, today)).toList();
 
         BigDecimal value = sum(computed, c -> c.value), invested = sum(computed, c -> c.invested);
@@ -48,7 +54,7 @@ public final class PortfolioCalculator {
                 m(dayChange), pct(dayChange, prevValue), m(realized), rate(Xirr.of(allFlows)), holdings.size());
 
         Map<AssetClass, List<Computed>> byClass = new EnumMap<>(AssetClass.class);
-        computed.forEach(c -> byClass.computeIfAbsent(c.h.category(), k -> new ArrayList<>()).add(c));
+        computed.forEach(c -> byClass.computeIfAbsent(c.h.category(goldFundsAsGold), k -> new ArrayList<>()).add(c));
         List<ClassSlice> allocation = byClass.entrySet().stream().map(e -> {
             BigDecimal v = sum(e.getValue(), c -> c.value), inv = sum(e.getValue(), c -> c.invested);
             BigDecimal day = sum(e.getValue(), c -> c.dayChange), real = sum(e.getValue(), c -> c.realized);
@@ -65,7 +71,7 @@ public final class PortfolioCalculator {
                 .map(e -> new HorizonSlice(e.getKey(), m(sum(e.getValue(), c -> c.value)), pct(sum(e.getValue(), c -> c.value), value), e.getValue().size()))
                 .sorted(Comparator.comparing(HorizonSlice::value).reversed()).toList();
 
-        List<HoldingView> views = computed.stream().map(c -> c.view(value)).sorted(Comparator.comparing(HoldingView::currentValue).reversed()).toList();
+        List<HoldingView> views = computed.stream().map(c -> c.view(value, goldFundsAsGold)).sorted(Comparator.comparing(HoldingView::currentValue).reversed()).toList();
 
         Instant asOf = computed.stream().filter(c -> c.source == PriceSource.LIVE && c.asOf != null).map(c -> c.asOf).min(Instant::compareTo).orElse(null);
         List<String> notes = computed.stream().filter(c -> c.source == PriceSource.COST && c.h.marketKey() != null)
@@ -88,7 +94,7 @@ public final class PortfolioCalculator {
         TreeMap<LocalDate, BigDecimal> prices = new TreeMap<>(); // adjusted per-unit closes
         LocalDate today;
 
-        HoldingView view(BigDecimal total) {
+        HoldingView view(BigDecimal total, boolean goldFundsAsGold) {
             BigDecimal gain = value.subtract(invested);
             List<Xirr.Flow> f = new ArrayList<>(flows);
             if (value.signum() > 0) f.add(new Xirr.Flow(today, value.doubleValue()));
@@ -103,7 +109,7 @@ public final class PortfolioCalculator {
                     lots.stream().map(l -> new LotView(l.getId(), l.getType(), l.getDate(), l.getQuantity().stripTrailingZeros(), l.getPrice(),
                             m(l.getQuantity().multiply(l.getPrice())), l.getNote(), l.fundedFrom(),
                             l.getType() == LotType.SELL ? null : m(l.fromSavings()), l.getType() == LotType.SELL ? null : m(l.fromSpending()), l.getImportSource())).toList(),
-                    h.category(), h.getCountAs());
+                    h.category(goldFundsAsGold), h.getCountAs());
         }
 
         GoldInfo gold() {

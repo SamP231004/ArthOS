@@ -101,7 +101,8 @@ public class PortfolioController {
         String userId = CurrentUser.id();
         List<Holding> list = mergeDuplicates(holdings.findByUserIdOrderByCreatedAtAsc(userId));
         List<String> keys = list.stream().map(Holding::marketKey).filter(Objects::nonNull).distinct().toList();
-        return PortfolioCalculator.calculate(list, market.quotes(keys, live), market.histories(keys), LocalDate.now(userCtx.zone(userId)), range);
+        return PortfolioCalculator.calculate(list, market.quotes(keys, live), market.histories(keys), LocalDate.now(userCtx.zone(userId)), range,
+                userCtx.goldFundsAsGold(userId));
     }
 
     @PostMapping("/holdings")
@@ -258,7 +259,7 @@ public class PortfolioController {
         String k = h.marketKey();
         List<String> keys = k == null ? List.of() : List.of(k);
         PortfolioView v = PortfolioCalculator.calculate(List.of(h), market.quotes(keys), market.histories(keys),
-                LocalDate.now(userCtx.zone(h.getUserId())), "1M");
+                LocalDate.now(userCtx.zone(h.getUserId())), "1M", userCtx.goldFundsAsGold(h.getUserId()));
         return v.holdings().getFirst();
     }
 

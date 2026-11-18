@@ -26,7 +26,8 @@ public class Income {
 
     /** Who paid, e.g. employer or client name. */
     private String source;
-    private IncomeType type;
+    /** A built-in {@link IncomeType} name or one of the user's own income type keys. */
+    private String type;
     private LocalDate date;
     /** "YYYY-MM", derived from {@link #date}. */
     private String monthKey;
@@ -49,8 +50,8 @@ public class Income {
     public void setAmount(BigDecimal amount) { this.amount = amount; }
     public String getSource() { return source; }
     public void setSource(String source) { this.source = source; }
-    public IncomeType getType() { return type; }
-    public void setType(IncomeType type) { this.type = type; }
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
     public LocalDate getDate() { return date; }
     public void setDate(LocalDate date) { this.date = date; }
     public String getMonthKey() { return monthKey; }

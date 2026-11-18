@@ -19,7 +19,10 @@ public class IncomeController {
     private final IncomeRepository incomes;
     private final UserContext userCtx;
 
-    public IncomeController(IncomeRepository incomes, UserContext userCtx) {
+    private final com.arthos.category.CategoryService categories;
+
+    public IncomeController(IncomeRepository incomes, UserContext userCtx, com.arthos.category.CategoryService categories) {
+        this.categories = categories;
         this.incomes = incomes;
         this.userCtx = userCtx;
     }
@@ -44,6 +47,7 @@ public class IncomeController {
         Income i = new Income();
         i.setUserId(CurrentUser.id());
         i.setExpiresAt(userCtx.demoExpiry(i.getUserId()));
+        categories.requireValid(CurrentUser.id(), com.arthos.category.CategoryKind.INCOME, req.type());
         apply(i, req);
         return IncomeResponse.from(incomes.save(i));
     }
@@ -51,6 +55,7 @@ public class IncomeController {
     @PutMapping("/{id}")
     IncomeResponse update(@PathVariable String id, @Valid @RequestBody IncomeRequest req) {
         Income i = load(id);
+        categories.requireValid(CurrentUser.id(), com.arthos.category.CategoryKind.INCOME, req.type());
         apply(i, req);
         return IncomeResponse.from(incomes.save(i));
     }

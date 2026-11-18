@@ -16,9 +16,9 @@ class HoldingCategoryTest {
     }
 
     @Test
-    void goldAndSilverFundsCountAsGold() {
+    void goldFundsCountAsGoldButSilverStaysAFund() {
         assertEquals(AssetClass.GOLD, h(AssetClass.MUTUAL_FUND, "SBI GOLD FUND - Direct Plan - Growth", "119788").category());
-        assertEquals(AssetClass.GOLD, h(AssetClass.MUTUAL_FUND, "ICICI Prudential Silver ETF FoF - Direct Plan - Growth", "149760").category());
+        assertEquals(AssetClass.MUTUAL_FUND, h(AssetClass.MUTUAL_FUND, "ICICI Prudential Silver ETF FoF - Direct Plan - Growth", "149760").category());
         assertEquals(AssetClass.MUTUAL_FUND, h(AssetClass.MUTUAL_FUND, "HDFC Multi Cap Fund - Direct Plan - Growth Option", "149368").category());
     }
 
@@ -28,6 +28,14 @@ class HoldingCategoryTest {
         assertEquals(AssetClass.GOLD, h(AssetClass.STOCK, "Nippon India Gold BeES", "GOLDBEES.NS").category());
         assertEquals(AssetClass.STOCK, h(AssetClass.STOCK, "Shanti Gold International Limited", "SHANTIGOLD.NS").category());
         assertEquals(AssetClass.STOCK, h(AssetClass.STOCK, "Goldiam International Limited", "GOLDIAM.NS").category());
+    }
+
+    @Test
+    void theSettingTurnsTheAutomaticRuleOff() {
+        Holding fund = h(AssetClass.MUTUAL_FUND, "SBI GOLD FUND - Direct Plan - Growth", "119788");
+        assertEquals(AssetClass.MUTUAL_FUND, fund.category(false));
+        fund.setCountAs(AssetClass.GOLD); // a holding the user moved by hand still moves
+        assertEquals(AssetClass.GOLD, fund.category(false));
     }
 
     @Test

@@ -41,10 +41,10 @@ public class AutomationController {
     public record ParseRequest(@NotBlank @Size(max = 20_000) String text) {}
 
     public record ParseResponse(String kind, BigDecimal amount, LocalDate date, String merchant, String reference,
-                                PaymentSource paymentSource, ExpenseCategory category, IncomeType incomeType,
+                                PaymentSource paymentSource, String category, String incomeType,
                                 String categorySource, double confidence, List<String> found, boolean usable) {}
 
-    public record CategoryResponse(ExpenseCategory category, String source) {}
+    public record CategoryResponse(String category, String source) {}
 
     public record RecurringView(String kind, String key, String name, String tag, BigDecimal typicalAmount, int months,
                                 LocalDate lastDate, int dayOfMonth) {}
@@ -72,9 +72,9 @@ public class AutomationController {
         LocalDate today = LocalDate.now(userCtx.zone(userId));
         Parsed p = TransactionTextParser.parse(req.text(), today);
         if (p.kind() == TransactionTextParser.Kind.INCOME) {
-            IncomeType type = CategoryRules.income(p.merchant(), req.text()).orElse(IncomeType.OTHER);
+            String type = CategoryRules.income(p.merchant(), req.text()).map(Enum::name).orElse(IncomeType.OTHER.name());
             return new ParseResponse("INCOME", p.amount(), p.date(), p.merchant(), p.reference(), p.paymentSource(), null, type,
-                    type == IncomeType.OTHER ? "NONE" : "BUILT_IN", p.confidence(), p.found(), TransactionTextParser.usable(p).isPresent());
+                    IncomeType.OTHER.name().equals(type) ? "NONE" : "BUILT_IN", p.confidence(), p.found(), TransactionTextParser.usable(p).isPresent());
         }
         CategoryLearner.Suggestion s = learner.suggest(userId, p.merchant(), req.text());
         return new ParseResponse("EXPENSE", p.amount(), p.date(), p.merchant(), p.reference(), p.paymentSource(), s.category(), null,
@@ -125,9 +125,9 @@ public class AutomationController {
         List<String> months = months(zone);
         List<Entry> out = new ArrayList<>();
         for (Expense e : expenses.findByUserIdAndMonthKeyIn(userId, months))
-            out.add(new Entry(e.getId(), RecurringDetector.Kind.EXPENSE, name(e), e.getCategory() == null ? null : e.getCategory().name(), e.getAmount(), e.getDate(), e.isRecurring()));
+            out.add(new Entry(e.getId(), RecurringDetector.Kind.EXPENSE, name(e), e.getCategory(), e.getAmount(), e.getDate(), e.isRecurring()));
         for (Income i : incomes.findByUserIdAndMonthKeyIn(userId, months))
-            out.add(new Entry(i.getId(), RecurringDetector.Kind.INCOME, i.getSource(), i.getType() == null ? null : i.getType().name(), i.getAmount(), i.getDate(), i.isRecurring()));
+            out.add(new Entry(i.getId(), RecurringDetector.Kind.INCOME, i.getSource(), i.getType(), i.getAmount(), i.getDate(), i.isRecurring()));
         return out;
     }
 
@@ -140,7 +140,7 @@ public class AutomationController {
 
     /** Expenses without a merchant are grouped by category name, as they're shown in the app. */
     private static String name(Expense e) {
-        return e.getMerchant() != null ? e.getMerchant() : e.getCategory() == null ? "" : e.getCategory().name();
+        return e.getMerchant() != null ? e.getMerchant() : e.getCategory() == null ? "" : e.getCategory();
     }
 
     private static RecurringView view(Candidate c) {

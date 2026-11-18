@@ -18,7 +18,7 @@ class BudgetCalculatorTest {
 
     private static final YearMonth NOV = YearMonth.of(2026, 11); // 30 days
     private static final BigDecimal L = new BigDecimal("30000");
-    private static final List<ExpenseCategory> EXCL = List.of(ExpenseCategory.RENT, ExpenseCategory.EMI);
+    private static final List<String> EXCL = List.of(ExpenseCategory.RENT.name(), ExpenseCategory.EMI.name());
 
     private static BudgetStatus calc(BudgetMode mode, LocalDate today, Expense... es) {
         return BudgetCalculator.calculate(NOV, today, L, mode, EXCL, List.of(es), null);
@@ -61,7 +61,7 @@ class BudgetCalculatorTest {
         assertEq("500", s.spentMonth());
         assertEq("24000", s.excludedSpent());
         assertEq("1153.84", s.todayAllowance()); // rent ignored: 30,000 / 26 days left
-        assertEquals(List.of(ExpenseCategory.RENT, ExpenseCategory.EMI), s.excludedCategories());
+        assertEquals(List.of(ExpenseCategory.RENT.name(), ExpenseCategory.EMI.name()), s.excludedCategories());
     }
 
     @Test
@@ -122,14 +122,14 @@ class BudgetCalculatorTest {
 
     private static Expense exp(long amount, int day, ExpenseCategory cat) {
         Expense e = expOn(amount, NOV.atDay(day));
-        e.setCategory(cat);
+        e.setCategory(cat.name());
         return e;
     }
 
     private static Expense expOn(long amount, LocalDate date) {
         Expense e = new Expense();
         e.setAmount(BigDecimal.valueOf(amount));
-        e.setCategory(ExpenseCategory.FOOD);
+        e.setCategory(ExpenseCategory.FOOD.name());
         e.setPaymentSource(PaymentSource.UPI);
         e.setDate(date);
         return e;

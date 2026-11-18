@@ -19,7 +19,7 @@ public record BudgetStatus(
         String inheritedFrom,
         BigDecimal limit,
         BudgetMode mode,
-        List<ExpenseCategory> excludedCategories,
+        List<String> excludedCategories,
 
         int daysInMonth,
         /** Day of month treated as "today": 0 for a future month, daysInMonth for a past month. */

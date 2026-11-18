@@ -39,9 +39,11 @@ public class InsightsController {
     private final BudgetRepository budgets;
     private final HoldingRepository holdings;
     private final SavingsService savings;
+    private final com.arthos.category.CategoryService categories;
 
     public InsightsController(UserRepository users, ExpenseRepository expenses, IncomeRepository incomes, BudgetRepository budgets,
-                              HoldingRepository holdings, SavingsService savings) {
+                              HoldingRepository holdings, SavingsService savings, com.arthos.category.CategoryService categories) {
+        this.categories = categories;
         this.users = users;
         this.expenses = expenses;
         this.incomes = incomes;
@@ -78,7 +80,8 @@ public class InsightsController {
                 if (l.getType() == Holding.LotType.BUY && l.getDate() != null) buys.add(l.getDate());
 
         return InsightsCalculator.calculate(new InsightsCalculator.Input(ym, today, user.getCurrency(), user.savingsRule(), ex, in,
-                budget(ym, today, ex, Parallel.get(ownF), Parallel.get(earlierF)), SavingsService.account(user, ym, allIncomes, allHoldings), buys));
+                budget(ym, today, ex, Parallel.get(ownF), Parallel.get(earlierF)), SavingsService.account(user, ym, allIncomes, allHoldings), buys,
+                categories.labels(user)));
     }
 
     /** The month's own budget, or the latest earlier one it inherits (as the budget page does). */

@@ -48,6 +48,10 @@ public class User {
     private BigDecimal savingsStartingBalance;
 
     private boolean onboardingCompleted;
+    /** Gold funds and gold ETFs count as Gold in allocation and tabs. Null (older accounts) = on. */
+    private Boolean goldFundsAsGold;
+    /** Renamed / hidden built-in categories and the user's own (null = all defaults). */
+    private com.arthos.category.CategoryPrefs categories;
 
     /** Sandbox account created from "Try the demo". */
     private boolean demo;
@@ -87,6 +91,11 @@ public class User {
     public void setSavingsValue(BigDecimal savingsValue) { this.savingsValue = savingsValue; }
     public BigDecimal getSavingsStartingBalance() { return savingsStartingBalance; }
     public void setSavingsStartingBalance(BigDecimal savingsStartingBalance) { this.savingsStartingBalance = savingsStartingBalance; }
+    public com.arthos.category.CategoryPrefs getCategories() { return categories; }
+    public void setCategories(com.arthos.category.CategoryPrefs categories) { this.categories = categories; }
+    public boolean goldFundsAsGold() { return goldFundsAsGold == null || goldFundsAsGold; }
+    public Boolean getGoldFundsAsGold() { return goldFundsAsGold; }
+    public void setGoldFundsAsGold(Boolean goldFundsAsGold) { this.goldFundsAsGold = goldFundsAsGold; }
     public boolean isOnboardingCompleted() { return onboardingCompleted; }
     public void setOnboardingCompleted(boolean onboardingCompleted) { this.onboardingCompleted = onboardingCompleted; }
     public boolean isDemo() { return demo; }

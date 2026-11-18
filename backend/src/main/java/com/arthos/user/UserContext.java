@@ -20,6 +20,11 @@ public class UserContext {
         return MonthKey.zoneOrDefault(users.findById(userId).map(User::getTimezone).orElse(null));
     }
 
+    /** Whether gold funds and gold ETFs count as Gold for this user (on unless they turned it off). */
+    public boolean goldFundsAsGold(String userId) {
+        return users.findById(userId).map(User::goldFundsAsGold).orElse(true);
+    }
+
     /** For demo accounts, when their data self-destructs; null for real accounts. */
     public Instant demoExpiry(String userId) {
         return users.findById(userId).filter(User::isDemo).map(User::getExpiresAt).orElse(null);

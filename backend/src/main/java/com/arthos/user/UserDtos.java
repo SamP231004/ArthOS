@@ -24,6 +24,8 @@ public final class UserDtos {
             BigDecimal savingsValue,
             BigDecimal savingsStartingBalance,
             boolean onboardingCompleted,
+            /** Gold funds and gold ETFs count as Gold. */
+            boolean goldFundsAsGold,
             boolean demo,
             Instant expiresAt,
             Instant createdAt) {
@@ -31,7 +33,7 @@ public final class UserDtos {
         public static UserResponse from(User u) {
             return new UserResponse(u.getId(), u.getName(), u.getEmail(), u.getAvatarUrl(), u.getCurrency(), u.getTimezone(),
                     u.getMonthlyIncomeTarget(), u.savingsRule().mode(), u.savingsRule().value(),
-                    u.getSavingsStartingBalance() == null ? BigDecimal.ZERO : u.getSavingsStartingBalance(), u.isOnboardingCompleted(), u.isDemo(), u.getExpiresAt(), u.getCreatedAt());
+                    u.getSavingsStartingBalance() == null ? BigDecimal.ZERO : u.getSavingsStartingBalance(), u.isOnboardingCompleted(), u.goldFundsAsGold(), u.isDemo(), u.getExpiresAt(), u.getCreatedAt());
         }
     }
 
@@ -44,5 +46,6 @@ public final class UserDtos {
             SavingsRule.Mode savingsMode,
             @DecimalMin(value = "0", message = "must be zero or more") @Digits(integer = 13, fraction = 2) BigDecimal savingsValue,
             @DecimalMin(value = "0", message = "must be zero or more") @Digits(integer = 13, fraction = 2) BigDecimal savingsStartingBalance,
-            Boolean onboardingCompleted) {}
+            Boolean onboardingCompleted,
+            Boolean goldFundsAsGold) {}
 }

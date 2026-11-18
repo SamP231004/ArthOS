@@ -24,7 +24,8 @@ public class Expense {
     @Field(targetType = FieldType.DECIMAL128)
     private BigDecimal amount;
 
-    private ExpenseCategory category;
+    /** A built-in {@link ExpenseCategory} name or one of the user's own category keys. */
+    private String category;
     private String merchant;
     private PaymentSource paymentSource;
     private LocalDate date;
@@ -48,8 +49,8 @@ public class Expense {
     public void setUserId(String userId) { this.userId = userId; }
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
-    public ExpenseCategory getCategory() { return category; }
-    public void setCategory(ExpenseCategory category) { this.category = category; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
     public String getMerchant() { return merchant; }
     public void setMerchant(String merchant) { this.merchant = merchant; }
     public PaymentSource getPaymentSource() { return paymentSource; }

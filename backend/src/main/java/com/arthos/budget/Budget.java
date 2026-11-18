@@ -35,7 +35,7 @@ public class Budget {
     private BudgetMode mode;
 
     /** Fixed costs (e.g. rent, EMIs) that don't count against the daily/weekly allowance. */
-    private List<ExpenseCategory> excludedCategories = new ArrayList<>();
+    private List<String> excludedCategories = new ArrayList<>();
 
     /** Demo data only: removed by the Mongo TTL monitor. */
     @Indexed(expireAfter = "0s")
@@ -55,8 +55,8 @@ public class Budget {
     public void setLimit(BigDecimal limit) { this.limit = limit; }
     public BudgetMode getMode() { return mode; }
     public void setMode(BudgetMode mode) { this.mode = mode; }
-    public List<ExpenseCategory> getExcludedCategories() { return excludedCategories; }
-    public void setExcludedCategories(List<ExpenseCategory> excludedCategories) { this.excludedCategories = excludedCategories; }
+    public List<String> getExcludedCategories() { return excludedCategories; }
+    public void setExcludedCategories(List<String> excludedCategories) { this.excludedCategories = excludedCategories; }
     public Instant getExpiresAt() { return expiresAt; }
     public void setExpiresAt(Instant expiresAt) { this.expiresAt = expiresAt; }
     public Instant getCreatedAt() { return createdAt; }

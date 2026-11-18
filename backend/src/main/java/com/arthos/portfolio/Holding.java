@@ -204,16 +204,22 @@ public class Holding {
     public AssetClass getCountAs() { return countAs; }
     public void setCountAs(AssetClass countAs) { this.countAs = countAs; }
 
-    private static final java.util.regex.Pattern PRECIOUS = java.util.regex.Pattern.compile("\\b(gold|silver)\\b", java.util.regex.Pattern.CASE_INSENSITIVE);
+    private static final java.util.regex.Pattern PRECIOUS = java.util.regex.Pattern.compile("\\bgold\\b", java.util.regex.Pattern.CASE_INSENSITIVE);
     private static final java.util.regex.Pattern ETF = java.util.regex.Pattern.compile("\\b(etf|bees)\\b|bees$", java.util.regex.Pattern.CASE_INSENSITIVE);
 
-    /**
-     * The class this holding counts under in allocation and tabs. Gold and silver funds (and gold/silver ETFs) count as
-     * GOLD, though they're still valued by NAV/market price; stocks need "ETF"/"BeES" too, so a jewellery company
-     * named "… Gold …" stays a stock. The user's choice ({@link #countAs}) wins.
-     */
+    /** {@link #category(boolean)} with the automatic gold rule on. */
     public AssetClass category() {
+        return category(true);
+    }
+
+    /**
+     * The class this holding counts under in allocation and tabs. With {@code autoGold}, gold funds (and gold ETFs)
+     * count as GOLD, though they're still valued by NAV/market price; stocks need "ETF"/"BeES" too, so a jewellery
+     * company named "… Gold …" stays a stock. The user's choice for this holding ({@link #countAs}) always wins.
+     */
+    public AssetClass category(boolean autoGold) {
         if (countAs != null) return countAs;
+        if (!autoGold) return assetClass;
         String n = name == null ? "" : name;
         if (assetClass == AssetClass.MUTUAL_FUND && PRECIOUS.matcher(n).find()) return AssetClass.GOLD;
         if (assetClass == AssetClass.STOCK && PRECIOUS.matcher(n).find() && (ETF.matcher(n).find() || ETF.matcher(symbol == null ? "" : symbol).find()))

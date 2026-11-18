@@ -12,7 +12,7 @@ public final class ExpenseDtos {
 
     public record ExpenseRequest(
             @NotNull @DecimalMin(value = "0.01", message = "must be greater than 0") @Digits(integer = 13, fraction = 2) BigDecimal amount,
-            @NotNull ExpenseCategory category,
+            @NotBlank @Size(max = 40) String category,
             @Size(max = 120) String merchant,
             @NotNull PaymentSource paymentSource,
             @NotNull LocalDate date,
@@ -20,7 +20,7 @@ public final class ExpenseDtos {
             boolean recurring) {}
 
     public record ExpenseResponse(
-            String id, BigDecimal amount, ExpenseCategory category, String merchant, PaymentSource paymentSource,
+            String id, BigDecimal amount, String category, String merchant, PaymentSource paymentSource,
             LocalDate date, String monthKey, String note, boolean recurring, Instant createdAt, Instant updatedAt) {
 
         public static ExpenseResponse from(Expense e) {

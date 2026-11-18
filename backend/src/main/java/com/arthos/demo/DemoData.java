@@ -115,7 +115,7 @@ public final class DemoData {
         i.setUserId(userId);
         i.setAmount(BigDecimal.valueOf(amount));
         i.setSource(source);
-        i.setType(type);
+        i.setType(type.name());
         i.setDate(date);
         i.setMonthKey(MonthKey.of(date));
         i.setNote(note);
@@ -134,7 +134,7 @@ public final class DemoData {
         Expense e = new Expense();
         e.setUserId(userId);
         e.setAmount(amount);
-        e.setCategory(cat);
+        e.setCategory(cat.name());
         e.setMerchant(merchant);
         e.setPaymentSource(via);
         e.setDate(date);

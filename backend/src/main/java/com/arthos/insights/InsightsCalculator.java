@@ -33,20 +33,22 @@ public final class InsightsCalculator {
                         List<Expense> expenses, List<Income> incomes,
                         BudgetStatus budget, SavingsAccount savings,
                         /** Dates of every investment purchase (for the investing-habit score). */
-                        List<LocalDate> investmentDates) {}
+                        List<LocalDate> investmentDates,
+                        /** The user's names for categories they renamed or added (key → label). */
+                        java.util.Map<String, String> categoryLabels) {}
 
     public record Report(String month, boolean current, List<String> summary, List<CategoryTrend> trends,
                          List<Anomaly> anomalies, Leakage leakage, Health health, List<Alert> alerts,
                          List<Suggestion> suggestions) {}
 
-    public record CategoryTrend(ExpenseCategory category, BigDecimal thisMonth, BigDecimal typical, BigDecimal changePct) {}
+    public record CategoryTrend(String category, BigDecimal thisMonth, BigDecimal typical, BigDecimal changePct) {}
 
-    public record Anomaly(String id, String merchant, ExpenseCategory category, BigDecimal amount, LocalDate date,
+    public record Anomaly(String id, String merchant, String category, BigDecimal amount, LocalDate date,
                           BigDecimal typical, String reason) {}
 
     public record Leakage(BigDecimal monthly, BigDecimal yearly, List<RecurringItem> items, List<PriceRise> priceRises) {}
 
-    public record RecurringItem(String name, ExpenseCategory category, BigDecimal amount, LocalDate lastDate) {}
+    public record RecurringItem(String name, String category, BigDecimal amount, LocalDate lastDate) {}
 
     public record PriceRise(String name, BigDecimal before, BigDecimal now, BigDecimal changePct) {}
 
@@ -62,7 +64,7 @@ public final class InsightsCalculator {
 
     public record Suggestion(String title, String body, BigDecimal monthlyImpact) {}
 
-    private static final Set<ExpenseCategory> FIXED = EnumSet.of(ExpenseCategory.RENT, ExpenseCategory.EMI);
+    private static final Set<String> FIXED = Set.of(ExpenseCategory.RENT.name(), ExpenseCategory.EMI.name());
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH);
 
@@ -120,14 +122,14 @@ public final class InsightsCalculator {
                         && anomalies.stream().filter(a -> a.category() == t.category()).map(Anomaly::amount).reduce(BigDecimal.ZERO, BigDecimal::add)
                                 .compareTo(t.thisMonth().subtract(t.typical()).multiply(new BigDecimal("0.5"))) < 0)
                 .limit(2)
-                .forEach(t -> out.add(label(t.category()) + " is up " + t.changePct().setScale(0, RoundingMode.HALF_UP) + "% — "
+                .forEach(t -> out.add(label(in, t.category()) + " is up " + t.changePct().setScale(0, RoundingMode.HALF_UP) + "% — "
                         + money.f(t.thisMonth()) + " against a usual " + money.f(t.typical()) + "."));
         trends.stream().filter(t -> t.changePct() != null && t.changePct().compareTo(BigDecimal.valueOf(-20)) <= 0
                         && t.typical().subtract(t.thisMonth()).compareTo(BigDecimal.valueOf(300)) >= 0)
                 .findFirst()
                 .ifPresent(t -> out.add(t.thisMonth().signum() == 0
-                        ? "Nothing on " + label(t.category()).toLowerCase(Locale.ROOT) + " yet — usually " + money.f(t.typical()) + (current ? " by now." : " a month.")
-                        : label(t.category()) + " is down " + t.changePct().abs().setScale(0, RoundingMode.HALF_UP) + "% ("
+                        ? "Nothing on " + label(in, t.category()).toLowerCase(Locale.ROOT) + " yet — usually " + money.f(t.typical()) + (current ? " by now." : " a month.")
+                        : label(in, t.category()) + " is down " + t.changePct().abs().setScale(0, RoundingMode.HALF_UP) + "% ("
                         + money.f(t.thisMonth()) + " vs " + money.f(t.typical()) + ") — nicely done."));
 
         BigDecimal income = sumIncome(in.incomes(), m);
@@ -154,22 +156,22 @@ public final class InsightsCalculator {
     // ------------------------------------------------------------------ trends
 
     private static List<CategoryTrend> trends(Input in, YearMonth m, int cut, List<YearMonth> history, List<Expense> thisMonth) {
-        Map<ExpenseCategory, BigDecimal> now = new EnumMap<>(ExpenseCategory.class);
+        Map<String, BigDecimal> now = new java.util.LinkedHashMap<>();
         for (Expense e : thisMonth) if (e.getDate().getDayOfMonth() <= cut) now.merge(e.getCategory(), e.getAmount(), BigDecimal::add);
-        Map<ExpenseCategory, BigDecimal> typical = new EnumMap<>(ExpenseCategory.class);
+        Map<String, BigDecimal> typical = new java.util.LinkedHashMap<>();
         if (!history.isEmpty()) {
-            for (ExpenseCategory c : ExpenseCategory.values()) {
+            for (String c : in.expenses().stream().map(Expense::getCategory).filter(java.util.Objects::nonNull).distinct().toList()) {
                 BigDecimal total = BigDecimal.ZERO;
                 for (YearMonth p : history) {
                     int pc = Math.min(cut, p.lengthOfMonth());
                     for (Expense e : in.expenses())
-                        if (e.getCategory() == c && e.getDate() != null && YearMonth.from(e.getDate()).equals(p) && e.getDate().getDayOfMonth() <= pc)
+                        if (c.equals(e.getCategory()) && e.getDate() != null && YearMonth.from(e.getDate()).equals(p) && e.getDate().getDayOfMonth() <= pc)
                             total = total.add(e.getAmount());
                 }
                 if (total.signum() > 0) typical.put(c, total.divide(BigDecimal.valueOf(history.size()), 2, RoundingMode.HALF_UP));
             }
         }
-        Set<ExpenseCategory> cats = EnumSet.noneOf(ExpenseCategory.class);
+        Set<String> cats = new java.util.LinkedHashSet<>();
         cats.addAll(now.keySet());
         cats.addAll(typical.keySet());
         cats.removeAll(FIXED); // rent and EMIs don't move month to month — they're in the health score instead
@@ -193,14 +195,14 @@ public final class InsightsCalculator {
         for (Expense e : thisMonth) {
             if (FIXED.contains(e.getCategory()) || e.isRecurring() || e.getAmount().compareTo(BigDecimal.valueOf(1000)) < 0) continue;
             List<BigDecimal> same = past.stream().filter(p -> p.getCategory() == e.getCategory()).map(Expense::getAmount).toList();
-            String name = e.getMerchant() != null ? e.getMerchant() : label(e.getCategory());
+            String name = e.getMerchant() != null ? e.getMerchant() : label(in, e.getCategory());
             if (same.size() >= 4) {
                 BigDecimal med = median(same);
                 BigDecimal bar = med.multiply(BigDecimal.valueOf(3)).max(med.add(BigDecimal.valueOf(1000)));
                 if (e.getAmount().compareTo(bar) >= 0) {
                     BigDecimal times = e.getAmount().divide(med, 1, RoundingMode.HALF_UP);
                     out.add(new Anomaly(e.getId(), name, e.getCategory(), e.getAmount(), e.getDate(), med,
-                            times.stripTrailingZeros().toPlainString() + "× your usual " + label(e.getCategory()).toLowerCase(Locale.ROOT) + " spend (" + money.f(med) + ")"));
+                            times.stripTrailingZeros().toPlainString() + "× your usual " + label(in, e.getCategory()).toLowerCase(Locale.ROOT) + " spend (" + money.f(med) + ")"));
                 }
             } else if (overallMedian != null && e.getAmount().compareTo(BigDecimal.valueOf(5000)) >= 0
                     && e.getAmount().compareTo(overallMedian.multiply(BigDecimal.valueOf(5))) >= 0) {
@@ -221,13 +223,13 @@ public final class InsightsCalculator {
                 .filter(e -> e.isRecurring() && e.getDate() != null && !YearMonth.from(e.getDate()).isAfter(m) && !YearMonth.from(e.getDate()).isBefore(m.minusMonths(2)))
                 .sorted(Comparator.comparing(Expense::getDate).reversed())
                 .forEach(e -> {
-                    String k = MerchantKey.of(e.getMerchant() != null ? e.getMerchant() : e.getCategory().name());
+                    String k = MerchantKey.of(e.getMerchant() != null ? e.getMerchant() : e.getCategory());
                     if (!latest.containsKey(k)) latest.put(k, e);
                     else if (!previous.containsKey(k) && !YearMonth.from(e.getDate()).equals(YearMonth.from(latest.get(k).getDate()))) previous.put(k, e);
                 });
         List<RecurringItem> items = latest.values().stream()
                 .filter(e -> !FIXED.contains(e.getCategory()))
-                .map(e -> new RecurringItem(e.getMerchant() != null ? e.getMerchant() : label(e.getCategory()), e.getCategory(), e.getAmount(), e.getDate()))
+                .map(e -> new RecurringItem(e.getMerchant() != null ? e.getMerchant() : label(in, e.getCategory()), e.getCategory(), e.getAmount(), e.getDate()))
                 .sorted(Comparator.comparing(RecurringItem::amount).reversed())
                 .toList();
         BigDecimal monthly = items.stream().map(RecurringItem::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -237,7 +239,7 @@ public final class InsightsCalculator {
             if (before == null || before.getAmount().signum() <= 0) return;
             BigDecimal change = pct(now.getAmount().subtract(before.getAmount()), before.getAmount());
             if (change != null && change.compareTo(BigDecimal.valueOf(2)) > 0) {
-                rises.add(new PriceRise(now.getMerchant() != null ? now.getMerchant() : label(now.getCategory()), before.getAmount(), now.getAmount(), change));
+                rises.add(new PriceRise(now.getMerchant() != null ? now.getMerchant() : label(in, now.getCategory()), before.getAmount(), now.getAmount(), change));
             }
         });
         return new Leakage(monthly.setScale(2, RoundingMode.HALF_UP), monthly.multiply(BigDecimal.valueOf(12)).setScale(2, RoundingMode.HALF_UP), items, rises);
@@ -351,16 +353,16 @@ public final class InsightsCalculator {
         // recurring bills from last month that are due in the next 3 days (or today) and not logged yet
         YearMonth prev = m.minusMonths(1);
         Set<String> loggedThisMonth = in.expenses().stream().filter(e -> e.getDate() != null && YearMonth.from(e.getDate()).equals(m))
-                .map(e -> MerchantKey.of(e.getMerchant() != null ? e.getMerchant() : e.getCategory().name())).collect(Collectors.toSet());
+                .map(e -> MerchantKey.of(e.getMerchant() != null ? e.getMerchant() : e.getCategory())).collect(Collectors.toSet());
         in.expenses().stream()
                 .filter(e -> e.isRecurring() && e.getDate() != null && YearMonth.from(e.getDate()).equals(prev))
                 .forEach(e -> {
-                    String k = MerchantKey.of(e.getMerchant() != null ? e.getMerchant() : e.getCategory().name());
+                    String k = MerchantKey.of(e.getMerchant() != null ? e.getMerchant() : e.getCategory());
                     if (loggedThisMonth.contains(k)) return;
                     LocalDate due = m.atDay(Math.min(e.getDate().getDayOfMonth(), m.lengthOfMonth()));
                     long days = ChronoUnit.DAYS.between(in.today(), due);
                     if (days < 0 || days > 3) return;
-                    String name = e.getMerchant() != null ? e.getMerchant() : label(e.getCategory());
+                    String name = e.getMerchant() != null ? e.getMerchant() : label(in, e.getCategory());
                     out.add(new Alert("recurring-" + k + "-" + due, Level.INFO, name + " due " + (days == 0 ? "today" : days == 1 ? "tomorrow" : "in " + days + " days"),
                             money.f(e.getAmount()) + " on " + DAY.format(due) + ", like last month.", due,
                             name + " " + money.f(e.getAmount()) + " due " + (days == 0 ? "today" : days == 1 ? "tomorrow" : "in " + days + " days")));
@@ -381,10 +383,10 @@ public final class InsightsCalculator {
                 .limit(2)
                 .forEach(t -> {
                     BigDecimal save = t.thisMonth().subtract(t.typical()).setScale(0, RoundingMode.DOWN);
-                    out.add(new Suggestion("Bring " + label(t.category()).toLowerCase(Locale.ROOT) + " back to usual",
+                    out.add(new Suggestion("Bring " + label(in, t.category()).toLowerCase(Locale.ROOT) + " back to usual",
                             "It's at " + money.f(t.thisMonth()) + " against a usual " + money.f(t.typical()) + " — getting back to normal frees about " + money.f(save) + ".", save));
                 });
-        List<RecurringItem> subs = leakage.items().stream().filter(i -> i.category() == ExpenseCategory.SUBSCRIPTIONS).toList();
+        List<RecurringItem> subs = leakage.items().stream().filter(i -> ExpenseCategory.SUBSCRIPTIONS.name().equals(i.category())).toList();
         if (!subs.isEmpty()) {
             BigDecimal monthly = subs.stream().map(RecurringItem::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
             RecurringItem cheapest = subs.getLast();
@@ -452,9 +454,16 @@ public final class InsightsCalculator {
         return (int) Math.round((v - lo) / (hi - lo) * max);
     }
 
-    static String label(ExpenseCategory c) {
-        String s = c.name().replace('_', ' ').toLowerCase(Locale.ROOT);
-        return c == ExpenseCategory.EMI ? "EMI" : Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    /** The user's name for a category (their rename, or their own category), else the built-in name. */
+    static String label(Input in, String key) {
+        if (key == null) return "Other";
+        String own = in.categoryLabels() == null ? null : in.categoryLabels().get(key);
+        return own != null ? own : builtInLabel(key);
+    }
+
+    static String builtInLabel(String key) {
+        String s = key.replace('_', ' ').toLowerCase(Locale.ROOT);
+        return "EMI".equals(key) ? "EMI" : Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
     /** Whole-unit money for sentences: ₹1,23,456 (Indian grouping for INR). */

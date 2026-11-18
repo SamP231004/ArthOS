@@ -29,12 +29,12 @@ import java.util.Optional;
 @RequestMapping("/api/budget")
 public class BudgetController {
 
-    public static final List<ExpenseCategory> DEFAULT_EXCLUDED = List.of(ExpenseCategory.RENT, ExpenseCategory.EMI);
+    public static final List<String> DEFAULT_EXCLUDED = List.of(ExpenseCategory.RENT.name(), ExpenseCategory.EMI.name());
 
     public record BudgetRequest(
             @NotNull @DecimalMin(value = "1", message = "must be at least 1") @Digits(integer = 13, fraction = 2) BigDecimal limit,
             @NotNull BudgetMode mode,
-            @Size(max = 15) List<ExpenseCategory> excludedCategories) {}
+            @Size(max = 80) List<@Size(max = 40) String> excludedCategories) {}
 
     private final BudgetRepository budgets;
     private final ExpenseRepository expenses;

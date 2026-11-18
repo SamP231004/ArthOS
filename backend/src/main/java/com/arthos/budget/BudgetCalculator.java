@@ -39,14 +39,14 @@ public final class BudgetCalculator {
     private BudgetCalculator() {}
 
     public static BudgetStatus calculate(YearMonth month, LocalDate today, BigDecimal limit, BudgetMode mode,
-                                         Collection<ExpenseCategory> excluded, List<Expense> expenses,
+                                         Collection<String> excluded, List<Expense> expenses,
                                          String inheritedFrom) {
         int n = month.lengthOfMonth();
         YearMonth current = YearMonth.from(today);
         boolean isPast = month.isBefore(current);
         boolean isFuture = month.isAfter(current);
         int t = isPast ? n : isFuture ? 0 : today.getDayOfMonth(); // last elapsed day (0 = none)
-        Set<ExpenseCategory> skip = excluded.isEmpty() ? EnumSet.noneOf(ExpenseCategory.class) : EnumSet.copyOf(excluded);
+        Set<String> skip = new java.util.LinkedHashSet<>(excluded);
 
         // per-day counted spending (index 1..n)
         BigDecimal[] spent = new BigDecimal[n + 1];

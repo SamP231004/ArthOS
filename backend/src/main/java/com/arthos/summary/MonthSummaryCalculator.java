@@ -65,7 +65,7 @@ public final class MonthSummaryCalculator {
 
     private static List<CategoryTotal> byCategory(List<Expense> expenses, BigDecimal total) {
         Map<String, BigDecimal> map = new HashMap<>();
-        for (Expense e : expenses) map.merge(e.getCategory().name(), e.getAmount(), BigDecimal::add);
+        for (Expense e : expenses) map.merge(e.getCategory(), e.getAmount(), BigDecimal::add);
         return map.entrySet().stream()
                 .sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
                 .map(en -> new CategoryTotal(en.getKey(), en.getValue(),
@@ -75,7 +75,7 @@ public final class MonthSummaryCalculator {
 
     private static List<TypeTotal> byType(List<Income> incomes) {
         Map<String, BigDecimal> map = new HashMap<>();
-        for (Income i : incomes) map.merge(i.getType().name(), i.getAmount(), BigDecimal::add);
+        for (Income i : incomes) map.merge(i.getType(), i.getAmount(), BigDecimal::add);
         return map.entrySet().stream()
                 .sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
                 .map(en -> new TypeTotal(en.getKey(), en.getValue()))
@@ -97,12 +97,12 @@ public final class MonthSummaryCalculator {
     private static List<RecentTransaction> recent(List<Income> incomes, List<Expense> expenses) {
         record Row(RecentTransaction tx, Instant created) {}
         Stream<Row> in = incomes.stream().map(i -> new Row(
-                new RecentTransaction(i.getId(), "INCOME", i.getAmount(), i.getSource(), i.getType().name(), i.getDate()),
+                new RecentTransaction(i.getId(), "INCOME", i.getAmount(), i.getSource(), i.getType(), i.getDate()),
                 i.getCreatedAt()));
         Stream<Row> out = expenses.stream().map(e -> new Row(
                 new RecentTransaction(e.getId(), "EXPENSE", e.getAmount(),
-                        e.getMerchant() != null ? e.getMerchant() : prettify(e.getCategory().name()),
-                        e.getCategory().name(), e.getDate()),
+                        e.getMerchant() != null ? e.getMerchant() : prettify(e.getCategory()),
+                        e.getCategory(), e.getDate()),
                 e.getCreatedAt()));
         Comparator<Row> order = Comparator.comparing((Row r) -> r.tx().date())
                 .thenComparing(Row::created, Comparator.nullsFirst(Comparator.naturalOrder()))

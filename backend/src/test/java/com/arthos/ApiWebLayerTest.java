@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = {AuthController.class, UserController.class, ExpenseController.class})
-@Import({SecurityConfig.class, JwtService.class, UserContext.class, DemoRateLimiter.class})
+@Import({SecurityConfig.class, JwtService.class, UserContext.class, DemoRateLimiter.class, com.arthos.category.CategoryService.class})
 class ApiWebLayerTest {
 
     @Autowired MockMvc mvc;

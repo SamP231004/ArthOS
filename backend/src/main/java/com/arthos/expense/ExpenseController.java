@@ -28,7 +28,11 @@ public class ExpenseController {
     private final UserContext userCtx;
     private final CategoryLearner learner;
 
-    public ExpenseController(ExpenseRepository expenses, MongoTemplate mongo, UserContext userCtx, CategoryLearner learner) {
+    private final com.arthos.category.CategoryService categories;
+
+    public ExpenseController(ExpenseRepository expenses, MongoTemplate mongo, UserContext userCtx, CategoryLearner learner,
+                             com.arthos.category.CategoryService categories) {
+        this.categories = categories;
         this.expenses = expenses;
         this.mongo = mongo;
         this.userCtx = userCtx;
@@ -41,7 +45,7 @@ public class ExpenseController {
      */
     @GetMapping
     List<ExpenseResponse> list(@RequestParam(required = false) String month,
-                               @RequestParam(required = false) ExpenseCategory category,
+                               @RequestParam(required = false) String category,
                                @RequestParam(required = false) String q,
                                @RequestParam(required = false) BigDecimal minAmount,
                                @RequestParam(required = false) BigDecimal maxAmount) {
@@ -74,6 +78,7 @@ public class ExpenseController {
         Expense e = new Expense();
         e.setUserId(CurrentUser.id());
         e.setExpiresAt(userCtx.demoExpiry(e.getUserId()));
+        categories.requireValid(CurrentUser.id(), com.arthos.category.CategoryKind.EXPENSE, req.category());
         apply(e, req);
         Expense saved = expenses.save(e);
         learn(saved);
@@ -83,6 +88,7 @@ public class ExpenseController {
     @PutMapping("/{id}")
     ExpenseResponse update(@PathVariable String id, @Valid @RequestBody ExpenseRequest req) {
         Expense e = load(id);
+        categories.requireValid(CurrentUser.id(), com.arthos.category.CategoryKind.EXPENSE, req.category());
         apply(e, req);
         Expense saved = expenses.save(e);
         learn(saved); // a changed category is a correction: remembered for this merchant from now on

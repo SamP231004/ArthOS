@@ -13,13 +13,13 @@ public final class IncomeDtos {
     public record IncomeRequest(
             @NotNull @DecimalMin(value = "0.01", message = "must be greater than 0") @Digits(integer = 13, fraction = 2) BigDecimal amount,
             @NotBlank @Size(max = 120) String source,
-            @NotNull IncomeType type,
+            @NotBlank @Size(max = 40) String type,
             @NotNull LocalDate date,
             @Size(max = 500) String note,
             boolean recurring) {}
 
     public record IncomeResponse(
-            String id, BigDecimal amount, String source, IncomeType type, LocalDate date,
+            String id, BigDecimal amount, String source, String type, LocalDate date,
             String monthKey, String note, boolean recurring, Instant createdAt, Instant updatedAt) {
 
         public static IncomeResponse from(Income i) {

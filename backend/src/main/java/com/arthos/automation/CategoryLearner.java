@@ -17,7 +17,7 @@ public class CategoryLearner {
 
     public enum Source { LEARNED, BUILT_IN, NONE }
 
-    public record Suggestion(ExpenseCategory category, Source source) {}
+    public record Suggestion(String category, Source source) {}
 
     private final MerchantRuleRepository rules;
 
@@ -32,12 +32,12 @@ public class CategoryLearner {
             if (learned.isPresent()) return new Suggestion(learned.get().getCategory(), Source.LEARNED);
         }
         return CategoryRules.expense(merchant, text)
-                .map(c -> new Suggestion(c, Source.BUILT_IN))
+                .map(c -> new Suggestion(c.name(), Source.BUILT_IN))
                 .orElse(new Suggestion(null, Source.NONE));
     }
 
     /** Remember the category the user just saved for this merchant. */
-    public void learn(String userId, String merchant, ExpenseCategory category, Instant expiresAt) {
+    public void learn(String userId, String merchant, String category, Instant expiresAt) {
         String key = MerchantKey.of(merchant);
         if (key.isBlank() || category == null) return;
         MerchantRule r = rules.findByUserIdAndKey(userId, key).orElseGet(MerchantRule::new);

@@ -18,7 +18,7 @@ public class MerchantRule {
     private String userId;
     /** {@link MerchantKey} of the merchant. */
     private String key;
-    private ExpenseCategory category;
+    private String category;
     /** How many saved expenses have confirmed this mapping. */
     private int uses;
     private Instant updatedAt;
@@ -31,8 +31,8 @@ public class MerchantRule {
     public void setUserId(String userId) { this.userId = userId; }
     public String getKey() { return key; }
     public void setKey(String key) { this.key = key; }
-    public ExpenseCategory getCategory() { return category; }
-    public void setCategory(ExpenseCategory category) { this.category = category; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
     public int getUses() { return uses; }
     public void setUses(int uses) { this.uses = uses; }
     public Instant getUpdatedAt() { return updatedAt; }

@@ -67,6 +67,7 @@ public class UserController {
         }
         if (req.savingsStartingBalance() != null) u.setSavingsStartingBalance(req.savingsStartingBalance());
         if (req.onboardingCompleted() != null) u.setOnboardingCompleted(req.onboardingCompleted());
+        if (req.goldFundsAsGold() != null) u.setGoldFundsAsGold(req.goldFundsAsGold());
         return UserResponse.from(users.save(u));
     }
 
