@@ -3,7 +3,7 @@
 import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Sparkline } from "../charts";
-import { CLASS_META, HORIZON_META, SOURCE_LABEL, fmtQty, holdingSubtitle, signedPct, tone } from "./meta";
+import { CLASS_META, HORIZON_META, SOURCE_LABEL, fmtQty, holdingSubtitle, signedPct, tone, usd } from "./meta";
 import { Badge, Button, ErrorNote, Field, Input, Modal, Select } from "../ui";
 import { dateLabel, money, todayISO } from "@/lib/format";
 import { useAddLot, useDeleteHolding, useDeleteLot, useSaveHolding, useUpdateLot } from "@/lib/queries";
@@ -48,7 +48,11 @@ function Detail({ h, onClose, initialTab }: { h: HoldingView; onClose: () => voi
             {h.spark.length > 1 && <Sparkline values={h.spark} color={h.spark[h.spark.length - 1] >= h.spark[0] ? "var(--income)" : "var(--expense)"} className="h-12 w-32" />}
           </div>
           <dl className="grid grid-cols-2 gap-3 text-sm">
-            <Stat k={h.assetClass === "GOLD" ? "Price / gram" : h.assetClass === "MUTUAL_FUND" ? "NAV" : "Price"} v={money(h.price)} sub={SOURCE_LABEL[h.priceSource]} />
+            {h.assetClass === "US_STOCK" && h.nativePrice != null ? (
+              <Stat k="Price" v={usd(h.nativePrice)} sub={`≈ ${money(h.price)} · ${SOURCE_LABEL[h.priceSource]}`} />
+            ) : (
+              <Stat k={h.assetClass === "GOLD" ? "Price / gram" : h.assetClass === "MUTUAL_FUND" ? "NAV" : "Price"} v={money(h.price)} sub={SOURCE_LABEL[h.priceSource]} />
+            )}
             <Stat k="Today" v={h.priceSource === "LIVE" ? `${h.dayChange >= 0 ? "+" : "−"}${money(Math.abs(h.dayChange))}` : "—"} sub={h.priceSource === "LIVE" ? signedPct(h.dayChangePct) : "no live price"} tone={tone(h.dayChange)} />
             <Stat k="Invested" v={money(h.invested)} sub={`avg ${money(h.avgCost)} / ${M.unit === "g" ? "g" : "unit"}`} />
             <Stat k="XIRR" v={h.xirr != null ? signedPct(h.xirr) : "—"} sub={h.xirr != null ? "annualised" : "needs 30+ days of history"} tone={tone(h.xirr)} />
@@ -117,7 +121,7 @@ function Lots({ h, autoEdit = null }: { h: HoldingView; autoEdit?: string | null
               <Badge tone={l.type === "BUY" ? "income" : "expense"}>{l.type === "BUY" ? "Buy" : "Sell"}</Badge>
               <span className="text-muted">{dateLabel(l.date)}</span>
               <span className="tabular ml-auto text-right">
-                {fmtQty(l.quantity)} × {money(l.price)}
+                {fmtQty(l.quantity)} × {l.nativePrice != null ? `${usd(l.nativePrice)} (${money(l.price)})` : money(l.price)}
                 <span className="block text-[11px] text-subtle">
                   {money(l.amount)}
                   {paidWith(l)}
@@ -146,10 +150,12 @@ function LotEditor({ h, lot, onDone }: { h: HoldingView; lot: HoldingView["lots"
   const update = useUpdateLot(h.id);
   const [type, setType] = useState<LotType>(lot.type);
   const [qty, setQty] = useState(String(lot.quantity));
-  const [price, setPrice] = useState(String(lot.price));
+  const isUs = h.assetClass === "US_STOCK";
+  const lotFx = isUs && lot.nativePrice ? lot.price / lot.nativePrice : 1; // ₹ per $ on that day
+  const [price, setPrice] = useState(String(isUs && lot.nativePrice != null ? lot.nativePrice : lot.price));
   const [date, setDate] = useState(lot.date);
   const [note, setNote] = useState(lot.note ?? "");
-  const amount = Number(qty) * Number(price) || 0;
+  const amount = (Number(qty) * Number(price) || 0) * lotFx;
   const funding = useFunding(amount, date, fundingOf(lot.fromSavings, lot.amount));
   const unit = CLASS_META[h.assetClass].unit;
 
@@ -179,7 +185,7 @@ function LotEditor({ h, lot, onDone }: { h: HoldingView; lot: HoldingView["lots"
         <Field label={unit === "g" ? "Grams" : unit === "units" ? "Units" : unit === "bonds" ? "Bonds" : "Shares"}>
           <Input type="number" min="0.000001" step="any" required value={qty} onChange={(e) => setQty(e.target.value)} />
         </Field>
-        <Field label={h.assetClass === "MUTUAL_FUND" ? "NAV" : h.assetClass === "GOLD" ? "Price / gram" : "Price"}>
+        <Field label={h.assetClass === "MUTUAL_FUND" ? "NAV" : h.assetClass === "GOLD" ? "Price / gram" : isUs ? "Price ($)" : "Price"}>
           <Input type="number" min="0" step="any" required value={price} onChange={(e) => setPrice(e.target.value)} />
         </Field>
         <Field label="Date">
@@ -209,9 +215,11 @@ function Trade({ h, onDone, initialType = "BUY" }: { h: HoldingView; onDone: () 
   const add = useAddLot(h.id);
   const [type, setType] = useState<LotType>(initialType);
   const [qty, setQty] = useState("");
-  const [price, setPrice] = useState(String(h.price));
+  const isUs = h.assetClass === "US_STOCK";
+  const fx = isUs && h.nativePrice ? h.price / h.nativePrice : 1; // today's ₹ per $
+  const [price, setPrice] = useState(String(isUs && h.nativePrice != null ? h.nativePrice : h.price));
   const [date, setDate] = useState(todayISO());
-  const funding = useFunding(Number(qty) * Number(price) || 0, date);
+  const funding = useFunding((Number(qty) * Number(price) || 0) * fx, date);
   const unit = CLASS_META[h.assetClass].unit;
 
   async function submit(e: React.FormEvent) {
@@ -243,7 +251,7 @@ function Trade({ h, onDone, initialType = "BUY" }: { h: HoldingView; onDone: () 
         <Field label={unit === "g" ? "Grams" : unit === "units" ? "Units" : unit === "bonds" ? "Bonds" : "Shares"} hint={type === "SELL" ? `You hold ${fmtQty(h.quantity)}` : undefined}>
           <Input type="number" min="0.001" step="any" required autoFocus value={qty} onChange={(e) => setQty(e.target.value)} />
         </Field>
-        <Field label="Price / unit"><Input type="number" min="0" step="any" required value={price} onChange={(e) => setPrice(e.target.value)} /></Field>
+        <Field label={isUs ? "Price / share ($)" : "Price / unit"}><Input type="number" min="0" step="any" required value={price} onChange={(e) => setPrice(e.target.value)} /></Field>
         <Field label="Date"><Input type="date" required max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} /></Field>
       </div>
       {Number(qty) > 0 && Number(price) > 0 && (

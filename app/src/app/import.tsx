@@ -7,7 +7,8 @@ import { Pressable, Switch, Text, View } from 'react-native';
 import { Screen } from '@/components/screen';
 import { Button, Card, ErrorNote, Input, T } from '@/components/ui';
 import { money } from '@/lib/format';
-import { heldSummary, parseImport, SOURCES, withSince, type ImportItem, type Parsed, type SourceId } from '@/lib/import';
+import { usd } from '@/lib/invest-meta';
+import { heldSummary, parseImport, SOURCES, US_SOURCES, withSince, type ImportItem, type Parsed, type SourceId } from '@/lib/import';
 import { useImportHoldings, useIsinIndex, type ImportResult } from '@/lib/queries';
 import { alpha, F, R, S, useTheme } from '@/theme';
 
@@ -103,12 +104,13 @@ function Upload({ src, onBack, onParsed }: { src: (typeof SOURCES)[number]; onBa
       const p = await parseImport(bytes, f.name, index.data, {
         since: yearAgo(),
         password: pw,
+        source: src.id,
         pdfText: async (_bytes, password) => {
           if (!ArthosOcrModule) throw new Error('Reading PDFs needs the ArthOS app build (not Expo Go).');
           return ArthosOcrModule.pdfText(f.uri, password ?? null);
         },
       });
-      if (!p.items.length) throw new Error(p.unmatched.length ? 'None of the rows matched an NSE stock or a mutual fund.' : 'No holdings found in this file.');
+      if (!p.items.length) throw new Error(p.unmatched.length ? (US_SOURCES.includes(src.id) ? 'None of the rows had a US ticker (like AAPL) — use the holdings or transactions report.' : 'None of the rows matched an NSE stock or a mutual fund.') : 'No holdings found in this file.');
       onParsed(p);
     } catch (e) {
       const code = (e as { code?: string })?.code;
@@ -162,6 +164,8 @@ function Upload({ src, onBack, onParsed }: { src: (typeof SOURCES)[number]; onBa
 }
 
 function Preview({ parsed, source, onBack, onDone }: { parsed: Parsed; source: SourceId; onBack: () => void; onDone: (r: ImportResult) => void }) {
+  // US statements are in dollars (converted to rupees on import, at each date's rate)
+  const cash = (n: number) => (US_SOURCES.includes(source) ? usd(n) : money(n));
   const { c } = useTheme();
   const importer = useImportHoldings();
   const [since, setSince] = useState(yearAgo());
@@ -207,10 +211,10 @@ function Preview({ parsed, source, onBack, onDone }: { parsed: Parsed; source: S
               <View style={{ flex: 1 }}>
                 <Text numberOfLines={1} style={{ color: on ? c.fg : c.subtle, fontFamily: F.uiMedium, fontSize: 14, textDecorationLine: on ? 'none' : 'line-through' }}>{i.name}</Text>
                 <T variant="small" numberOfLines={1}>
-                  {i.assetClass === 'STOCK' ? 'Stock / ETF' : 'Mutual fund'} · {h.quantity} · avg {money(h.avg)}
+                  {i.assetClass === 'US_STOCK' ? 'US stock / ETF' : i.assetClass === 'STOCK' ? 'Stock / ETF' : 'Mutual fund'} · {h.quantity} · avg {cash(h.avg)}
                 </T>
               </View>
-              <Text style={{ color: c.fg, fontFamily: F.uiSemibold, fontSize: 13.5 }}>{money(Math.round(h.invested))}</Text>
+              <Text style={{ color: c.fg, fontFamily: F.uiSemibold, fontSize: 13.5 }}>{cash(Math.round(h.invested))}</Text>
             </View>
           );
         })}
@@ -229,7 +233,7 @@ function Preview({ parsed, source, onBack, onDone }: { parsed: Parsed; source: S
       <T variant="small">These count as investments you already had — they won&apos;t be taken from your savings account or this month&apos;s spending. Importing a newer file from the same source later updates them.</T>
       <ErrorNote message={importer.error?.message} />
       <Button
-        title={`Import ${chosen.length} holding${chosen.length === 1 ? '' : 's'} · ${money(Math.round(total))}`}
+        title={`Import ${chosen.length} holding${chosen.length === 1 ? '' : 's'} · ${cash(Math.round(total))}`}
         size="lg"
         loading={importer.isPending}
         disabled={!chosen.length || (!parsed.dated && !validSince)}

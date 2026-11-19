@@ -17,11 +17,13 @@ const SYN = {
   symbol: ["symbol", "tradingsymbol", "instrument", "scrip", "scripcode", "stocksymbol", "ticker", "nsesymbol", "scripname"],
   name: ["name", "stockname", "companyname", "securityname", "schemename", "fundname", "scheme", "instrumentname", "security", "stock", "company", "fund"],
   quantity: ["quantity", "quantityavailable", "qty", "totalquantity", "units", "balanceunits", "currentunits", "unitsheld", "holdingqty", "netqty", "availableqty", "shares", "noofshares", "closingbalanceunits"],
-  avg: ["averageprice", "avgprice", "averagebuyprice", "avgbuyprice", "avgcost", "averagecost", "buyavg", "buyaverage", "averagenav", "avgnav", "purchaseprice", "costprice", "avgcostprice", "averagepurchaseprice", "buyprice"],
-  invested: ["buyvalue", "investedvalue", "invested", "investedamount", "costvalue", "totalcost", "purchasevalue", "amountinvested", "investment", "investmentvalue"],
-  date: ["tradedate", "date", "transactiondate", "orderexecutiontime", "executiondate", "dateoftransaction", "navdate"],
+  avg: ["averageprice", "avgprice", "averagebuyprice", "avgbuyprice", "avgcost", "averagecost", "buyavg", "buyaverage", "averagenav", "avgnav", "purchaseprice", "costprice", "avgcostprice", "averagepurchaseprice", "buyprice",
+        "averagepriceusd", "avgpriceusd", "averagebuypriceusd", "avgbuypriceusd", "averagecostusd", "avgcostusd", "costbasispershare", "averagecostpershare", "avgcostpershare"],
+  invested: ["buyvalue", "investedvalue", "invested", "investedamount", "costvalue", "totalcost", "purchasevalue", "amountinvested", "investment", "investmentvalue",
+        "investedvalueusd", "investedamountusd", "totalcostusd", "costbasis", "costbasisusd", "totalinvestedusd", "totalinvested"],
+  date: ["tradedate", "date", "transactiondate", "orderexecutiontime", "executiondate", "dateoftransaction", "navdate", "orderdate", "executedat", "settlementdate"],
   side: ["tradetype", "transactiontype", "buysell", "side", "action", "type", "ordertype"],
-  price: ["price", "tradeprice", "nav", "rate", "executionprice", "averagetradeprice", "purchasenav"],
+  price: ["price", "tradeprice", "nav", "rate", "executionprice", "averagetradeprice", "purchasenav", "priceusd", "pricepershare", "executionpriceusd", "fillprice"],
   amount: ["amount", "value", "tradevalue", "netamount", "transactionamount"],
 } as const;
 

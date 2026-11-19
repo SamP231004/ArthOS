@@ -7,8 +7,8 @@ import { AppHeader } from '@/components/app-header';
 import { Screen } from '@/components/screen';
 import { Button, Card, Chip, ErrorNote, Loading, Segmented, T } from '@/components/ui';
 import { dateLabel, money, monthLabel } from '@/lib/format';
-import { CLASS_META, fmtQty, HORIZON_META, signedPct, toneColor } from '@/lib/invest-meta';
-import { indianMarketStatus } from '@/lib/market';
+import { CLASS_META, fmtQty, HORIZON_META, signedPct, toneColor, usd } from '@/lib/invest-meta';
+import { indianMarketStatus, usMarketStatus } from '@/lib/market';
 import { usePortfolio, useRefreshPrices, useSummary } from '@/lib/queries';
 import type { AssetClass, HoldingView, Horizon, Portfolio, PortfolioRange } from '@/lib/types';
 import { useMonth } from '@/lib/ui-store';
@@ -16,7 +16,8 @@ import { alpha, F, R, S, useStyles, useTheme, type Mode, type Palette } from '@/
 
 type Tab = AssetClass;
 /** Fixed tab order, showing only the classes the user holds (no "All" tab). */
-const CLASS_ORDER: AssetClass[] = ['STOCK', 'MUTUAL_FUND', 'GOLD', 'BOND'];
+/** US stocks get their own tab right after Indian stocks — shown only when the user holds some. */
+const CLASS_ORDER: AssetClass[] = ['STOCK', 'US_STOCK', 'MUTUAL_FUND', 'GOLD', 'BOND'];
 /** Where a holding counts: a gold fund or gold ETF sits under Gold (it's still valued by NAV / market price). */
 const cat = (h: HoldingView) => h.category ?? h.assetClass;
 const presentClasses = (p: Portfolio) => CLASS_ORDER.filter((c) => p.holdings.some((h) => cat(h) === c));
@@ -247,7 +248,7 @@ function Holdings({ p, onRefresh, refreshing }: { p: Portfolio; onRefresh: () =>
   const day = items.reduce((x, h) => x + h.dayChange, 0);
   const asOf = asOfLabel(items);
   const t = p.totals;
-  const market = indianMarketStatus();
+  const market = tab === 'US_STOCK' ? usMarketStatus() : indianMarketStatus();
   // the card follows the selected category, like the web's summary strip; the whole portfolio sits in its footer
   const slice = p.allocation.find((a) => a.assetClass === tab);
   const realized = all.reduce((x, h) => x + h.realizedGain, 0); // fully sold holdings included
@@ -392,11 +393,11 @@ function Row({ h, last, share }: { h: HoldingView; last: boolean; share: number 
         <View style={s.facts}>
           <Fact k={h.assetClass === 'GOLD' ? 'Grams' : 'Qty'} v={`${fmtQty(h.quantity)}${qtyUnit}`} />
           <View style={s.factDivider} />
-          <Fact k="Avg price" v={money(h.avgCost)} />
+          <Fact k="Avg price" v={h.assetClass === 'US_STOCK' && h.nativeAvgCost != null ? usd(h.nativeAvgCost) : money(h.avgCost)} />
           <View style={s.factDivider} />
           <Fact
             k={h.priceSource === 'LIVE' ? 'LTP' : 'Price'}
-            v={money(h.price)}
+            v={h.assetClass === 'US_STOCK' && h.nativePrice != null ? usd(h.nativePrice) : money(h.price)}
             extra={live ? `${(h.dayChangePct ?? 0) >= 0 ? '▲' : '▼'}${Math.abs(h.dayChangePct ?? 0).toFixed(2)}%` : h.priceSource === 'MANUAL' ? 'manual' : h.priceSource === 'FACE_VALUE' ? 'face value' : 'last trade'}
             extraColor={live ? dayTone : c.subtle}
           />

@@ -117,12 +117,12 @@ public class PortfolioController {
         Optional<Holding> existing = holdings.findByUserIdOrderByCreatedAtAsc(h.getUserId()).stream().filter(x -> HoldingIdentity.same(x, h)).findFirst();
         if (existing.isPresent()) {
             Holding e = existing.get();
-            e.getLots().add(lot(req.firstLot()));
+            e.getLots().add(lot(req.firstLot(), req.assetClass()));
             if (e.getGoal() == null) e.setGoal(h.getGoal());
             if (e.getHorizon() == null) e.setHorizon(h.getHorizon());
             return single(holdings.save(e));
         }
-        h.getLots().add(lot(req.firstLot()));
+        h.getLots().add(lot(req.firstLot(), req.assetClass()));
         h.setExpiresAt(userCtx.demoExpiry(h.getUserId()));
         return single(holdings.save(h));
     }
@@ -149,7 +149,7 @@ public class PortfolioController {
             BigDecimal held = held(h, req.date());
             if (req.quantity().compareTo(held) > 0) throw ApiException.badRequest("You only held " + held.stripTrailingZeros().toPlainString() + " on that date");
         }
-        h.getLots().add(lot(req));
+        h.getLots().add(lot(req, h.getAssetClass()));
         checkChronology(h.getLots());
         return single(holdings.save(h));
     }
@@ -166,7 +166,7 @@ public class PortfolioController {
         int created = 0, updated = 0, count = 0;
         List<ImportResult.Skipped> skipped = new java.util.ArrayList<>();
         for (ImportItem item : req.items()) {
-            if (item.assetClass() != AssetClass.STOCK && item.assetClass() != AssetClass.MUTUAL_FUND) {
+            if (item.assetClass() != AssetClass.STOCK && item.assetClass() != AssetClass.MUTUAL_FUND && item.assetClass() != AssetClass.US_STOCK) {
                 skipped.add(new ImportResult.Skipped(item.name(), "Only stocks, ETFs and mutual funds can be imported"));
                 continue;
             }
@@ -175,7 +175,7 @@ public class PortfolioController {
             probe.setAssetClass(item.assetClass());
             probe.setName(item.name().trim());
             probe.setSymbol(item.symbol().trim().toUpperCase(java.util.Locale.ROOT));
-            probe.setExchange(item.assetClass() == AssetClass.STOCK ? "NSE" : null);
+            probe.setExchange(item.assetClass() == AssetClass.STOCK ? "NSE" : item.assetClass() == AssetClass.US_STOCK ? "US" : null);
             Optional<Holding> existing = mine.stream().filter(h -> HoldingIdentity.same(h, probe)).findFirst();
             if (existing.isPresent() && existing.get().getLots().stream().anyMatch(l -> !l.imported())) {
                 skipped.add(new ImportResult.Skipped(item.name(), "Already in ArthOS (added by hand), so it was skipped to avoid counting it twice. Delete it first to replace it with the import."));
@@ -186,10 +186,33 @@ public class PortfolioController {
             // a fresh file from the same broker (or an overlapping statement) replaces the earlier import
             String family = importFamily(req.source());
             target.getLots().removeIf(l -> family.equals(importFamily(l.getImportSource())));
+            boolean us = item.assetClass() == AssetClass.US_STOCK;
+            boolean noRate = false;
             for (ImportLot il : item.lots()) {
-                Holding.Lot l = new Holding.Lot(UUID.randomUUID().toString(), il.type(), il.date(), il.quantity(), il.price(), "Imported");
+                // US statements are in dollars: store INR at that day's rate, keeping the dollar price
+                BigDecimal fx = BigDecimal.ONE;
+                if (us) {
+                    try {
+                        fx = market.usdInr(il.date());
+                    } catch (IllegalStateException e) {
+                        noRate = true;
+                        break;
+                    }
+                }
+                Holding.Lot l = new Holding.Lot(UUID.randomUUID().toString(), il.type(), il.date(), il.quantity(),
+                        il.price().multiply(fx).setScale(4, java.math.RoundingMode.HALF_UP), "Imported");
+                if (us) {
+                    l.setNativePrice(il.price());
+                    l.setFxRate(fx);
+                }
                 l.setImportSource(req.source());
                 target.getLots().add(l);
+            }
+            if (noRate) {
+                target.getLots().clear();
+                target.getLots().addAll(before);
+                skipped.add(new ImportResult.Skipped(item.name(), "Couldn't get the dollar rate right now — try again in a minute"));
+                continue;
             }
             try {
                 if (target.getLots().isEmpty() || target.getLots().stream().noneMatch(l -> l.getType() == LotType.BUY))
@@ -230,8 +253,10 @@ public class PortfolioController {
     PortfolioView.HoldingView updateLot(@PathVariable String id, @PathVariable String lotId, @Valid @RequestBody LotRequest req) {
         Holding h = load(id);
         Holding.Lot l = h.getLots().stream().filter(x -> lotId.equals(x.getId())).findFirst().orElseThrow(() -> ApiException.notFound("Transaction"));
-        Holding.Lot edited = lot(req);
+        Holding.Lot edited = lot(req, h.getAssetClass());
         l.setType(edited.getType());
+        l.setNativePrice(edited.getNativePrice());
+        l.setFxRate(edited.getFxRate());
         l.setDate(edited.getDate());
         l.setQuantity(edited.getQuantity());
         l.setPrice(edited.getPrice());
@@ -267,12 +292,29 @@ public class PortfolioController {
         return holdings.findByIdAndUserId(id, CurrentUser.id()).orElseThrow(() -> ApiException.notFound("Holding"));
     }
 
-    private static Holding.Lot lot(LotRequest r) {
-        Holding.Lot l = new Holding.Lot(UUID.randomUUID().toString(), r.type(), r.date(), r.quantity(), r.price(), blank(r.note()));
+    /**
+     * A transaction from the request. For US stocks the price comes in USD (a savings split stays in INR): it's stored in INR
+     * at that day's USD/INR rate, with the USD price and the rate kept for display — so returns include currency moves.
+     */
+    private Holding.Lot lot(LotRequest r, AssetClass cls) {
+        BigDecimal fx = BigDecimal.ONE;
+        if (cls == AssetClass.US_STOCK) {
+            try {
+                fx = market.usdInr(r.date());
+            } catch (IllegalStateException e) {
+                throw ApiException.badRequest("Couldn't get the dollar rate right now — try again in a minute");
+            }
+        }
+        BigDecimal price = r.price().multiply(fx).setScale(4, java.math.RoundingMode.HALF_UP);
+        Holding.Lot l = new Holding.Lot(UUID.randomUUID().toString(), r.type(), r.date(), r.quantity(), price, blank(r.note()));
+        if (cls == AssetClass.US_STOCK) {
+            l.setNativePrice(r.price());
+            l.setFxRate(fx);
+        }
         if (r.type() != LotType.BUY) return l;
         if (r.fromSavings() != null) {
             // split payment: this much from savings, the rest from spending money
-            BigDecimal s = r.fromSavings().max(BigDecimal.ZERO).min(l.cost());
+            BigDecimal s = r.fromSavings().max(BigDecimal.ZERO).min(l.cost()); // rupees: the savings account is in INR
             l.setSavingsAmount(s);
             l.setFundedFrom(s.signum() == 0 ? FundingSource.SPENDING : FundingSource.SAVINGS);
         } else {
@@ -342,8 +384,8 @@ public class PortfolioController {
         h.setNotes(blank(r.notes()));
         h.setExchange(blank(r.exchange()));
         switch (r.assetClass()) {
-            case STOCK, MUTUAL_FUND -> {
-                if (blank(r.symbol()) == null) throw ApiException.badRequest(r.assetClass() == AssetClass.STOCK
+            case STOCK, MUTUAL_FUND, US_STOCK -> {
+                if (blank(r.symbol()) == null) throw ApiException.badRequest(r.assetClass() != AssetClass.MUTUAL_FUND
                         ? "Pick a stock from search so we can fetch its price" : "Pick a fund from search so we can fetch its NAV");
                 h.setSymbol(r.symbol().trim().toUpperCase(java.util.Locale.ROOT));
             }

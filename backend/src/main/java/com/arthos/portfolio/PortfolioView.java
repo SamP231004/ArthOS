@@ -45,7 +45,9 @@ public record PortfolioView(
     public record LotView(String id, LotType type, LocalDate date, BigDecimal quantity, BigDecimal price, BigDecimal amount, String note,
                           Holding.FundingSource fundedFrom, BigDecimal fromSavings, BigDecimal fromSpending,
                           /** Broker/CAS import source when the transaction was imported (held before ArthOS). */
-                          String importedFrom) {}
+                          String importedFrom,
+                          /** US stocks: the price paid in USD (price is the INR figure at that day's rate). */
+                          BigDecimal nativePrice) {}
 
     public record GoldInfo(GoldForm form, GoldPurity purity, BigDecimal grams, BigDecimal pricePerGram24k) {}
 
@@ -64,5 +66,10 @@ public record PortfolioView(
             /** Where it counts in allocation and tabs (a gold fund → GOLD); valuation follows assetClass. */
             AssetClass category,
             /** The user's "count as" choice; null = automatic. */
-            AssetClass countAs) {}
+            AssetClass countAs,
+            /** "USD" for US stocks (all money fields stay INR); null otherwise. */
+            String currency,
+            /** US stocks: today's price and the average cost, in USD. */
+            BigDecimal nativePrice,
+            BigDecimal nativeAvgCost) {}
 }

@@ -2,7 +2,7 @@
 
 import { ArrowLeft, Check, Search } from "lucide-react";
 import { useDeferredValue, useState } from "react";
-import { CLASS_META, HORIZON_META } from "./meta";
+import { CLASS_META, HORIZON_META, usd } from "./meta";
 import { Button, ErrorNote, Field, Input, Modal, Select } from "../ui";
 import { ApiError } from "@/lib/api";
 import { money, todayISO } from "@/lib/format";
@@ -61,7 +61,10 @@ function HoldingForm({ cls, onBack, onDone }: { cls: AssetClass; onBack: () => v
   const [manualPrice, setManualPrice] = useState("");
 
   const quote = useQuote(cls, picked?.symbol);
-  const live = quote.data?.price;
+  const isUs = cls === "US_STOCK";
+  // US stocks: the form works in dollars (what the broker shows); the backend converts at the purchase date's rate
+  const live = isUs ? quote.data?.nativePrice : quote.data?.price;
+  const fx = isUs && quote.data?.nativePrice ? quote.data.price / quote.data.nativePrice : 1; // today's ₹ per $
   const factor = cls === "GOLD" && purity === "K22" ? 0.916 : 1;
   const livePrice = live != null ? Math.round(live * factor * 100) / 100 : null;
 
@@ -70,7 +73,8 @@ function HoldingForm({ cls, onBack, onDone }: { cls: AssetClass; onBack: () => v
   const units = cls === "MUTUAL_FUND" && amount && effectivePrice ? Number(amount) / Number(effectivePrice) : null;
   const quantity = units != null && !qty ? Math.floor(units * 1000) / 1000 : Number(qty);
   const total = quantity > 0 && Number(effectivePrice) > 0 ? quantity * Number(effectivePrice) : 0;
-  const funding = useFunding(total, date);
+  // the savings account is in rupees, so the funding check uses the ₹ cost (today's rate is close enough here)
+  const funding = useFunding(isUs ? Math.round(total * fx * 100) / 100 : total, date);
   const err = save.error instanceof ApiError ? save.error : null;
 
   async function submit(e: React.FormEvent) {
@@ -100,21 +104,23 @@ function HoldingForm({ cls, onBack, onDone }: { cls: AssetClass; onBack: () => v
     }
   }
 
-  const needsPick = (cls === "STOCK" || cls === "MUTUAL_FUND") && !picked;
+  const listed = cls === "STOCK" || cls === "MUTUAL_FUND" || cls === "US_STOCK";
+  const needsPick = listed && !picked;
   return (
     <form onSubmit={submit} className="space-y-5">
       <button type="button" onClick={onBack} className="flex items-center gap-1.5 text-xs text-muted hover:text-fg">
         <ArrowLeft size={13} /> Change type
       </button>
 
-      {(cls === "STOCK" || cls === "MUTUAL_FUND") && (
+      {listed && (
         picked ? (
           <div className="flex items-center justify-between gap-3 rounded-xl border border-brand/30 bg-brand/[0.05] p-3.5">
             <div className="min-w-0">
               <p className="truncate font-medium">{picked.name}</p>
               <p className="text-xs text-muted">
                 {picked.symbol} · {picked.exchange}
-                {live != null && <> · {cls === "MUTUAL_FUND" ? "NAV" : "Last"} {money(live)}</>}
+                {live != null && <> · {cls === "MUTUAL_FUND" ? "NAV" : "Last"} {isUs ? usd(live) : money(live)}</>}
+                {isUs && live != null && <> · ≈ {money(quote.data!.price)}</>}
                 {quote.isLoading && " · fetching price…"}
               </p>
             </div>
@@ -182,7 +188,7 @@ function HoldingForm({ cls, onBack, onDone }: { cls: AssetClass; onBack: () => v
                 <Input type="number" min="0.001" step="any" required value={qty} onChange={(e) => setQty(e.target.value)} />
               </Field>
             )}
-            <Field label={cls === "GOLD" ? "Price / gram" : cls === "MUTUAL_FUND" ? "NAV paid" : "Price paid"}>
+            <Field label={cls === "GOLD" ? "Price / gram" : cls === "MUTUAL_FUND" ? "NAV paid" : isUs ? "Price paid ($)" : "Price paid"} hint={isUs && Number(effectivePrice) > 0 ? `≈ ${money(Number(effectivePrice) * fx)} per share today · converted at the rate on the purchase date` : undefined}>
               <Input type="number" min="0" step="any" required value={effectivePrice} onChange={(e) => setPrice(e.target.value)} />
             </Field>
             <Field label="Date" required>
@@ -240,7 +246,7 @@ function SymbolPicker({ cls, onPick }: { cls: AssetClass; onPick: (m: SymbolMatc
     <div>
       <div className="relative">
         <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-subtle" />
-        <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} className="field pl-10" placeholder={cls === "STOCK" ? "Search NSE / BSE — e.g. Reliance, NIFTYBEES" : "Search funds — e.g. Parag Parikh Flexi Cap"} />
+        <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} className="field pl-10" placeholder={cls === "STOCK" ? "Search NSE / BSE — e.g. Reliance, NIFTYBEES" : cls === "US_STOCK" ? "Search NASDAQ / NYSE — e.g. Apple, NVIDIA, VOO" : "Search funds — e.g. Parag Parikh Flexi Cap"} />
       </div>
       <div className="mt-2 max-h-64 overflow-y-auto rounded-xl border border-line">
         {q.trim().length < 2 ? (

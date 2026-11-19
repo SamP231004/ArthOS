@@ -25,4 +25,18 @@ public final class MarketHours {
     public static boolean isOpenNow() {
         return isOpen(Instant.now());
     }
+
+    public static final ZoneId NEW_YORK = ZoneId.of("America/New_York");
+
+    /** NYSE/NASDAQ regular session: Monday–Friday, 09:30–16:00 New York time (DST handled by the zone). */
+    public static boolean isUsOpen(Instant at) {
+        ZonedDateTime t = at.atZone(NEW_YORK);
+        if (t.getDayOfWeek() == DayOfWeek.SATURDAY || t.getDayOfWeek() == DayOfWeek.SUNDAY) return false;
+        LocalTime time = t.toLocalTime();
+        return !time.isBefore(LocalTime.of(9, 30)) && time.isBefore(LocalTime.of(16, 0));
+    }
+
+    public static boolean isUsOpenNow() {
+        return isUsOpen(Instant.now());
+    }
 }

@@ -6,6 +6,7 @@ export const CLASS_META: Record<AssetClass, { label: string; plural: string; add
   STOCK: { label: 'Stock / ETF', plural: 'Stocks & ETFs', addTitle: 'Add a stock or ETF', unit: 'shares', color: (c) => c.c1, glyph: '↗', blurb: 'NSE & BSE equities and ETFs, priced live' },
   MUTUAL_FUND: { label: 'Mutual fund', plural: 'Mutual funds', addTitle: 'Add a mutual fund', unit: 'units', color: (c) => c.c3, glyph: '◔', blurb: 'Any AMFI scheme — SIPs or lump sums, with XIRR' },
   GOLD: { label: 'Gold', plural: 'Gold', addTitle: 'Add gold', unit: 'g', color: (c) => c.c2, glyph: '◈', blurb: 'Digital, physical or Sovereign Gold Bonds by weight' },
+  US_STOCK: { label: 'US stock / ETF', plural: 'US stocks', addTitle: 'Add a US stock or ETF', unit: 'shares', color: (c) => c.c5, glyph: '$', blurb: 'NASDAQ & NYSE, in ₹ at each day’s dollar rate' },
   BOND: { label: 'Bond', plural: 'Bonds', addTitle: 'Add a bond', unit: 'bonds', color: (c) => c.c4, glyph: '▤', blurb: 'G-Secs and corporate bonds with coupon & maturity' },
 };
 
@@ -26,6 +27,8 @@ export function holdingSubtitle(h: HoldingView): string {
   switch (h.assetClass) {
     case 'STOCK':
       return `${fmtQty(h.quantity)} shares · ${h.symbol?.replace(/\.(NS|BO)$/, '')}`;
+    case 'US_STOCK':
+      return `${fmtQty(h.quantity)} shares · ${h.symbol}${h.nativePrice != null ? ` · ${usd(h.nativePrice)}` : ''}`;
     case 'MUTUAL_FUND':
       return `${fmtQty(h.quantity)} units · NAV ${h.price.toFixed(2)}`;
     case 'GOLD':
@@ -33,6 +36,11 @@ export function holdingSubtitle(h: HoldingView): string {
     case 'BOND':
       return h.bond ? `${fmtQty(h.quantity)} × ${h.bond.faceValue} · ${h.bond.couponRate}% · ${h.bond.maturityDate.slice(0, 4)}` : `${fmtQty(h.quantity)} bonds`;
   }
+}
+
+/** A US dollar amount: $1,234.50. */
+export function usd(n?: number | null): string {
+  return n == null ? '—' : '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 export function signedPct(n?: number | null): string {

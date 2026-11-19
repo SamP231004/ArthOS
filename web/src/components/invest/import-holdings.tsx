@@ -4,7 +4,8 @@ import { ArrowLeft, Check, FileUp, Loader2, Lock, ShieldCheck, TriangleAlert } f
 import { useRef, useState } from "react";
 import { Button, ErrorNote, Input, Modal } from "@/components/ui";
 import { money } from "@/lib/format";
-import { heldSummary, parseImport, SOURCES, withSince, type ImportItem, type Parsed, type SourceId } from "@/lib/import";
+import { usd } from "./meta";
+import { heldSummary, parseImport, SOURCES, US_SOURCES, withSince, type ImportItem, type Parsed, type SourceId } from "@/lib/import";
 import { PdfPasswordError, pdfTextWeb } from "@/lib/import/pdf-web";
 import { useImportHoldings, useIsinIndex, type ImportResult } from "@/lib/queries";
 
@@ -88,8 +89,8 @@ function Upload({ src, onBack, onParsed }: { src: (typeof SOURCES)[number]; onBa
     setBusy(true);
     setError(null);
     try {
-      const p = await parseImport(f.bytes, f.name, index.data, { since: yearAgo(), password: pw, pdfText: pdfTextWeb });
-      if (!p.items.length) throw new Error(p.unmatched.length ? "None of the rows matched an NSE stock or a mutual fund." : "No holdings found in this file.");
+      const p = await parseImport(f.bytes, f.name, index.data, { since: yearAgo(), password: pw, source: src.id, pdfText: pdfTextWeb });
+      if (!p.items.length) throw new Error(p.unmatched.length ? (US_SOURCES.includes(src.id) ? "None of the rows had a US ticker (like AAPL) — use the holdings or transactions report." : "None of the rows matched an NSE stock or a mutual fund.") : "No holdings found in this file.");
       onParsed(p);
     } catch (e) {
       if (e instanceof PdfPasswordError) {
@@ -158,6 +159,8 @@ function Upload({ src, onBack, onParsed }: { src: (typeof SOURCES)[number]; onBa
 }
 
 function Preview({ parsed, source, onBack, onDone }: { parsed: Parsed; source: SourceId; onBack: () => void; onDone: (r: ImportResult) => void }) {
+  // US statements are in dollars (converted to rupees on import, at each date's rate)
+  const cash = (n: number) => (US_SOURCES.includes(source) ? usd(n) : money(n));
   const importer = useImportHoldings();
   const [since, setSince] = useState(yearAgo());
   const [off, setOff] = useState<Set<string>>(new Set());
@@ -198,11 +201,11 @@ function Preview({ parsed, source, onBack, onDone }: { parsed: Parsed; source: S
                 <span className="min-w-0 flex-1">
                   <span className={`block truncate text-sm font-medium ${on ? "" : "text-subtle line-through"}`}>{i.name}</span>
                   <span className="block text-xs text-subtle">
-                    {i.assetClass === "STOCK" ? "Stock / ETF" : "Mutual fund"} · {h.quantity} {i.assetClass === "STOCK" ? "shares" : "units"} · avg {money(h.avg)}
+                    {i.assetClass === "US_STOCK" ? "US stock / ETF" : i.assetClass === "STOCK" ? "Stock / ETF" : "Mutual fund"} · {h.quantity} {i.assetClass === "MUTUAL_FUND" ? "units" : "shares"} · avg {cash(h.avg)}
                     {parsed.dated && ` · ${i.lots.length} transaction${i.lots.length === 1 ? "" : "s"}`}
                   </span>
                 </span>
-                <span className="tabular shrink-0 text-sm">{money(Math.round(h.invested))}</span>
+                <span className="tabular shrink-0 text-sm">{cash(Math.round(h.invested))}</span>
               </label>
             </li>
           );
@@ -232,7 +235,7 @@ function Preview({ parsed, source, onBack, onDone }: { parsed: Parsed; source: S
         disabled={!chosen.length}
         onClick={() => importer.mutate({ source, items: chosen }, { onSuccess: onDone })}
       >
-        Import {chosen.length} holding{chosen.length === 1 ? "" : "s"} · {money(Math.round(total))}
+        Import {chosen.length} holding{chosen.length === 1 ? "" : "s"} · {cash(Math.round(total))}
       </Button>
     </div>
   );

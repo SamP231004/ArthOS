@@ -31,6 +31,16 @@ class HoldingCategoryTest {
     }
 
     @Test
+    void usGoldEtfsCountAsGoldButMinersAndStocksDoNot() {
+        assertEquals(AssetClass.GOLD, h(AssetClass.US_STOCK, "SPDR Gold Shares", "GLD").category());
+        assertEquals(AssetClass.GOLD, h(AssetClass.US_STOCK, "iShares Gold Trust", "IAU").category());
+        assertEquals(AssetClass.GOLD, h(AssetClass.US_STOCK, "abrdn Gold ETF Trust", "SGOL").category());
+        assertEquals(AssetClass.US_STOCK, h(AssetClass.US_STOCK, "VanEck Gold Miners ETF", "GDX").category());
+        assertEquals(AssetClass.US_STOCK, h(AssetClass.US_STOCK, "Apple Inc.", "AAPL").category());
+        assertEquals(AssetClass.US_STOCK, h(AssetClass.US_STOCK, "SPDR Gold Shares", "GLD").category(false)); // setting off
+    }
+
+    @Test
     void theSettingTurnsTheAutomaticRuleOff() {
         Holding fund = h(AssetClass.MUTUAL_FUND, "SBI GOLD FUND - Direct Plan - Growth", "119788");
         assertEquals(AssetClass.MUTUAL_FUND, fund.category(false));

@@ -8,7 +8,9 @@ import type { RawHolding, RawTrade } from "./detect";
 export type IsinIndex = { generatedAt: string; eq: [string, string, string][]; mf: [string, string, string][] };
 
 export type ImportLot = { type: "BUY" | "SELL"; date: string; quantity: number; price: number };
-export type ImportItem = { assetClass: "STOCK" | "MUTUAL_FUND"; name: string; symbol: string; isin?: string; lots: ImportLot[] };
+export type ImportItem = { assetClass: "STOCK" | "MUTUAL_FUND" | "US_STOCK"; name: string; symbol: string; isin?: string; lots: ImportLot[] };
+/** Anything that can resolve a row to an instrument: the ISIN-index matcher, or the US ticker reader. */
+type Finder = { find: Matcher["find"] };
 export type Unmatched = { label: string; reason: string };
 
 const key = (s: string) =>
@@ -59,7 +61,7 @@ export class Matcher {
   }
 
   /** ISIN first (exact), then NSE symbol, then a normalised name. */
-  find(r: { isin?: string; symbol?: string; name?: string }): { assetClass: ImportItem["assetClass"]; symbol: string; name: string; isin: string } | null {
+  find(r: { isin?: string; symbol?: string; name?: string }): { assetClass: ImportItem["assetClass"]; symbol: string; name: string; isin?: string } | null {
     if (r.isin) {
       const e = this.eqIsin.get(r.isin);
       if (e) return { assetClass: "STOCK", symbol: `${e[0]}.NS`, name: e[1], isin: r.isin };
@@ -86,7 +88,7 @@ const label = (r: { isin?: string; symbol?: string; name?: string }) => r.name ?
 const round = (n: number, d: number) => Math.round(n * 10 ** d) / 10 ** d;
 
 /** Holdings files have no purchase dates: each holding becomes one purchase at its average price on `since`. */
-export function fromHoldings(rows: RawHolding[], m: Matcher, since: string): { items: ImportItem[]; unmatched: Unmatched[] } {
+export function fromHoldings(rows: RawHolding[], m: Finder, since: string): { items: ImportItem[]; unmatched: Unmatched[] } {
   const byKey = new Map<string, ImportItem>();
   const unmatched: Unmatched[] = [];
   for (const r of rows) {
@@ -104,7 +106,7 @@ export function fromHoldings(rows: RawHolding[], m: Matcher, since: string): { i
 }
 
 /** Trades keep their real dates, so P&L and XIRR are exact. Sells beyond what the file bought are dropped. */
-export function fromTrades(rows: RawTrade[], m: Matcher): { items: ImportItem[]; unmatched: Unmatched[]; dropped: number } {
+export function fromTrades(rows: RawTrade[], m: Finder): { items: ImportItem[]; unmatched: Unmatched[]; dropped: number } {
   const byKey = new Map<string, ImportItem>();
   const unmatched = new Map<string, Unmatched>();
   for (const r of rows) {
@@ -157,3 +159,18 @@ export function heldSummary(item: ImportItem) {
   }
   return { quantity: round(qty, 4), invested: Math.max(0, round(cost, 2)), avg: qty > 0 ? round(cost / qty, 2) : 0 };
 }
+
+/**
+ * US statements (INDmoney, Vested…) name shares by ticker, which the Indian ISIN index doesn't know — take the ticker
+ * as it is ("AAPL", or "Apple Inc (AAPL)" when only a name column exists). Prices stay in USD; the server converts
+ * each at its date's USD/INR rate.
+ */
+export const usTickers: Finder = {
+  find(r) {
+    const fromName = r.name?.match(/\(([A-Z][A-Z.\-]{0,9})\)\s*$/)?.[1];
+    const raw = (r.symbol ?? fromName ?? "").toUpperCase().replace(/^(NASDAQ|NYSE|ARCA|AMEX)[:\s]+/, "").replace(/\.(US|O|N)$/, "").trim();
+    if (!/^[A-Z][A-Z.\-]{0,9}$/.test(raw)) return null;
+    const name = (r.name ?? raw).replace(/\s*\([A-Z.\-]+\)\s*$/, "").trim() || raw;
+    return { assetClass: "US_STOCK", symbol: raw, name, isin: r.isin };
+  },
+};

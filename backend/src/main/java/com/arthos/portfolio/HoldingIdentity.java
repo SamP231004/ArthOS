@@ -27,7 +27,7 @@ public final class HoldingIdentity {
                 String ta = ticker(a.getSymbol()), tb = ticker(b.getSymbol());
                 yield (!ta.isEmpty() && ta.equals(tb)) || (!name(a.getName()).isEmpty() && name(a.getName()).equals(name(b.getName())));
             }
-            case MUTUAL_FUND -> a.getSymbol() != null && a.getSymbol().equalsIgnoreCase(Objects.toString(b.getSymbol(), ""));
+            case MUTUAL_FUND, US_STOCK -> a.getSymbol() != null && a.getSymbol().equalsIgnoreCase(Objects.toString(b.getSymbol(), ""));
             case GOLD -> a.getGoldForm() == b.getGoldForm() && a.getPurity() == b.getPurity()
                     && (a.getGoldForm() != GoldForm.SGB || name(a.getName()).equals(name(b.getName())));
             case BOND -> name(a.getName()).equals(name(b.getName()));

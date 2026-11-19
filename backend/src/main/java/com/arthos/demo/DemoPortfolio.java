@@ -45,6 +45,12 @@ public final class DemoPortfolio {
             new Spec(AssetClass.MUTUAL_FUND, "125354", "Axis Small Cap Fund - Direct Growth", "AMFI", Horizon.MEDIUM, null, 110),
             new Spec(AssetClass.MUTUAL_FUND, "118968", "HDFC Balanced Advantage Fund - Direct Growth", "AMFI", Horizon.MEDIUM, "House down payment", 500));
 
+    /** US holdings (priced in INR from converted history; the demo service fills in the dollar side). */
+    static final List<Spec> US = List.of(
+            new Spec(AssetClass.US_STOCK, "AAPL", "Apple Inc.", "NASDAQ", Horizon.LONG, "Retirement", 21_000),
+            new Spec(AssetClass.US_STOCK, "MSFT", "Microsoft Corporation", "NASDAQ", Horizon.LONG, null, 38_000),
+            new Spec(AssetClass.US_STOCK, "VOO", "Vanguard S&P 500 ETF", "NYSE Arca", Horizon.LONG, "Retirement", 48_000));
+
     private DemoPortfolio() {}
 
     /** Market keys whose histories should be fetched before {@link #build}. */
@@ -52,6 +58,7 @@ public final class DemoPortfolio {
         List<String> keys = new ArrayList<>();
         STOCKS.forEach(s -> keys.add(key(s)));
         FUNDS.forEach(s -> keys.add(key(s)));
+        US.forEach(s -> keys.add(key(s)));
         keys.add("GOLD:XAU");
         return keys;
     }
@@ -119,6 +126,18 @@ public final class DemoPortfolio {
                 double amount = i == 2 ? 40_000 : 25_000;
                 hd.getLots().add(new Lot(UUID.randomUUID().toString(), LotType.BUY, d, BigDecimal.valueOf(amount).divide(nav, 3, RoundingMode.DOWN), nav, "Lump sum"));
             }
+            out.add(hd);
+        }
+
+        // ---- US stocks: one buy on a dip 12–4 months ago, about ₹40,000 each (fractional shares, as US apps allow).
+        for (Spec s : US) {
+            List<PricePoint> h = histories.getOrDefault(key(s), List.of());
+            PricePoint dip = lowest(h, today.minusMonths(12), today.minusMonths(4));
+            LocalDate d = dip != null ? dip.date() : today.minusMonths(8);
+            BigDecimal price = dip != null ? dip.close() : BigDecimal.valueOf(s.fallbackPrice());
+            Holding hd = base(s);
+            hd.getLots().add(new Lot(UUID.randomUUID().toString(), LotType.BUY, d, BigDecimal.valueOf(40_000).divide(price, 4, RoundingMode.DOWN),
+                    price.setScale(2, RoundingMode.HALF_UP), null));
             out.add(hd);
         }
 

@@ -8,7 +8,7 @@ import { Screen } from '@/components/screen';
 import { Button, Card, Chip, ErrorNote, Input, T } from '@/components/ui';
 import { ApiError } from '@/lib/api';
 import { money, todayISO } from '@/lib/format';
-import { CLASS_META, HORIZON_META } from '@/lib/invest-meta';
+import { CLASS_META, HORIZON_META, usd } from '@/lib/invest-meta';
 import { useMarketSearch, useQuote, useSaveHolding } from '@/lib/queries';
 import { ASSET_CLASSES, HORIZONS, type AssetClass, type BondType, type GoldForm, type GoldPurity, type Horizon, type SymbolMatch } from '@/lib/types';
 import { alpha, F, R, S, useTheme } from '@/theme';
@@ -68,12 +68,17 @@ function Form({ cls, onBack }: { cls: AssetClass; onBack: () => void }) {
 
   const quote = useQuote(cls, picked?.symbol);
   const factor = cls === 'GOLD' && purity === 'K22' && goldForm !== 'SGB' ? 0.916 : 1;
-  const live = quote.data?.price != null ? Math.round(quote.data.price * factor * 100) / 100 : null;
+  const isUs = cls === 'US_STOCK';
+  // US stocks: the form works in dollars (what the broker shows); the backend converts at the purchase date's rate
+  const fx = isUs && quote.data?.nativePrice ? quote.data.price / quote.data.nativePrice : 1; // today's ₹ per $
+  const live = isUs ? quote.data?.nativePrice ?? null : quote.data?.price != null ? Math.round(quote.data.price * factor * 100) / 100 : null;
   const effPrice = price !== '' ? price : date === todayISO() && live != null ? String(live) : '';
   const units = cls === 'MUTUAL_FUND' && amount && effPrice ? Number(amount) / Number(effPrice) : null;
   const quantity = units != null && !qty ? Math.floor(units * 1000) / 1000 : Number(qty);
-  const funding = useFunding(quantity * Number(effPrice) || 0, date);
-  const needsPick = (cls === 'STOCK' || cls === 'MUTUAL_FUND') && !picked;
+  // the savings account is in rupees, so the funding check uses the ₹ cost
+  const funding = useFunding((quantity * Number(effPrice) || 0) * fx, date);
+  const listed = cls === 'STOCK' || cls === 'MUTUAL_FUND' || cls === 'US_STOCK';
+  const needsPick = listed && !picked;
   const err = save.error instanceof ApiError ? save.error : null;
   const num = (t: string) => t.replace(/[^0-9.]/g, '');
 
@@ -109,13 +114,13 @@ function Form({ cls, onBack }: { cls: AssetClass; onBack: () => void }) {
         </Pressable>
         <T variant="title" style={{ fontSize: 26 }}>{CLASS_META[cls].addTitle}</T>
 
-        {(cls === 'STOCK' || cls === 'MUTUAL_FUND') &&
+        {listed &&
           (picked ? (
             <Card style={{ borderColor: alpha(c.brand, 0.35), gap: 2 }}>
               <T variant="h2">{picked.name}</T>
               <T variant="small">
                 {picked.symbol} · {picked.exchange}
-                {quote.data ? ` · ${cls === 'MUTUAL_FUND' ? 'NAV' : 'Last'} ${money(quote.data.price)}` : quote.isLoading ? ' · fetching price…' : ''}
+                {quote.data ? ` · ${cls === 'MUTUAL_FUND' ? 'NAV' : 'Last'} ${isUs ? `${usd(quote.data.nativePrice)} ≈ ${money(quote.data.price)}` : money(quote.data.price)}` : quote.isLoading ? ' · fetching price…' : ''}
               </T>
               <Pressable onPress={() => { setPicked(null); setPrice(''); }}>
                 <T variant="small" style={{ color: c.brand, marginTop: S.xs }}>Change</T>
@@ -127,7 +132,7 @@ function Form({ cls, onBack }: { cls: AssetClass; onBack: () => void }) {
                 autoFocus
                 value={query}
                 onChangeText={setQuery}
-                placeholder={cls === 'STOCK' ? '⌕  Search NSE / BSE — e.g. Reliance' : '⌕  Search funds — e.g. Parag Parikh'}
+                placeholder={cls === 'STOCK' ? '⌕  Search NSE / BSE — e.g. Reliance' : cls === 'US_STOCK' ? '⌕  Search NASDAQ / NYSE — e.g. Apple' : '⌕  Search funds — e.g. Parag Parikh'}
                 placeholderTextColor={c.subtle}
                 style={{ borderWidth: 1, borderColor: c.lineStrong, backgroundColor: c.field, color: c.fg, borderRadius: R.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, fontFamily: F.ui }}
               />
@@ -195,7 +200,7 @@ function Form({ cls, onBack }: { cls: AssetClass; onBack: () => void }) {
                 )}
               </View>
               <View style={{ flex: 1 }}>
-                <Input label={cls === 'GOLD' ? 'Price / gram' : cls === 'MUTUAL_FUND' ? 'NAV paid' : 'Price paid'} keyboardType="decimal-pad" value={effPrice} onChangeText={(t) => setPrice(num(t))} />
+                <Input label={cls === 'GOLD' ? 'Price / gram' : cls === 'MUTUAL_FUND' ? 'NAV paid' : isUs ? 'Price paid ($)' : 'Price paid'} keyboardType="decimal-pad" value={effPrice} onChangeText={(t) => setPrice(num(t))} hint={isUs && Number(effPrice) > 0 ? `≈ ${money(Number(effPrice) * fx)} per share today` : undefined} />
               </View>
             </View>
             {cls === 'MUTUAL_FUND' && <Input label="…or units (optional)" keyboardType="decimal-pad" value={qty} onChangeText={(t) => setQty(num(t))} />}

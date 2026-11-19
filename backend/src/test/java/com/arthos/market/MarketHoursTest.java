@@ -24,4 +24,14 @@ class MarketHoursTest {
         assertThat(at("2026-11-14T11:00:00")).isFalse(); // Saturday
         assertThat(at("2026-11-15T11:00:00")).isFalse(); // Sunday
     }
+
+    @Test
+    void usSessionFollowsNewYorkTimeAcrossDaylightSaving() {
+        // 18 Nov 2026 (no DST): 9:30–16:00 New York = 20:00–02:30 IST
+        assertThat(MarketHours.isUsOpen(java.time.ZonedDateTime.of(2026, 11, 18, 9, 30, 0, 0, MarketHours.NEW_YORK).toInstant())).isTrue();
+        assertThat(MarketHours.isUsOpen(java.time.ZonedDateTime.of(2026, 11, 18, 16, 0, 0, 0, MarketHours.NEW_YORK).toInstant())).isFalse();
+        // 15 Jul 2026 (DST): still 9:30 local, one hour earlier in IST
+        assertThat(MarketHours.isUsOpen(java.time.ZonedDateTime.of(2026, 7, 15, 10, 0, 0, 0, MarketHours.NEW_YORK).toInstant())).isTrue();
+        assertThat(MarketHours.isUsOpen(java.time.ZonedDateTime.of(2026, 11, 21, 11, 0, 0, 0, MarketHours.NEW_YORK).toInstant())).isFalse(); // Saturday
+    }
 }

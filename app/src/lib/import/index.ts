@@ -1,6 +1,6 @@
 import { parseCas } from "./cas";
 import { detect } from "./detect";
-import { fromHoldings, fromTrades, Matcher, type ImportItem, type IsinIndex, type Unmatched } from "./match";
+import { fromHoldings, fromTrades, Matcher, usTickers, type ImportItem, type IsinIndex, type Unmatched } from "./match";
 import { readTable } from "./table";
 
 /**
@@ -11,7 +11,9 @@ import { readTable } from "./table";
 export type { ImportItem, ImportLot, IsinIndex, Unmatched } from "./match";
 export { heldSummary } from "./match";
 
-export type SourceId = "ZERODHA_HOLDINGS" | "ZERODHA_TRADEBOOK" | "GROWW_STOCKS" | "GROWW_MF" | "CAS" | "OTHER";
+export type SourceId = "ZERODHA_HOLDINGS" | "ZERODHA_TRADEBOOK" | "GROWW_STOCKS" | "GROWW_MF" | "CAS" | "INDMONEY_US" | "VESTED" | "OTHER";
+/** Statements of US shares: tickers and USD prices instead of ISINs and rupees. */
+export const US_SOURCES: SourceId[] = ["INDMONEY_US", "VESTED"];
 
 export const SOURCES: { id: SourceId; name: string; what: string; how: string; accepts: string; exact: boolean }[] = [
   { id: "ZERODHA_HOLDINGS", name: "Zerodha · Holdings", what: "Your current stocks and ETFs", how: "Console → Portfolio → Holdings → Download (Excel or CSV)", accepts: ".xlsx,.csv", exact: false },
@@ -19,6 +21,8 @@ export const SOURCES: { id: SourceId; name: string; what: string; how: string; a
   { id: "GROWW_STOCKS", name: "Groww · Stocks", what: "Your current stocks and ETFs", how: "Groww → Reports → Stocks → Holdings statement → Download (Excel)", accepts: ".xlsx,.csv", exact: false },
   { id: "GROWW_MF", name: "Groww · Mutual funds", what: "Your funds — the transactions report keeps dates", how: "Groww → Reports → Mutual funds → Transactions (or Holdings) statement → Download (Excel)", accepts: ".xlsx,.csv", exact: true },
   { id: "CAS", name: "CAS · All mutual funds", what: "Every fund across all apps, with full history", how: "camsonline.com → Investor services → CAS (CAMS + KFintech) → Detailed, since inception → set a password → it arrives by email as a PDF", accepts: ".pdf", exact: true },
+  { id: "INDMONEY_US", name: "INDmoney · US stocks", what: "Your US shares and ETFs, in dollars", how: "INDmoney → US Stocks → your portfolio → download the holdings or transactions report (Excel or CSV). It needs the ticker, quantity and average price in USD", accepts: ".xlsx,.csv", exact: false },
+  { id: "VESTED", name: "Vested · US stocks", what: "Your US shares and ETFs, in dollars", how: "Vested → Reports → Holdings (or Transactions) → download as Excel or CSV. It needs the ticker, quantity and average price in USD", accepts: ".xlsx,.csv", exact: false },
   { id: "OTHER", name: "Other broker", what: "Upstox, Angel One, ICICI, HDFC, Kotak and more", how: "Download the holdings (or tradebook) as Excel/CSV — it needs ISIN or symbol, quantity and average price", accepts: ".xlsx,.csv", exact: false },
 ];
 
@@ -38,9 +42,10 @@ export async function parseImport(
   bytes: Uint8Array,
   filename: string,
   index: IsinIndex,
-  opts: { since: string; password?: string; pdfText: (bytes: Uint8Array, password?: string) => Promise<string> },
+  opts: { since: string; password?: string; source?: SourceId; pdfText: (bytes: Uint8Array, password?: string) => Promise<string> },
 ): Promise<Parsed> {
-  const matcher = new Matcher(index);
+  // US statements are read by ticker; everything else is matched against the Indian ISIN index
+  const matcher = opts.source && US_SOURCES.includes(opts.source) ? usTickers : new Matcher(index);
   const isPdf = filename.toLowerCase().endsWith(".pdf") || (bytes[0] === 0x25 && bytes[1] === 0x50); // "%P"
   if (isPdf) {
     const text = await opts.pdfText(bytes, opts.password);

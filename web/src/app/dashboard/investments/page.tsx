@@ -8,20 +8,21 @@ import { ImportHoldingsModal } from "@/components/invest/import-holdings";
 import { ContributionChart } from "@/components/invest/contribution-chart";
 import { GoalHorizon } from "@/components/invest/goal-horizon";
 import { HoldingModal, type DetailTab } from "@/components/invest/holding-detail";
-import { CLASS_META, fmtQty, signedPct, tone } from "@/components/invest/meta";
+import { CLASS_META, fmtQty, signedPct, tone, usd } from "@/components/invest/meta";
 import { SavingsBreakdown } from "@/components/invest/savings-breakdown";
 import { ValueChart } from "@/components/invest/value-chart";
 import { PageHeader } from "@/components/page-header";
 import { Button, ErrorNote, Modal, Skeleton } from "@/components/ui";
 import { money, shortMoney } from "@/lib/format";
-import { indianMarketStatus } from "@/lib/market";
+import { indianMarketStatus, usMarketStatus } from "@/lib/market";
 import { useDeleteHolding, usePortfolio, useRefreshPrices, useSummary } from "@/lib/queries";
 import { useMonth } from "@/lib/ui-store";
 import type { AssetClass, HoldingView, Portfolio, PortfolioRange } from "@/lib/types";
 
 type Tab = AssetClass;
 /** Fixed tab order, showing only the classes the user holds. */
-const CLASS_ORDER: AssetClass[] = ["STOCK", "MUTUAL_FUND", "GOLD", "BOND"];
+/** US stocks get their own tab right after Indian stocks — shown only when the user holds some. */
+const CLASS_ORDER: AssetClass[] = ["STOCK", "US_STOCK", "MUTUAL_FUND", "GOLD", "BOND"];
 /** Where a holding counts: a gold fund or gold ETF sits under Gold (it's still valued by NAV / market price). */
 const cat = (h: HoldingView) => h.category ?? h.assetClass;
 const presentClasses = (p: Portfolio) => CLASS_ORDER.filter((c) => p.holdings.some((h) => cat(h) === c));
@@ -166,11 +167,12 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
   const day = items.reduce((s, h) => s + h.dayChange, 0);
   const asOf = asOfLabel(items);
   const xirr = p.allocation.find((a) => a.assetClass === tab)?.xirr; // per category, from the backend
-  const [market, setMarket] = useState(() => indianMarketStatus());
+  const [clock, setClock] = useState(() => Date.now());
   useEffect(() => {
-    const t = setInterval(() => setMarket(indianMarketStatus()), 60_000);
+    const t = setInterval(() => setClock(Date.now()), 60_000);
     return () => clearInterval(t);
   }, []);
+  const market = tab === "US_STOCK" ? usMarketStatus(new Date(clock)) : indianMarketStatus(new Date(clock));
 
   return (
     <div className="grid items-start gap-6 2xl:grid-cols-[1fr_300px]">
@@ -252,7 +254,7 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
                                 {h.assetClass === "MUTUAL_FUND" ? "Fund · NAV" : "ETF"}
                               </span>
                             )}
-                            {isMf ? (h.firstBought ? `Since ${new Date(h.firstBought).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}` : "Mutual fund") : `Avg ${money(h.avgCost)}${h.assetClass === "GOLD" ? "/g" : ""}`}
+                            {isMf ? (h.firstBought ? `Since ${new Date(h.firstBought).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}` : "Mutual fund") : h.assetClass === "US_STOCK" ? `Avg ${usd(h.nativeAvgCost)} · ${money(h.avgCost)}` : `Avg ${money(h.avgCost)}${h.assetClass === "GOLD" ? "/g" : ""}`}
                           </p>
                         </div>
                       </div>
@@ -269,7 +271,8 @@ function HoldingsView({ p, refresh, refreshing, onOpen }: { p: Portfolio; refres
                     </td>
                     {!isMf && (
                       <td className={`px-3 py-3.5 text-right ${HIDE.price}`}>
-                        <p className="tabular">{money(h.price)}</p>
+                        <p className="tabular">{h.assetClass === "US_STOCK" && h.nativePrice != null ? usd(h.nativePrice) : money(h.price)}</p>
+                        {h.assetClass === "US_STOCK" && <p className="tabular text-[11px] text-subtle">{money(h.price)}</p>}
                         <p className={`tabular text-xs ${h.priceSource === "LIVE" ? tone(h.dayChangePct) : "text-subtle"}`}>
                           {h.priceSource === "LIVE" ? signedPct(h.dayChangePct) : h.priceSource === "MANUAL" ? "manual" : h.priceSource === "FACE_VALUE" ? "face value" : "last trade"}
                         </p>

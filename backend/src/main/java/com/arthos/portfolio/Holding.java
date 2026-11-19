@@ -22,7 +22,7 @@ import java.util.List;
 @Document("holdings")
 public class Holding {
 
-    public enum AssetClass { STOCK, MUTUAL_FUND, GOLD, BOND }
+    public enum AssetClass { STOCK, MUTUAL_FUND, GOLD, BOND, US_STOCK }
 
     /** Time horizon for goal-based views (§9.3). */
     public enum Horizon { SHORT, MEDIUM, LONG }
@@ -75,6 +75,11 @@ public class Holding {
          * Re-importing from the same source replaces that source's lots.
          */
         private String importSource;
+        /** US stocks: the price paid in USD, and the USD/INR rate that day ({@link #price} is the INR figure). */
+        @Field(targetType = FieldType.DECIMAL128)
+        private BigDecimal nativePrice;
+        @Field(targetType = FieldType.DECIMAL128)
+        private BigDecimal fxRate;
 
         public Lot() {}
 
@@ -103,6 +108,10 @@ public class Holding {
         public String getImportSource() { return importSource; }
         public void setImportSource(String importSource) { this.importSource = importSource; }
         public boolean imported() { return importSource != null; }
+        public BigDecimal getNativePrice() { return nativePrice; }
+        public void setNativePrice(BigDecimal nativePrice) { this.nativePrice = nativePrice; }
+        public BigDecimal getFxRate() { return fxRate; }
+        public void setFxRate(BigDecimal fxRate) { this.fxRate = fxRate; }
         public void setType(LotType type) { this.type = type; }
         public void setDate(LocalDate date) { this.date = date; }
         public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
@@ -205,6 +214,10 @@ public class Holding {
     public void setCountAs(AssetClass countAs) { this.countAs = countAs; }
 
     private static final java.util.regex.Pattern PRECIOUS = java.util.regex.Pattern.compile("\\bgold\\b", java.util.regex.Pattern.CASE_INSENSITIVE);
+    private static final java.util.regex.Pattern MINERS = java.util.regex.Pattern.compile("\\bmin(ers?|ing)\\b", java.util.regex.Pattern.CASE_INSENSITIVE);
+    private static final java.util.regex.Pattern US_FUND = java.util.regex.Pattern.compile("\\b(etf|trust|shares)\\b", java.util.regex.Pattern.CASE_INSENSITIVE);
+    /** Physical-gold ETFs listed in the US. */
+    private static final java.util.Set<String> US_GOLD = java.util.Set.of("GLD", "IAU", "GLDM", "SGOL", "IAUM", "BAR", "AAAU", "OUNZ");
     private static final java.util.regex.Pattern ETF = java.util.regex.Pattern.compile("\\b(etf|bees)\\b|bees$", java.util.regex.Pattern.CASE_INSENSITIVE);
 
     /** {@link #category(boolean)} with the automatic gold rule on. */
@@ -222,7 +235,11 @@ public class Holding {
         if (!autoGold) return assetClass;
         String n = name == null ? "" : name;
         if (assetClass == AssetClass.MUTUAL_FUND && PRECIOUS.matcher(n).find()) return AssetClass.GOLD;
-        if (assetClass == AssetClass.STOCK && PRECIOUS.matcher(n).find() && (ETF.matcher(n).find() || ETF.matcher(symbol == null ? "" : symbol).find()))
+        if (assetClass == AssetClass.STOCK && PRECIOUS.matcher(n).find() && !MINERS.matcher(n).find() && (ETF.matcher(n).find() || ETF.matcher(symbol == null ? "" : symbol).find()))
+            return AssetClass.GOLD;
+        // US gold ETFs: by ticker, or a gold "ETF / Trust / Shares" that isn't a gold-miners fund
+        if (assetClass == AssetClass.US_STOCK && (US_GOLD.contains(symbol == null ? "" : symbol.toUpperCase(java.util.Locale.ROOT))
+                || (PRECIOUS.matcher(n).find() && US_FUND.matcher(n).find() && !MINERS.matcher(n).find())))
             return AssetClass.GOLD;
         return assetClass;
     }
@@ -237,7 +254,7 @@ public class Holding {
     /** Key used for market data lookups, or null when the holding has no live price source. */
     public String marketKey() {
         return switch (assetClass) {
-            case STOCK, MUTUAL_FUND -> symbol == null ? null : assetClass + ":" + symbol;
+            case STOCK, MUTUAL_FUND, US_STOCK -> symbol == null ? null : assetClass + ":" + symbol;
             case GOLD -> "GOLD:XAU";
             case BOND -> null;
         };

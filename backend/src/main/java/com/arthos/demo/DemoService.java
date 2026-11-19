@@ -102,6 +102,7 @@ public class DemoService {
         try {
             var h = Parallel.get(histories);
             var portfolio = DemoPortfolio.build(u.getId(), today, expiresAt, h);
+            usdSide(portfolio);
             fundFromSavings(u, portfolio, seed, today, h.getOrDefault("GOLD:XAU", List.of()));
             var savedUser = Parallel.async(() -> users.save(u));
             holdings.saveAll(portfolio);
@@ -148,5 +149,21 @@ public class DemoService {
         BigDecimal start = low.negate().add(BigDecimal.valueOf(60_000)).max(BigDecimal.valueOf(60_000))
                 .divide(BigDecimal.valueOf(1000), 0, RoundingMode.CEILING).multiply(BigDecimal.valueOf(1000));
         u.setSavingsStartingBalance(start);
+    }
+
+    /** US holdings in the demo: the dollar price and rate on each purchase date, as real US purchases carry. */
+    private void usdSide(List<Holding> portfolio) {
+        for (Holding h : portfolio) {
+            if (h.getAssetClass() != Holding.AssetClass.US_STOCK) continue;
+            for (Holding.Lot l : h.getLots()) {
+                try {
+                    var fx = market.usdInr(l.getDate());
+                    l.setFxRate(fx);
+                    l.setNativePrice(l.getPrice().divide(fx, 2, java.math.RoundingMode.HALF_UP));
+                } catch (Exception e) {
+                    // no rate: the holding still shows in rupees
+                }
+            }
+        }
     }
 }

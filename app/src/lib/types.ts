@@ -133,7 +133,7 @@ export type BudgetModeOption = { mode: BudgetMode; todayAllowance: number; today
 
 export type BudgetInput = { limit: number; mode: BudgetMode; excludedCategories: ExpenseCategory[] };
 // ---- Investments (Phase 3) — mirrors backend/src/main/java/com/arthos/portfolio/PortfolioView.java ----
-export const ASSET_CLASSES = ["STOCK", "MUTUAL_FUND", "GOLD", "BOND"] as const;
+export const ASSET_CLASSES = ["STOCK", "US_STOCK", "MUTUAL_FUND", "GOLD", "BOND"] as const;
 export type AssetClass = (typeof ASSET_CLASSES)[number];
 export const HORIZONS = ["SHORT", "MEDIUM", "LONG"] as const;
 export type Horizon = (typeof HORIZONS)[number];
@@ -173,11 +173,16 @@ export type HoldingView = {
   gold?: { form: GoldForm; purity: GoldPurity; grams: number; pricePerGram24k: number };
   bond?: { faceValue: number; couponRate: number; maturityDate: string; bondType: BondType; annualCoupon: number; nextCouponDate?: string; yearsToMaturity?: number; currentYield?: number };
   spark: number[];
-  lots: { id: string; type: LotType; date: string; quantity: number; price: number; amount: number; note?: string; fundedFrom?: FundingSource; fromSavings?: number; fromSpending?: number; importedFrom?: string }[];
+  lots: { id: string; type: LotType; date: string; quantity: number; price: number; amount: number; note?: string; fundedFrom?: FundingSource; fromSavings?: number; fromSpending?: number; importedFrom?: string; /** US stocks: price paid in USD */ nativePrice?: number }[];
   /** Where it counts in allocation and tabs (a gold fund → GOLD); valuation follows assetClass. */
   category?: AssetClass;
   /** The user's "count as" choice; null = automatic. */
   countAs?: AssetClass | null;
+  /** "USD" for US stocks; every money field stays INR. */
+  currency?: string | null;
+  /** US stocks: today's price and the average cost, in USD. */
+  nativePrice?: number | null;
+  nativeAvgCost?: number | null;
 };
 
 export type Portfolio = {
@@ -194,7 +199,7 @@ export type Portfolio = {
 };
 
 export type SymbolMatch = { symbol: string; name: string; exchange: string; assetClass: AssetClass };
-export type Quote = { price: number; previousClose?: number; asOf: string; source: string };
+export type Quote = { price: number; previousClose?: number; asOf: string; source: string; /** "USD" for US stocks (price is INR) */ currency?: string; nativePrice?: number };
 
 export type FundingSource = 'SAVINGS' | 'SPENDING';
 export type LotInput = { type: LotType; date: string; quantity: number; price: number; note?: string; fundedFrom?: FundingSource; fromSavings?: number };

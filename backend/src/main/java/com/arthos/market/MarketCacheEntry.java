@@ -18,6 +18,9 @@ public class MarketCacheEntry {
     private BigDecimal previousClose;
     private Instant asOf;
     private String source;
+    /** USD for US stocks (price is converted to INR; nativePrice keeps the USD figure). Null = INR. */
+    private String currency;
+    private BigDecimal nativePrice;
     private Instant quoteFetchedAt;
     private List<PricePoint> history;
     private Instant historyFetchedAt;
@@ -35,6 +38,10 @@ public class MarketCacheEntry {
     public void setPreviousClose(BigDecimal previousClose) { this.previousClose = previousClose; }
     public Instant getAsOf() { return asOf; }
     public void setAsOf(Instant asOf) { this.asOf = asOf; }
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
+    public BigDecimal getNativePrice() { return nativePrice; }
+    public void setNativePrice(BigDecimal nativePrice) { this.nativePrice = nativePrice; }
     public String getSource() { return source; }
     public void setSource(String source) { this.source = source; }
     public Instant getQuoteFetchedAt() { return quoteFetchedAt; }

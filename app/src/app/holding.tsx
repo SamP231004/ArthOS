@@ -9,7 +9,7 @@ import { confirm } from '@/components/confirm';
 import { Screen } from '@/components/screen';
 import { Badge, Button, Card, Chip, ErrorNote, Input, Loading, Segmented, T } from '@/components/ui';
 import { dateLabel, money, todayISO } from '@/lib/format';
-import { CLASS_META, fmtQty, holdingSubtitle, HORIZON_META, signedPct, SOURCE_LABEL, toneColor } from '@/lib/invest-meta';
+import { CLASS_META, fmtQty, holdingSubtitle, HORIZON_META, signedPct, SOURCE_LABEL, toneColor, usd } from '@/lib/invest-meta';
 import { useAddLot, useDeleteHolding, useDeleteLot, useHolding, useSaveHolding, useUpdateLot } from '@/lib/queries';
 import { HORIZONS, type AssetClass, type HoldingView, type Horizon, type LotType } from '@/lib/types';
 import { alpha, F, R, S, useTheme } from '@/theme';
@@ -54,7 +54,11 @@ function Overview({ h }: { h: HoldingView }) {
         </T>
       </Card>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.md }}>
-        <Stat k={h.assetClass === 'GOLD' ? 'Price / gram' : h.assetClass === 'MUTUAL_FUND' ? 'NAV' : 'Price'} v={money(h.price)} sub={SOURCE_LABEL[h.priceSource]} />
+        {h.assetClass === 'US_STOCK' && h.nativePrice != null ? (
+          <Stat k="Price" v={usd(h.nativePrice)} sub={`≈ ${money(h.price)} · ${SOURCE_LABEL[h.priceSource]}`} />
+        ) : (
+          <Stat k={h.assetClass === 'GOLD' ? 'Price / gram' : h.assetClass === 'MUTUAL_FUND' ? 'NAV' : 'Price'} v={money(h.price)} sub={SOURCE_LABEL[h.priceSource]} />
+        )}
         <Stat k="Today" v={h.priceSource === 'LIVE' ? `${h.dayChange >= 0 ? '+' : '−'}${money(Math.abs(h.dayChange))}` : '—'} sub={signedPct(h.dayChangePct)} color={toneColor(c, h.dayChange)} />
         <Stat k="Invested" v={money(h.invested)} sub={`avg ${money(h.avgCost)}`} />
         <Stat k="XIRR" v={h.xirr != null ? signedPct(h.xirr) : '—'} sub={h.xirr != null ? 'annualised' : 'needs 30+ days'} color={toneColor(c, h.xirr)} />
@@ -84,7 +88,7 @@ function Overview({ h }: { h: HoldingView }) {
             <Badge label={l.type === 'BUY' ? 'Buy' : 'Sell'} color={l.type === 'BUY' ? c.income : c.expense} />
             <T variant="small" style={{ flex: 1 }}>{dateLabel(l.date)}</T>
             <View style={{ alignItems: 'flex-end' }}>
-              <T style={{ fontSize: 13, fontVariant: ['tabular-nums'] }}>{fmtQty(l.quantity)} × {money(l.price)}</T>
+              <T style={{ fontSize: 13, fontVariant: ['tabular-nums'] }}>{fmtQty(l.quantity)} × {l.nativePrice != null ? `${usd(l.nativePrice)} (${money(l.price)})` : money(l.price)}</T>
               <T variant="small">
                 {money(l.amount)}
                 {paidWith(l)}
@@ -123,9 +127,11 @@ function LotEditor({ h, lot, onDone }: { h: HoldingView; lot: HoldingView['lots'
   const update = useUpdateLot(h.id);
   const [type, setType] = useState<LotType>(lot.type);
   const [qty, setQty] = useState(String(lot.quantity));
-  const [price, setPrice] = useState(String(lot.price));
+  const isUs = h.assetClass === 'US_STOCK';
+  const lotFx = isUs && lot.nativePrice ? lot.price / lot.nativePrice : 1; // ₹ per $ on that day
+  const [price, setPrice] = useState(String(isUs && lot.nativePrice != null ? lot.nativePrice : lot.price));
   const [date, setDate] = useState(lot.date);
-  const amount = Number(qty) * Number(price) || 0;
+  const amount = (Number(qty) * Number(price) || 0) * lotFx;
   const funding = useFunding(amount, date, fundingOf(lot.fromSavings, lot.amount));
   const num = (t: string) => t.replace(/[^0-9.]/g, '');
   return (
@@ -136,7 +142,7 @@ function LotEditor({ h, lot, onDone }: { h: HoldingView; lot: HoldingView['lots'
       </View>
       <View style={{ flexDirection: 'row', gap: S.md }}>
         <View style={{ flex: 1 }}><Input label={CLASS_META[h.assetClass].unit} keyboardType="decimal-pad" value={qty} onChangeText={(t) => setQty(num(t))} /></View>
-        <View style={{ flex: 1 }}><Input label={h.assetClass === 'MUTUAL_FUND' ? 'NAV' : 'Price / unit'} keyboardType="decimal-pad" value={price} onChangeText={(t) => setPrice(num(t))} /></View>
+        <View style={{ flex: 1 }}><Input label={h.assetClass === 'MUTUAL_FUND' ? 'NAV' : isUs ? 'Price ($)' : 'Price / unit'} keyboardType="decimal-pad" value={price} onChangeText={(t) => setPrice(num(t))} /></View>
       </View>
       <DateField value={date} onChange={setDate} />
       {type === 'BUY' && <FundingPicker f={funding} />}
@@ -165,9 +171,11 @@ function Trade({ h, onDone }: { h: HoldingView; onDone: () => void }) {
   const add = useAddLot(h.id);
   const [type, setType] = useState<LotType>('BUY');
   const [qty, setQty] = useState('');
-  const [price, setPrice] = useState(String(h.price));
+  const isUs = h.assetClass === 'US_STOCK';
+  const fx = isUs && h.nativePrice ? h.price / h.nativePrice : 1; // today's ₹ per $
+  const [price, setPrice] = useState(String(isUs && h.nativePrice != null ? h.nativePrice : h.price));
   const [date, setDate] = useState(todayISO());
-  const funding = useFunding(Number(qty) * Number(price) || 0, date);
+  const funding = useFunding((Number(qty) * Number(price) || 0) * fx, date);
   const num = (t: string) => t.replace(/[^0-9.]/g, '');
   return (
     <Card style={{ gap: S.md }}>
@@ -177,7 +185,7 @@ function Trade({ h, onDone }: { h: HoldingView; onDone: () => void }) {
       </View>
       <View style={{ flexDirection: 'row', gap: S.md }}>
         <View style={{ flex: 1 }}><Input label={CLASS_META[h.assetClass].unit} keyboardType="decimal-pad" value={qty} onChangeText={(t) => setQty(num(t))} hint={type === 'SELL' ? `You hold ${fmtQty(h.quantity)}` : undefined} /></View>
-        <View style={{ flex: 1 }}><Input label="Price / unit" keyboardType="decimal-pad" value={price} onChangeText={(t) => setPrice(num(t))} /></View>
+        <View style={{ flex: 1 }}><Input label={isUs ? 'Price / share ($)' : 'Price / unit'} keyboardType="decimal-pad" value={price} onChangeText={(t) => setPrice(num(t))} /></View>
       </View>
       <DateField value={date} onChange={setDate} />
       {Number(qty) > 0 && Number(price) > 0 && (

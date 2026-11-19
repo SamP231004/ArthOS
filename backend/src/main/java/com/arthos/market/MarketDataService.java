@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
@@ -67,11 +68,12 @@ public class MarketDataService {
      * instead of 10 minutes. Mutual fund NAVs are published once a day, so they keep their normal cache.
      */
     public Map<String, Quote> quotes(Collection<String> keys, boolean live) {
-        boolean open = MarketHours.isOpenNow();
+        boolean open = MarketHours.isOpenNow(), usOpen = MarketHours.isUsOpenNow();
         Map<String, Future<Quote>> pending = new HashMap<>();
         for (String k : keys.stream().distinct().toList()) {
+            boolean us = k.startsWith("US_STOCK:");
             Duration ttl = k.startsWith("MUTUAL_FUND:") ? NAV_TTL
-                    : live && (k.startsWith("GOLD:") || open) ? LIVE_TTL
+                    : live && (k.startsWith("GOLD:") || (us ? usOpen : open)) ? LIVE_TTL
                     : QUOTE_TTL;
             pending.put(k, pool.submit(() -> loadQuote(k, ttl)));
         }
@@ -81,6 +83,23 @@ public class MarketDataService {
             if (q != null) out.put(k, q);
         });
         return out;
+    }
+
+    /** USD → INR on a date (the last rate on or before it), from Yahoo's daily rates; cached like a price history. */
+    public BigDecimal usdInr(java.time.LocalDate date) {
+        MarketCacheEntry e = entry("FX:USDINR");
+        if (e.getHistory() == null || e.getHistory().isEmpty() || stale(e.getHistoryFetchedAt(), Duration.ofHours(6))) {
+            List<PricePoint> fresh = providers.get(AssetClass.US_STOCK) instanceof UsStockPriceProvider us ? us.fxHistory("5y") : List.of();
+            if (!fresh.isEmpty()) {
+                e.setHistory(fresh);
+                e.setHistoryFetchedAt(Instant.now());
+                save(e);
+            }
+        }
+        if (e.getHistory() == null || e.getHistory().isEmpty()) throw new IllegalStateException("USD/INR rate unavailable");
+        var byDate = UsStockPriceProvider.byDate(e.getHistory());
+        var rate = byDate.floorEntry(date);
+        return (rate != null ? rate : byDate.firstEntry()).getValue();
     }
 
     public Map<String, List<PricePoint>> histories(Collection<String> keys) {
@@ -108,11 +127,14 @@ public class MarketDataService {
                 e.setPreviousClose(q.previousClose());
                 e.setAsOf(q.asOf());
                 e.setSource(q.source());
+                e.setCurrency(q.currency());
+                e.setNativePrice(q.nativePrice());
                 e.setQuoteFetchedAt(Instant.now());
                 save(e);
             }
         }
-        return e.getPrice() == null ? null : new Quote(e.getPrice(), e.getPreviousClose(), e.getAsOf(), e.getSource());
+        return e.getPrice() == null ? null : new Quote(e.getPrice(), e.getPreviousClose(), e.getAsOf(), e.getSource(),
+                e.getCurrency() == null ? "INR" : e.getCurrency(), e.getNativePrice());
     }
 
     private List<PricePoint> loadHistory(String key) {

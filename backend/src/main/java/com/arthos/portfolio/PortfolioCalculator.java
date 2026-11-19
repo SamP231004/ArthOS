@@ -78,7 +78,8 @@ public final class PortfolioCalculator {
                 .map(c -> "No live price for " + c.h.getName() + " right now; valued at its last trade price.").toList();
 
         return new PortfolioView(totals, allocation, horizons, views, history(computed, today, range), range, asOf, notes,
-                com.arthos.market.MarketHours.isOpenNow());
+                com.arthos.market.MarketHours.isOpenNow()
+                        || (holdings.stream().anyMatch(h -> h.getAssetClass() == AssetClass.US_STOCK) && com.arthos.market.MarketHours.isUsOpenNow()));
     }
 
     // ---------------------------------------------------------------- per holding
@@ -89,6 +90,8 @@ public final class PortfolioCalculator {
         BigDecimal price, prev, value = BigDecimal.ZERO, dayChange = BigDecimal.ZERO;
         PriceSource source;
         Instant asOf;
+        /** US stocks: today's USD price from the quote. */
+        BigDecimal nativePrice;
         List<Xirr.Flow> flows = new ArrayList<>();
         List<Lot> lots;
         TreeMap<LocalDate, BigDecimal> prices = new TreeMap<>(); // adjusted per-unit closes
@@ -108,8 +111,27 @@ public final class PortfolioCalculator {
                     lots.isEmpty() ? null : lots.getFirst().getDate(), gold(), bond(), spark,
                     lots.stream().map(l -> new LotView(l.getId(), l.getType(), l.getDate(), l.getQuantity().stripTrailingZeros(), l.getPrice(),
                             m(l.getQuantity().multiply(l.getPrice())), l.getNote(), l.fundedFrom(),
-                            l.getType() == LotType.SELL ? null : m(l.fromSavings()), l.getType() == LotType.SELL ? null : m(l.fromSpending()), l.getImportSource())).toList(),
-                    h.category(goldFundsAsGold), h.getCountAs());
+                            l.getType() == LotType.SELL ? null : m(l.fromSavings()), l.getType() == LotType.SELL ? null : m(l.fromSpending()), l.getImportSource(), l.getNativePrice())).toList(),
+                    h.category(goldFundsAsGold), h.getCountAs(),
+                    h.getAssetClass() == AssetClass.US_STOCK ? "USD" : null,
+                    nativePrice == null ? null : nativePrice.setScale(2, RoundingMode.HALF_UP),
+                    h.getAssetClass() == AssetClass.US_STOCK ? nativeAvg() : null);
+        }
+
+        /** Average cost in USD (average-cost method, like the INR figure): buys move it, sells don't. */
+        BigDecimal nativeAvg() {
+            BigDecimal q = BigDecimal.ZERO, avg = BigDecimal.ZERO;
+            for (Lot l : lots) {
+                if (l.getType() == LotType.SELL) {
+                    q = q.subtract(l.getQuantity()).max(BigDecimal.ZERO);
+                    continue;
+                }
+                if (l.getNativePrice() == null) continue;
+                BigDecimal nq = q.add(l.getQuantity());
+                avg = nq.signum() == 0 ? BigDecimal.ZERO : avg.multiply(q).add(l.getNativePrice().multiply(l.getQuantity())).divide(nq, 6, RoundingMode.HALF_UP);
+                q = nq;
+            }
+            return avg.setScale(2, RoundingMode.HALF_UP);
         }
 
         GoldInfo gold() {
@@ -172,6 +194,7 @@ public final class PortfolioCalculator {
             c.prev = q.previousClose() == null ? null : q.previousClose().multiply(factor);
             c.source = PriceSource.LIVE;
             c.asOf = q.asOf();
+            c.nativePrice = q.nativePrice();
         } else if (h.getAssetClass() == AssetClass.BOND && h.getFaceValue() != null) {
             c.price = h.getFaceValue();
             c.source = PriceSource.FACE_VALUE;
