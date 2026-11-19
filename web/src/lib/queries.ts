@@ -144,7 +144,7 @@ export function useMarketSearch(assetClass: AssetClass, q: string) {
   return useQuery({
     queryKey: ["market-search", assetClass, q],
     queryFn: () => api<SymbolMatch[]>(`/api/market/search?assetClass=${assetClass}&q=${encodeURIComponent(q)}`),
-    enabled: q.trim().length >= 2 && (assetClass === "STOCK" || assetClass === "MUTUAL_FUND"),
+    enabled: q.trim().length >= 2 && (assetClass === "STOCK" || assetClass === "US_STOCK" || assetClass === "MUTUAL_FUND"),
     staleTime: 5 * 60_000,
   });
 }
@@ -153,7 +153,7 @@ export function useQuote(assetClass: AssetClass, symbol?: string) {
   return useQuery({
     queryKey: ["quote", assetClass, symbol],
     queryFn: () => api<Quote>(`/api/market/quote?assetClass=${assetClass}${symbol ? `&symbol=${encodeURIComponent(symbol)}` : ""}`),
-    enabled: assetClass === "GOLD" || ((assetClass === "STOCK" || assetClass === "MUTUAL_FUND") && !!symbol),
+    enabled: assetClass === "GOLD" || ((assetClass === "STOCK" || assetClass === "US_STOCK" || assetClass === "MUTUAL_FUND") && !!symbol),
     staleTime: 60_000,
     retry: false,
   });
