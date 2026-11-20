@@ -2,7 +2,7 @@
   "expo": {
     "name": "ArthOS",
     "slug": "arthos",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "arthos",
@@ -141,7 +141,8 @@
           ]
         }
       ],
-      "./plugins/with-local-gradle"
+      "./plugins/with-local-gradle",
+      "./plugins/with-optional-screen-features"
     ],
     "experiments": {
       "typedRoutes": true,
