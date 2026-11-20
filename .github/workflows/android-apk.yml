@@ -110,6 +110,12 @@ jobs:
           done
           exit 1
 
+      # The release page: .github/android-release.md with this build's version and commit filled in
+      - name: Write the release notes
+        run: |
+          version=$(node -p "require('./app.json').expo.version")  # steps run in app/
+          sed -e "s/{{VERSION}}/$version/g" -e "s/{{SHA}}/${GITHUB_SHA::7}/g" ../.github/android-release.md > "$RUNNER_TEMP/release-notes.md"
+
       - name: Publish "Android app (latest)" release
         uses: softprops/action-gh-release@v2
         with:
@@ -117,11 +123,7 @@ jobs:
           name: Android app (latest)
           target_commitish: ${{ github.sha }}
           make_latest: true
-          body: |
-            Latest ArthOS Android build from `${{ github.sha }}`.
-
-            Open this page on your phone and tap **ArthOS.apk** to download and install it
-            (allow "Install unknown apps" for your browser the first time).
+          body_path: ${{ runner.temp }}/release-notes.md
           files: ArthOS.apk
           fail_on_unmatched_files: true
 
